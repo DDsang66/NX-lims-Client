@@ -1,0 +1,178 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\source\\NX-limsVue\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\login\u0026feedback.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\login\u0026feedback.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\submitchecklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\submitchecklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\views\\login.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\views\\login.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\sampledescripe.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\sampledescripe.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\fibercontent.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\fibercontent.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\stores\\auth.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\stores\\auth.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\requirelabel.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\requirelabel.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\checklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\checklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\item additional required\\extraform.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\item additional required\\extraform.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FiberContent.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\FiberContent.vue",
+              "RelativeDocumentMoniker": "src\\components\\FiberContent.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\FiberContent.vue",
+              "RelativeToolTip": "src\\components\\FiberContent.vue",
+              "ViewState": "AgIAAJAAAAAAAAAAAAAAAJoAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-28T02:33:13.522Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Login\u0026Feedback.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\Login\u0026Feedback.vue",
+              "RelativeDocumentMoniker": "src\\components\\Login\u0026Feedback.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\Login\u0026Feedback.vue",
+              "RelativeToolTip": "src\\components\\Login\u0026Feedback.vue",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAAAH4AAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-09-02T05:57:40.085Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "auth.js",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\stores\\auth.js",
+              "RelativeDocumentMoniker": "src\\stores\\auth.js",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\stores\\auth.js",
+              "RelativeToolTip": "src\\stores\\auth.js",
+              "ViewState": "AgIAADsAAAAAAAAAAADwv0AAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-09-01T09:03:19.458Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Login.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\Views\\Login.vue",
+              "RelativeDocumentMoniker": "src\\Views\\Login.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\Views\\Login.vue",
+              "RelativeToolTip": "src\\Views\\Login.vue",
+              "ViewState": "AgIAAGkAAAAAAAAAAADwv3YAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-09-01T09:01:35.244Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CheckList.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\CheckList.vue",
+              "RelativeDocumentMoniker": "src\\components\\CheckList.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\CheckList.vue",
+              "RelativeToolTip": "src\\components\\CheckList.vue",
+              "ViewState": "AgIAAG8AAAAAAAAAAAAAAEAAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-28T09:09:25.694Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ExtraForm.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\Item Additional Required\\ExtraForm.vue",
+              "RelativeDocumentMoniker": "src\\components\\Item Additional Required\\ExtraForm.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\Item Additional Required\\ExtraForm.vue",
+              "RelativeToolTip": "src\\components\\Item Additional Required\\ExtraForm.vue",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-28T09:08:04.666Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SubmitCheckList.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\SubmitCheckList.vue",
+              "RelativeDocumentMoniker": "src\\components\\SubmitCheckList.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\SubmitCheckList.vue",
+              "RelativeToolTip": "src\\components\\SubmitCheckList.vue",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAAAJ4AAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-27T09:32:57.423Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SampleDescripe.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\SampleDescripe.vue",
+              "RelativeDocumentMoniker": "src\\components\\SampleDescripe.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\SampleDescripe.vue",
+              "RelativeToolTip": "src\\components\\SampleDescripe.vue",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAAAFYAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-27T03:44:39.757Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "RequireLabel.vue",
+              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\RequireLabel.vue",
+              "RelativeDocumentMoniker": "src\\components\\RequireLabel.vue",
+              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\RequireLabel.vue",
+              "RelativeToolTip": "src\\components\\RequireLabel.vue",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAAABYAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
+              "WhenOpened": "2025-08-27T03:43:20.946Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
