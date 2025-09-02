@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken') || '',
     refreshToken: localStorage.getItem('refreshToken') || '',
+    reviewer: localStorage.getItem('reviewer') || '',
     isLoggedIn: !!localStorage.getItem('accessToken'),
     logoutTimer: null
   }),

@@ -1,15 +1,16 @@
 <script setup>
-  import { ref ,computed} from 'vue'
+  import { ref, computed } from 'vue'
+  import { useAuthStore } from '@/stores/auth';
   import Feedback from '@/components/Login&Feedback.vue'
   import BuyerInfo from '@/components/BuyerInfo.vue'
   import CheckList from '@/components/CheckList.vue'
   import RequireLabel from '@/components/RequireLabel.vue'
   import SubmitCheckList from '@/components/SubmitCheckList.vue'
 
-
+  const authStore = useAuthStore()
+  const currentReviewer = computed(() => authStore.reviewer || '')
   const itemToTable = new Map();
   const currentBuyer = ref("CrazyLine");
-  const currentReviewer = ref("Guangxu,Chen");
   const menuName = ref();
   const orderNumber = ref(); 
   const menuOptions = ref([
@@ -71,8 +72,8 @@
       // 1. 过滤 + 拼接成字符串
       const str = Object.entries(patch)
         .filter(([k, v]) => k !== 'itemName' && k !== 'orderNumber' && v != null && v !== '')
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ')
+        .map(([k, v]) => k === 'param' ? v : `${k}: ${v}`)
+        .join(', ');
 
       // 2. 直接覆盖 parameters
       row.parameters = str
