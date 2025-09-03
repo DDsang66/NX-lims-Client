@@ -13,7 +13,7 @@
         <div class="row">
           <div class="col-xl-6 form-group">
             <label>Your Username</label>
-            <input v-model="login.username"
+            <input v-model="login.email"
                    type="text"
                    class="form-control"
                    placeholder="Username" />
@@ -96,7 +96,7 @@ const open = reactive({
 
 /* 表单数据 */
 const login = reactive({
-  username: '',
+  email: '',
   password: '',
   remember: false
 })
@@ -123,7 +123,7 @@ function leave(el, done) {
 /* 业务函数（示例） */
   const ChangeAccount = async () => {
   try {
-    const response = await axios.post('http://localhost:5051/api/auth/login', login, {
+    const response = await axios.post('http://192.168.235.8:5051/api/auth/login', login, {
       headers: {
         'Content-Type': 'application/json'
       }

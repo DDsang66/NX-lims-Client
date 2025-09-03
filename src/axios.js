@@ -3,7 +3,7 @@ import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
 const api = axios.create({
-  baseURL: 'http://localhost:5051/api',
+  baseURL: 'http://192.168.235.8:5051/api',
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' }
 });
@@ -30,7 +30,7 @@ api.interceptors.response.use(
         try {
           // 2️⃣ 改为纯文本
           const { data } = await axios.post(
-            'http://localhost:5051/api/refresh',
+            'http://192.168.235.8:5051/api/refresh',
             refreshToken,
             { headers: { 'Content-Type': 'text/plain' } }
           )

@@ -2,8 +2,8 @@
   import Footer from '@/components/Footer.vue';
   import Header from '@/components/Header.vue'
 import { ref, onMounted, onUnmounted } from 'vue';
-import banner1 from '@/assets/img/banner/3.jpg';
-import banner2 from '@/assets/img/banner/2.jpg';
+  import banner1 from '@/assets/img/banner/3.jpg';
+  import banner2 from '@/assets/img/banner/2.jpg';
 const videoRef      = ref(null);
 const showPlayBtn   = ref(true);
 

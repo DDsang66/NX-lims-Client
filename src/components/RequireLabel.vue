@@ -78,7 +78,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       sampleDescription: sampleDescription.value
   };
   try{
-    const response = await axios.post('http://localhost:5051/api/buyer/parameter', payload, {
+    const response = await axios.post('http://192.168.235.8:5051/api/buyer/parameter', payload, {
       headers: {
         'Content-Type': 'application/json'
       }

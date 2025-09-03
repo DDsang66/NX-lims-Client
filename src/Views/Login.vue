@@ -73,7 +73,7 @@
                      placeholder="Your Real Name.."
                      required />
             </div>
-            <div class="form-row bottom">
+            <!--<div class="form-row bottom">
               <div class="form-check">
                 <input id="remember"
                        v-model="register.remember"
@@ -81,7 +81,7 @@
                        name="remember" />
                 <label for="remember">Remember me?</label>
               </div>
-            </div>
+            </div>-->
 
             <button class="btn btn-primary btn-block" type="submit">Ok</button>
           </form>
@@ -136,7 +136,7 @@
   const handleLogin = async() => {
     // 登录逻辑，例如调用接口
     try {
-      const response = await axios.post('http://localhost:5051/api/auth/login', form, {
+      const response = await axios.post('http://192.168.235.8:5051/api/auth/login', form, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -149,11 +149,11 @@
       localStorage.setItem('reviewer', reviewer);
       const authStore = useAuthStore();
       authStore.setTokens(accessToken, refreshToken,reviewer);
-
+      alert('Login Success!');
       router.push('/main/Home');
     } catch (error)
     {
-      console.error('登录失败', error);
+      alert('The username or password entered is incorrect.');
     }
   }
 
@@ -164,18 +164,22 @@
 
   const handleRegister = async() => {
     try {
-      const response = await axios.post('http://localhost:5051/api/auth/register', register, {
+      if (register.password !== register.password_again) {
+        alert('The password entered twice is inconsistent, please re-enter it.');
+        return;
+      }
+
+      const response = await axios.post('http://192.168.235.8:5051/api/auth/register', register, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
       // 注册成功
-      console.log('注册成功', response.data);
-      alert('注册成功，请登录'); // 使用 alert 弹出提示
+      alert('Register Succeed,please login.'); // 使用 alert 弹出提示
       router.push('/Login'); // 跳转到登录页面
     } catch
     {
-      console.log('失败');
+      alert('Register Failed,please try again.');
     }
   }
 </script>

@@ -158,7 +158,7 @@
   const submitForm = async () => {
     try {
       //直接调用API - 修正了变量名 formData → form
-      const response = await axios.post('http://localhost:5051/api/buyer/confirm', form.value)
+      const response = await axios.post('http://192.168.235.8:5051/api/buyer/confirm', form.value)
       console.log('API Response:', response.data);
       // 将完整API响应发送给父组件
       emit('api-response', response.data)

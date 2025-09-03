@@ -222,7 +222,7 @@
   async function submitSearch() {
     try {
       // 发送 POST 请求
-      const response = await axios.post('http://localhost:5051/api/search/main', 
+      const response = await axios.post('http://192.168.235.8:5051/api/search/main', 
         searchQuery.value,{
         headers: {
           'Content-Type': 'application/json'

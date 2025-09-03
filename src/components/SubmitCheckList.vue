@@ -134,7 +134,7 @@ const cvv          = ref(null)
   }
 
   try {
-    const response = await axios.post('http://localhost:5051/api/receivedata/showExcel', form,
+    const response = await axios.post('http://192.168.235.8:5051/api/receivedata/showExcel', form,
       {
         responseType: 'blob', //axios 返回二进制流
         headers: { 'Content-Type': 'application/json' }
