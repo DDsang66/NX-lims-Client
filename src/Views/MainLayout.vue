@@ -1,7 +1,7 @@
 <script>
-  import Footer from '@/components/Footer.vue';
-  import HomeImage from '@/components/HomeImage.vue'
-  import Header from '@/components/Header.vue'
+  import Footer from '@/components/Layout/Footer.vue';
+  import HomeImage from '@/components/Layout/HomeImage.vue'
+  import Header from '@/components/Layout/Header.vue'
 
 import '@/assets/css/plugins/bootstrap.min.css';
 import '@/assets/css/plugins//animate.min.css';

@@ -53,17 +53,6 @@
                     </a>
                   </div>
                 </li>
-                <!--<li>
-                  <a router-link to="#">
-                    <i class="fal fa-pen" style="color: #3364d5"></i>
-                    <div>
-                      <p><b>Contact Us</b></p>
-                      <p>Pual</p>
-                      <p>Wang</p>
-                      <p>Chen</p>
-                    </div>
-                  </a>
-                </li>-->
                 <li>
                   <a router-link to="#">
                     <i class="fal fa-map-marker-alt" style="color: #3364d5"></i>
@@ -113,7 +102,7 @@
                   <router-link to="/main/Home">Home</router-link>
                 </li>
                 <li class="menu-item">
-                  <router-link to="#">FAQ</router-link>
+                  <router-link to="/main/FAQ">FAQ</router-link>
                 </li>
               </ul>
             </li>
@@ -124,10 +113,10 @@
               <a href="#">Order</a>
               <ul class="sub-menu">
                 <li class="menu-item">
-                  <router-link to="#">Null</router-link>
+                  <router-link to="/main/OrderSummary">Order Summary</router-link>
                 </li>
                 <li class="menu-item">
-                  <router-link to="#">Null</router-link>
+                  <router-link to="/main/OrderEntry">Order Entry</router-link>
                 </li>
               </ul>
             </li>
@@ -141,7 +130,7 @@
                   <router-link to="/main/CrazyLine">Crazy Line</router-link>
                 </li>
                 <li class="menu-item">
-                  <router-link to="/Adidas">Adidas</router-link>
+                  <router-link to="/main/Jako">Jako</router-link>
                 </li>
               </ul>
             </li>

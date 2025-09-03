@@ -7,6 +7,7 @@ import ChatBox from '../components/AI Helper(Demo)/ChatBox.vue';
 import Jako from '../views/Jako.vue';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
+import FAQ from '../views/StaticInterface/FAQ.vue';
 import MainLayout from '../views/MainLayout.vue';
 
 const routes = [
@@ -16,13 +17,13 @@ const routes = [
     component: Login
   },
   {
-    path: '/',
-    redirect: '/Login' // 默认路径重定向到登录页面
+    path: '/',redirect: '/Login' // 默认路径重定向到登录页面
   },
   {
-    path: '/main/Home',
-    name: 'Home',
-    component: Home, 
+    path: '/main/Home', name: 'Home', component: Home, 
+  },
+  {
+    path: '/main/FAQ', name: 'FAQ', component: FAQ
   },
   {
     path: '/main',
@@ -32,7 +33,7 @@ const routes = [
       { path: 'Mango', name: 'Mango', component: Mango },
       { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
       { path: 'Jako', name: 'Jako', component: Jako },
-      { path: 'ChatBox', name: 'ChatBox', component: ChatBox }
+      { path: 'ChatBox', name: 'ChatBox', component: ChatBox },
     ]
   },
 ];

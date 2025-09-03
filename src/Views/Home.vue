@@ -1,6 +1,6 @@
 <script setup>
-  import Footer from '@/components/Footer.vue';
-  import Header from '@/components/Header.vue'
+  import Footer from '@/components/Layout/Footer.vue';
+  import Header from '@/components/Layout/Header.vue'
 import { ref, onMounted, onUnmounted } from 'vue';
   import banner1 from '@/assets/img/banner/3.jpg';
   import banner2 from '@/assets/img/banner/2.jpg';
