@@ -3242,8 +3242,8 @@ table img {
 .sigma_header.style-5 .sigma_header-controls ul li.header-controls-item a:hover,
 .sigma_header.style-5 .aside-toggle:hover,
 .sigma_header.style-5 .aside-toggle.desktop-toggler:hover{
-  background-color: #20b9b2;
-  border-color: #20b9b2;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
   color: #fff;
 }
 
@@ -8555,7 +8555,7 @@ td.remove {
   transition: .3s;
 }
 .sigma_service:hover{
-  background-color: #20b9b2;
+  background-color: var(--primary-color);
   transform: translateY(-3px);
 }
 .sigma_service.style-1:hover .btn-link,
@@ -9170,7 +9170,7 @@ td.remove {
   position: relative;
 }
 .sigma_portfolio-item.style-6:hover .sigma_portfolio-item-content{
-  background-color: #20b9b2;
+  background-color: #3364d5;
 }
 .sigma_portfolio-item.style-6:hover .sigma_portfolio-item-content h5 a{
   color: #fff;
