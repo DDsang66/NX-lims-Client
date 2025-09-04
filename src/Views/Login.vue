@@ -6,7 +6,7 @@
           <h1>Welcome Back</h1>
           <p class="sub-para">Lorem ipsum dolor sit amet, consectetur adipiscing elit ... ... ...</p>
           <transition name="fade" mode="out-in">
-            <form v-if="isLoginMode" @submit.prevent="handleLogin">
+            <form v-if="currentMode === 'login'" @submit.prevent="handleLogin">
               <h2>Log In</h2>
               <div class="input-group">
                 <span><i class="fa fa-user" aria-hidden="true"></i></span>
@@ -32,7 +32,7 @@
                          name="remember" />
                   <label for="remember">Remember me?</label>
                 </div>
-                <a href="#" class="forgot" @click.prevent="handleForgot">Forgot password?</a>
+                <a href="#" class="forgot" @click.prevent="currentMode = 'pwdreset'">Forgot password?</a>
               </div>
 
               <button class="btn btn-primary btn-block" type="submit">Log In</button>
@@ -42,7 +42,7 @@
 
 
             <!--Register-->
-            <form v-else @submit.prevent="handleSignup">
+            <form v-else-if="currentMode === 'signup'" @submit.prevent="handleSignup">
               <h2>Sign Up</h2>
               <div class="input-group" style="margin-bottom:20px">
                 <span><i class="fa fa-user" aria-hidden="true"></i></span>
@@ -75,14 +75,43 @@
               </div>
               <button class="btn btn-primary btn-block" type="submit">Ok</button>
             </form>
+
+
+
+            <!--Pwd Reset-->
+            <form v-else @submit.prevent="handleForgot">
+              <h2>Password Reset</h2>
+              <div class="input-group" style="margin-bottom:20px">
+                <span><i class="fa fa-user" aria-hidden="true"></i></span>
+                <input v-model.trim="pwdReset.authenticinfo"
+                       type="text"
+                       placeholder="Your Name or Username"
+                       required />
+              </div>
+              <div class="input-group">
+                <span><i class="fa fa-key" aria-hidden="true"></i></span>
+                <input v-model.trim="pwdReset.newpassword"
+                       type="password"
+                       placeholder="Your New Password"
+                       required />
+              </div>
+              <div class="input-group two-groop">
+                <span><i class="fa fa-key" aria-hidden="true"></i></span>
+                <input v-model.trim="pwdReset.newpassword_again"
+                       type="password"
+                       placeholder="Confirm Your New Password Again"
+                       required />
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">Ok</button>
+            </form>
           </transition>
 
 
 
           <p class="account">
-            {{ isLoginMode ? "Don't have an account?" : "Already have an account?" }}
+            {{ currentMode === 'login' ? "Don't have an account?" : currentMode === 'signup' ? "Already have an account?" : "Back to login?" }}
             <a href="#" @click.prevent="toggleMode">
-              {{ isLoginMode ? 'Sign up' : 'Login' }}
+              {{ currentMode === 'login' ? 'Sign up' : currentMode === 'signup' ? 'Login' : 'Back to login' }}
             </a>
           </p>
         </div>
@@ -104,7 +133,7 @@
   import axios from '@/axios'
   import { useAuthStore } from '@/stores/auth';
 
-  const isLoginMode = ref(true)
+  const currentMode = ref('login')
   const router = useRouter()
   const form = reactive({
     email: '',
@@ -120,7 +149,23 @@
     remember: false
   })
 
-  const toggleMode = () => (isLoginMode.value = !isLoginMode.value)
+  const pwdReset = reactive({
+    authenticinfo: '',
+    newpassword: '',
+    newpassword_again: '',
+    remember: false
+  })
+
+
+  const toggleMode = () => {
+    if (currentMode.value === 'login') {
+      currentMode.value = 'signup'
+    } else if (currentMode.value === 'signup') {
+      currentMode.value = 'login'
+    } else {
+      currentMode.value = 'login'
+    }
+  }
 
 
   const handleLogin = async() => {
@@ -138,8 +183,9 @@
       localStorage.setItem('refreshToken', refreshToken); // 续用
       localStorage.setItem('reviewer', reviewer);
       const authStore = useAuthStore();
-      authStore.setTokens(accessToken, refreshToken,reviewer);
-      alert('Login Success!');
+      authStore.setTokens(accessToken, refreshToken, reviewer);
+      form.email = '';
+      form.password = '';
       router.push('/main/Home');
     } catch (error)
     {
@@ -148,8 +194,23 @@
   }
 
   const handleForgot = async() => {
-    // 忘记密码逻辑
-    console.log('忘记密码')
+    try {
+      if (pwdReset.newpassword !== pwdReset.newpassword_again) {
+        alert('The password entered twice is inconsistent, please re-enter it.');
+        return;
+      }
+
+      const response = await axios.post('/auth/pwdreset', pwdReset, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      alert('Reset Succeed,please login.'); // 使用 alert 弹出提示
+      currentMode.value = 'login';
+    } catch
+    {
+      alert('Register Failed,please try again.');
+    }
   }
 
   const handleSignup = async() => {
@@ -166,7 +227,7 @@
       });
       // 注册成功
       alert('Register Succeed,please login.'); // 使用 alert 弹出提示
-      router.push('/Login'); // 跳转到登录页面
+      currentMode.value = 'login';
     } catch
     {
       alert('Register Failed,please try again.');
