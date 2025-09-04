@@ -8,6 +8,7 @@ import '@/assets/fonts/flaticon/flaticon.css';
 import '@/assets/css/plugins/font-awesome.min.css';
 import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
+import '@/assets/css/cssVariable.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'
