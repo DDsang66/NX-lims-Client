@@ -7,6 +7,7 @@ import ChatBox from '../components/AI Helper(Demo)/ChatBox.vue';
 import Jako from '../views/Jako.vue';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
+import Profile from '../views/Profile.vue';
 import FAQ from '../views/StaticInterface/FAQ.vue';
 import MainLayout from '../views/MainLayout.vue';
 
@@ -21,6 +22,9 @@ const routes = [
   },
   {
     path: '/main/Home', name: 'Home', component: Home, 
+  },
+  {
+    path: '/main/Profile', name: 'Profile', component: Profile,
   },
   {
     path: '/main/FAQ', name: 'FAQ', component: FAQ

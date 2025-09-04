@@ -30,7 +30,7 @@
 
 <script setup>
   import { ref, defineComponent } from 'vue'
-  import axios from 'axios'
+  import axios from '@/axios'
   import WetCareLabel from '@/components/WetCareLabel.vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
@@ -78,7 +78,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       sampleDescription: sampleDescription.value
   };
   try{
-    const response = await axios.post('http://192.168.235.8:5051/api/buyer/parameter', payload, {
+    const response = await axios.post('/buyer/parameter', payload, {
       headers: {
         'Content-Type': 'application/json'
       }

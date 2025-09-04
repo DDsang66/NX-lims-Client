@@ -16,6 +16,7 @@
 
   </div>
   <!-- ===== FAQ Section Start ===== -->
+  <div class ="container-fluid" style="background-color: #f7f7f7;">
   <section class="section-faq">
     <div class="container">
       <h2 class="section-title" style="text-align:left">Frequently Asked Questions</h2>
@@ -39,7 +40,42 @@
   </section>
   <!-- ===== FAQ Section End ===== -->
 
+  <div class="container-fluid" style="background-color: #f7f7f7; padding:60px 0">
+    <h2 class="section-title" style="text-align:left">Write your feedback here.</h2>
+    <form class="sigma_box box-lg mf_form_validate ajax_submit m-0" action="sendmail.php" method="post" enctype="multipart/form-data" novalidate="novalidate">
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <i class="far fa-user"></i>
+            <input type="text" placeholder="Full Name" class="form-control dark" name="name">
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <i class="far fa-envelope"></i>
+            <input type="email" placeholder="Email Address" class="form-control dark" name="email">
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <i class="far fa-pencil"></i>
+            <input type="text" placeholder="Subject" class="form-control dark" name="subject">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <textarea name="message" placeholder="Enter Message" cols="45" rows="5" class="form-control dark"></textarea>
+      </div>
+      <div class="text-center">
+        <button type="submit" class="sigma_btn-custom secondary" name="button">Submit Now <i class="far fa-paper-plane"></i> </button>
+        <div class="server_response w-100">
+        </div>
+      </div>
+    </form>
 
+  </div>
+
+</div>
   <Footer />
 </template>
 
@@ -76,10 +112,6 @@ const faqList = ref([
 </script>
 
 <style scoped>
-  .sigma_btn-custom::before {
-    background-color: #18086a;
-  }
-
   .section-faq {
     padding: 60px 0;
     background: #f7f7f7;
@@ -113,11 +145,11 @@ const faqList = ref([
   }
 
   .icon {
-    transition: transform .3s;
+    transition: transform .6s;
   }
 
   .fade-enter-active, .fade-leave-active {
-    transition: opacity .3s ease;
+    transition: opacity .6s ease;
   }
 
   .fade-enter-from, .fade-leave-to {

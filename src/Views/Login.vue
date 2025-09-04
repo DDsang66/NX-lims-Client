@@ -101,7 +101,7 @@
 <script setup>
   import { ref, reactive } from 'vue'
   import { useRouter } from 'vue-router'
-  import axios from 'axios'
+  import axios from '@/axios'
   import { useAuthStore } from '@/stores/auth';
 
   const isLoginMode = ref(true)
@@ -126,7 +126,7 @@
   const handleLogin = async() => {
     // 登录逻辑，例如调用接口
     try {
-      const response = await axios.post('http://192.168.235.8:5051/api/auth/login', form, {
+      const response = await axios.post('/auth/login', form, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -159,7 +159,7 @@
         return;
       }
 
-      const response = await axios.post('http://192.168.235.8:5051/api/auth/register', register, {
+      const response = await axios.post('/auth/register', register, {
         headers: {
           'Content-Type': 'application/json'
         }

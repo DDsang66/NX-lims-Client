@@ -3,44 +3,8 @@
   "WorkspaceRootPath": "D:\\source\\NX-limsVue\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\views\\staticinterface\\faq.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\views\\staticinterface\\faq.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\router\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\router\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\views\\login.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\views\\login.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\sampledescripe.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\sampledescripe.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\requirelabel.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\requirelabel.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\checklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\checklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\views\\crazyline.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\views\\crazyline.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\login\u0026feedback.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\login\u0026feedback.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\item additional required\\extraform.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\item additional required\\extraform.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|d:\\source\\nx-limsvue\\src\\components\\submitchecklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{925844F9-4137-4CA2-92BF-FA49D5CCC8C4}|nx-limsvue.esproj|solutionrelative:src\\components\\submitchecklist.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     }
   ],
   "DocumentGroupContainers": [
@@ -50,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -66,132 +30,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "index.js",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\router\\index.js",
-              "RelativeDocumentMoniker": "src\\router\\index.js",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\router\\index.js",
-              "RelativeToolTip": "src\\router\\index.js",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAIwBYAAAA3AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-09-03T18:15:48.495Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "FAQ.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\Views\\StaticInterface\\FAQ.vue",
-              "RelativeDocumentMoniker": "src\\Views\\StaticInterface\\FAQ.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\Views\\StaticInterface\\FAQ.vue",
-              "RelativeToolTip": "src\\Views\\StaticInterface\\FAQ.vue",
-              "ViewState": "AgIAAC8AAAAAAAAAAAAYwDYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-09-03T18:07:37.309Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Login\u0026Feedback.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\Login\u0026Feedback.vue",
-              "RelativeDocumentMoniker": "src\\components\\Login\u0026Feedback.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\Login\u0026Feedback.vue",
-              "RelativeToolTip": "src\\components\\Login\u0026Feedback.vue",
-              "ViewState": "AgIAADwAAAAAAAAAAAAAAE4AAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-09-03T02:22:53.697Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "CrazyLine.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\Views\\CrazyLine.vue",
-              "RelativeDocumentMoniker": "src\\Views\\CrazyLine.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\Views\\CrazyLine.vue",
-              "RelativeToolTip": "src\\Views\\CrazyLine.vue",
-              "ViewState": "AgIAAIgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-09-02T18:00:50.618Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "Login.vue",
               "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\Views\\Login.vue",
               "RelativeDocumentMoniker": "src\\Views\\Login.vue",
               "ToolTip": "D:\\source\\NX-limsVue\\src\\Views\\Login.vue",
               "RelativeToolTip": "src\\Views\\Login.vue",
-              "ViewState": "AgIAABUAAAAAAAAAAAAAACkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAHgAAAAAAAAAAAAAAJgAAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
               "WhenOpened": "2025-09-01T09:01:35.244Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "CheckList.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\CheckList.vue",
-              "RelativeDocumentMoniker": "src\\components\\CheckList.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\CheckList.vue",
-              "RelativeToolTip": "src\\components\\CheckList.vue",
-              "ViewState": "AgIAAHUAAAAAAAAAAAAAAHUAAABGAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-08-28T09:09:25.694Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "ExtraForm.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\Item Additional Required\\ExtraForm.vue",
-              "RelativeDocumentMoniker": "src\\components\\Item Additional Required\\ExtraForm.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\Item Additional Required\\ExtraForm.vue",
-              "RelativeToolTip": "src\\components\\Item Additional Required\\ExtraForm.vue",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-08-28T09:08:04.666Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "SubmitCheckList.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\SubmitCheckList.vue",
-              "RelativeDocumentMoniker": "src\\components\\SubmitCheckList.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\SubmitCheckList.vue",
-              "RelativeToolTip": "src\\components\\SubmitCheckList.vue",
-              "ViewState": "AgIAAJwAAAAAAAAAAAAAAHUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-08-27T09:32:57.423Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "RequireLabel.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\RequireLabel.vue",
-              "RelativeDocumentMoniker": "src\\components\\RequireLabel.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\RequireLabel.vue",
-              "RelativeToolTip": "src\\components\\RequireLabel.vue",
-              "ViewState": "AgIAAFQAAAAAAAAAAAAAADgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-08-27T03:43:20.946Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "SampleDescripe.vue",
-              "DocumentMoniker": "D:\\source\\NX-limsVue\\src\\components\\SampleDescripe.vue",
-              "RelativeDocumentMoniker": "src\\components\\SampleDescripe.vue",
-              "ToolTip": "D:\\source\\NX-limsVue\\src\\components\\SampleDescripe.vue",
-              "RelativeToolTip": "src\\components\\SampleDescripe.vue",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAAJoAAAADAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-08-27T03:44:39.757Z",
               "EditorCaption": ""
             }
           ]

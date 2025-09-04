@@ -76,7 +76,7 @@
 
 <script setup>
   import { ref, defineProps, defineEmits } from 'vue'
-  import axios from 'axios'
+  import axios from '@/axios'
   const emit = defineEmits(['submit', 'api-response', 'api-error'])
 // 响应式数据
 const masterName   = ref('')
@@ -134,7 +134,7 @@ const cvv          = ref(null)
   }
 
   try {
-    const response = await axios.post('http://192.168.235.8:5051/api/receivedata/showExcel', form,
+    const response = await axios.post('/receivedata/showExcel', form,
       {
         responseType: 'blob', //axios 返回二进制流
         headers: { 'Content-Type': 'application/json' }

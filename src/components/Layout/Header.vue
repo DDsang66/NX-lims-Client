@@ -138,7 +138,7 @@
               <router-link to="#">Manual Management</router-link>
             </li>
             <li class="menu-item">
-              <router-link to="#">Personal Center</router-link>
+              <router-link to="/main/Profile">Personal Center</router-link>
             </li>
           </ul>
 
@@ -194,7 +194,7 @@
   import { ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuthStore } from '@/stores/auth';
-  import axios from 'axios';
+  import axios from '@/axios';
 
   const isSearchVisible = ref(false);
   const searchQuery = ref('');
@@ -211,7 +211,7 @@
   async function submitSearch() {
     try {
       // 发送 POST 请求
-      const response = await axios.post('http://192.168.235.8:5051/api/search/main', 
+      const response = await axios.post('/search/main', 
         searchQuery.value,{
         headers: {
           'Content-Type': 'application/json'
