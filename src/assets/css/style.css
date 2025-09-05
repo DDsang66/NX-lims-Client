@@ -2879,8 +2879,9 @@ table img {
   padding-top: 15px;
   padding-bottom: 15px;
 }
+/*二级导航栏颜色*/
 .sigma_header .sigma_header-bottom .navbar-nav li a:hover{
-  color: #20b9b2;
+  color: var(--primary-color);
 }
 
 .sigma_header .sigma_header-bottom-inner .aside-toggle.desktop-toggler{
@@ -3227,9 +3228,9 @@ table img {
   padding-top: 20px;
   padding-bottom: 20px;
 }
-
+/*一级导航栏颜色*/
 .sigma_header.style-5 .sigma_header-bottom .navbar-nav > li > a:hover{
-  color: #20b9b2;
+  color: var(--primary-color);
 }
 
 .sigma_header.style-5 .sigma_header-controls ul li.header-controls-item a,
