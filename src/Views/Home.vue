@@ -26,13 +26,13 @@ function onVideoEnd()    { showPlayBtn.value = true; }
 const slides = ref([
   {
     image: banner1,
-    title: 'NX-lims Lab Command Sys Version 0.9',
+    title: 'NX-lims Lab Command Sys Version 1.0',
     subtitle: 'passionate experts',
     description: 'Creative Laboratory & Science Research Template for all your future-ready science Laboratory It includes areas like Science Research & Technology.'
   },
   {
     image: banner2,
-    title: 'NX-lims Lab Command Sys Version 0.9',
+    title: 'NX-lims Lab Command Sys Version 1.0',
     subtitle: '3000 Different analyses',
     description: 'Creative Laboratory & Science Research Template for all your future-ready science Laboratory It includes areas like Science Research & Technology.'
   }

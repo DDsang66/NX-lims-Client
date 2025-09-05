@@ -73,6 +73,14 @@
                        placeholder="Your Real Name.."
                        required />
               </div>
+
+              <div class="input-group" style="margin-bottom:10px">
+                <span><i class="fa fa-user" aria-hidden="true"></i></span>
+                <input v-model.trim="register.employeeId"
+                       type="text"
+                       placeholder="Your Employee Id.."
+                       required />
+              </div>
               <button class="btn btn-primary btn-block" type="submit">Ok</button>
             </form>
 
@@ -145,7 +153,8 @@
     email: '',
     password: '',
     nickname: '',
-    password_again:'',
+    password_again: '',
+    employeeId: '',
     remember: false
   })
 
@@ -177,13 +186,14 @@
         }
       });
       // 在登录成功时
-      const { tokens, reviewer } = response.data;
+      const { tokens, user } = response.data;
+      console.log('Login Succeed:', response.data.user);
       const { accessToken, refreshToken } = tokens;
       localStorage.setItem('accessToken', accessToken);   // 用于请求
       localStorage.setItem('refreshToken', refreshToken); // 续用
-      localStorage.setItem('reviewer', reviewer);
+      localStorage.setItem('user', user);
       const authStore = useAuthStore();
-      authStore.setTokens(accessToken, refreshToken, reviewer);
+      authStore.setTokens(accessToken, refreshToken, user);
       form.email = '';
       form.password = '';
       router.push('/main/Home');
@@ -213,13 +223,16 @@
     }
   }
 
-  const handleSignup = async() => {
+  const handleSignup = async () => {
     try {
       if (register.password !== register.password_again) {
         alert('The password entered twice is inconsistent, please re-enter it.');
         return;
       }
-
+      if (register.employeeId == null || register.nickname == null) {
+        alert('Please check out all the input box were filled.');
+        return;
+      }
       const response = await axios.post('/auth/register', register, {
         headers: {
           'Content-Type': 'application/json'

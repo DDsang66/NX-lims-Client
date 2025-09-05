@@ -85,7 +85,7 @@
 <script setup>
   import { reactive } from 'vue'
   import { useRouter } from 'vue-router'
-  import axios from 'axios'
+  import axios from '@/axios'
   import { useAuthStore } from '@/stores/auth';
   const router = useRouter()
 /* 状态：两个面板的开关 */
@@ -123,19 +123,19 @@ function leave(el, done) {
 /* 业务函数（示例） */
   const ChangeAccount = async () => {
   try {
-    const response = await axios.post('http://192.168.235.8:5051/api/auth/login', login, {
+    const response = await axios.post('/auth/login', login, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
     // 在登录成功时
-    const { tokens, reviewer } = response.data;
+    const { tokens, user } = response.data;
     const { accessToken, refreshToken } = tokens;
     localStorage.setItem('accessToken', accessToken);   // 用于请求
     localStorage.setItem('refreshToken', refreshToken); // 续用
-    localStorage.setItem('reviewer', reviewer);
+    localStorage.setItem('user', user);
     const authStore = useAuthStore();
-    authStore.setTokens(accessToken, refreshToken, reviewer);
+    authStore.setTokens(accessToken, refreshToken, user);
     location.reload();
   } catch (error) {
     console.error('登录失败', error);

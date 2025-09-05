@@ -9,6 +9,8 @@ import '@/assets/css/plugins/font-awesome.min.css';
 import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
 import '@/assets/css/cssVariable.css'
+
+
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { createApp } from 'vue'

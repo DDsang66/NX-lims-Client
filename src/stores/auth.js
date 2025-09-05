@@ -20,30 +20,30 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken') || '',
     refreshToken: localStorage.getItem('refreshToken') || '',
-    reviewer: localStorage.getItem('reviewer') || '',
+    user: localStorage.getItem('user') || '',
     isLoggedIn: !!localStorage.getItem('accessToken'),
     logoutTimer: null
   }),
   actions: {
-    setTokens(accessToken, refreshToken,reviewer) {
+    setTokens(accessToken, refreshToken, user) {
       console.log("setTokens已经被执行")
       this.clearTokens();
       this.accessToken = accessToken;
       this.refreshToken = refreshToken;
-      this.reviewer = reviewer;
+      this.user = user;
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('reviewer', reviewer);
+      localStorage.setItem('user', user);
       this.isLoggedIn = true;
       this.scheduleRefresh();
     },
     clearTokens() {
       this.accessToken = '';
       this.refreshToken = '';
-      this.reviewer = '';
+      this.user = '';
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      localStorage.removeItem('reviewer');
+      localStorage.removeItem('user');
       this.isLoggedIn = false;
       if (this.logoutTimer) {
         clearTimeout(this.logoutTimer)

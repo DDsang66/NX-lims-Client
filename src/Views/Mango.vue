@@ -11,7 +11,7 @@
   const itemToTable = new Map();
   const currentBuyer = ref("Mango");
   const authStore = useAuthStore()
-  const currentReviewer = computed(() => authStore.reviewer || '')
+  const currentReviewer = computed(() => authStore.user || '')
   const menuName = ref();
   const orderNumber = ref(); 
   const menuOptions = ref([
