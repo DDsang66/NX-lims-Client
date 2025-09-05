@@ -18,7 +18,6 @@
   <!-- ===== Profile Section Start ===== -->
   <section>
 
-
   </section>
   <!-- ===== Profile Section End ===== -->
 

@@ -104,6 +104,9 @@
                 <li class="menu-item">
                   <router-link to="/main/FAQ">FAQ</router-link>
                 </li>
+                <li class="menu-item">
+                  <router-link to="/main/InstructionManual">Instruction Manual</router-link>
+                </li>
               </ul>
             </li>
             <li class="menu-item">

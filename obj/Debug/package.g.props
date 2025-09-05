@@ -11,8 +11,10 @@
     <PackageJsonScriptsLint Condition="$(PackageJsonScriptsLint) == ''">eslint . --fix</PackageJsonScriptsLint>
     <PackageJsonDependenciesVueRuntimeCore Condition="$(PackageJsonDependenciesVueRuntimeCore) == ''">^3.5.18</PackageJsonDependenciesVueRuntimeCore>
     <PackageJsonDependenciesAxios Condition="$(PackageJsonDependenciesAxios) == ''">^1.11.0</PackageJsonDependenciesAxios>
+    <PackageJsonDependenciesElementPlus Condition="$(PackageJsonDependenciesElementPlus) == ''">^2.11.1</PackageJsonDependenciesElementPlus>
     <PackageJsonDependenciesPinia Condition="$(PackageJsonDependenciesPinia) == ''">^3.0.3</PackageJsonDependenciesPinia>
     <PackageJsonDependenciesProcess Condition="$(PackageJsonDependenciesProcess) == ''">^0.11.10</PackageJsonDependenciesProcess>
+    <PackageJsonDependenciesVitePluginInspect Condition="$(PackageJsonDependenciesVitePluginInspect) == ''">^11.3.3</PackageJsonDependenciesVitePluginInspect>
     <PackageJsonDependenciesVue Condition="$(PackageJsonDependenciesVue) == ''">^3.5.17</PackageJsonDependenciesVue>
     <PackageJsonDependenciesVueRouter Condition="$(PackageJsonDependenciesVueRouter) == ''">^4.5.1</PackageJsonDependenciesVueRouter>
     <PackageJsonDevdependenciesEslintJs Condition="$(PackageJsonDevdependenciesEslintJs) == ''">^9.29.0</PackageJsonDevdependenciesEslintJs>
@@ -21,6 +23,6 @@
     <PackageJsonDevdependenciesEslintPluginVue Condition="$(PackageJsonDevdependenciesEslintPluginVue) == ''">~10.2.0</PackageJsonDevdependenciesEslintPluginVue>
     <PackageJsonDevdependenciesGlobals Condition="$(PackageJsonDevdependenciesGlobals) == ''">^16.2.0</PackageJsonDevdependenciesGlobals>
     <PackageJsonDevdependenciesVite Condition="$(PackageJsonDevdependenciesVite) == ''">^7.0.0</PackageJsonDevdependenciesVite>
-    <PackageJsonDevdependenciesVitePluginVueDevtools Condition="$(PackageJsonDevdependenciesVitePluginVueDevtools) == ''">^7.7.7</PackageJsonDevdependenciesVitePluginVueDevtools>
+    <PackageJsonDevdependenciesVitePluginVueDevtools Condition="$(PackageJsonDevdependenciesVitePluginVueDevtools) == ''">^8.0.1</PackageJsonDevdependenciesVitePluginVueDevtools>
   </PropertyGroup>
 </Project>

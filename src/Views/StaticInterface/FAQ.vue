@@ -41,7 +41,7 @@
   <!-- ===== FAQ Section End ===== -->
 
   <div class="container-fluid" style="background-color: #f7f7f7; padding:60px 0">
-    <h2 class="section-title" style="text-align:left">Write your feedback here.</h2>
+    <h2 style="text-align:center;padding:3%">Write your feedback here.</h2>
     <form class="sigma_box box-lg mf_form_validate ajax_submit m-0" action="sendmail.php" method="post" enctype="multipart/form-data" novalidate="novalidate">
       <div class="row">
         <div class="col-lg-4">

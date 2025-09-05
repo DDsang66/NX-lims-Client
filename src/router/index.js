@@ -9,6 +9,7 @@ import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
 import Profile from '../views/Profile.vue';
 import FAQ from '../views/StaticInterface/FAQ.vue';
+import InstructionManual from '../views/StaticInterface/InstructionManual.vue';
 import MainLayout from '../views/MainLayout.vue';
 
 const routes = [
@@ -28,6 +29,9 @@ const routes = [
   },
   {
     path: '/main/FAQ', name: 'FAQ', component: FAQ
+  },
+  {
+    path: '/main/InstructionManual', name: 'InstructionManual', component: InstructionManual
   },
   {
     path: '/main',
