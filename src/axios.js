@@ -28,13 +28,13 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
         try {
-          // 2️⃣ 改为纯文本
+          //改为纯文本
           const { data } = await axios.post(
-            'http://192.168.235.8:5051/api/refresh',
+            '/api/refresh',
             refreshToken,
             { headers: { 'Content-Type': 'text/plain' } }
           )
-          // 3️⃣ 交给 Pinia 统一处理
+          // 交给 Pinia 统一处理
           const auth = useAuthStore()
           auth.setTokens(data.accessToken, data.refreshToken)
           original.headers['Authorization'] = `Bearer ${data.accessToken}`
