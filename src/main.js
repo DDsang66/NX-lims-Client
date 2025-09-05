@@ -9,7 +9,8 @@ import '@/assets/css/plugins/font-awesome.min.css';
 import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
 import '@/assets/css/cssVariable.css'
-
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
@@ -19,6 +20,7 @@ const pinia = createPinia();
 
 app.use(router);
 app.use(pinia);
+app.use(ElementPlus)
 
 import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
