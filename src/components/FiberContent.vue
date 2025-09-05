@@ -49,18 +49,17 @@
                   <tr v-for="(row, idx) in rows" :key="idx">
                     <td contenteditable="true"
                         @input="updateComposition($event, row)"
-                        @blur="recalc"
                         :data-old-value="row.composition">
                       {{ row.composition }}
                     </td>
-                    <td contenteditable="true"
-                        @input="updateRate($event, row)"
-                        @blur="recalc"
-                        :data-old-value="row.rate">
-                      {{ row.rate }}
-                    </td>
+                    <td
+                      contenteditable="true"
+                      @keydown="handleKeydown"
+                      @blur="updateRateOnBlur($event, row)"
+                      v-text="row.rate"
+                    ></td>
                     <td style="text-align:center">
-                      <button class="btn btn-link text-danger p-0"@click="removeRow(idx)">
+                      <button class="btn btn-link text-danger p-0" @click="removeRow(idx)">
                         ×
                       </button>
                     </td>
@@ -87,14 +86,13 @@
 <script setup>
   import '@/assets/css/style.css';
   import { ref, reactive, computed, watch } from 'vue'
-  const emit = defineEmits(['confirm']); 
+  const emit = defineEmits(['confirm']);
 
 
   /* 折叠开关 */
   const isNoticeOpen = ref(false)
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
-    console.log("Toggle Notice:", isNoticeOpen.value);
 }
   /* 输入行 */
   const inputRow = reactive({
@@ -108,9 +106,13 @@
   /* 添加行 */
   function addRow() {
     if (!inputRow.composition.trim() || inputRow.rate <= 0) return alert('请输入成分和比例')
-    rows.push({ composition: inputRow.composition.trim(), rate: inputRow.rate })
-    inputRow.composition = ''
-    inputRow.rate = 0
+    if(totalRate.value+inputRow.rate>100){
+      alert('比例不能超过100%');
+    }else {
+      rows.push({ composition: inputRow.composition.trim(), rate: inputRow.rate })
+      inputRow.composition = ''
+      inputRow.rate = 0
+    }
   }
 
   /* 实时计算总比例 & MaxComposition */
@@ -121,11 +123,6 @@
     return synth > 50 ? 'Synth' : nat > 50 ? 'Natural' : ''
   })
 
-  /* 总比例超过100时提示 */
-  watch(totalRate, val => val > 100 && alert('总比例不能超过 100%'))
-  function recalc() {
-    console.log("Re-calculating...");
-  }
   /* 判断类别 */
   const synthList = ['Acetate', 'Polyester', 'Polyamide', 'Polyurethane', 'Polyethylene', 'Elastane', 'Spandex', 'Viscose', 'Acrylic', 'Modal', 'Tencel', 'Meraklon', 'Lycra', 'Lyocell', 'Modacrylic' ,'Nylon', 'Rayon', 'Vinylon']
   const naturalList = ['Cotton', 'Wool', 'Silk', 'Ramie', 'Mohair', 'Tussah', 'Linen', 'Asbestos']
@@ -161,16 +158,41 @@
     const newValue = e.target.textContent.trim();
     if (row.composition !== newValue) {
       row.composition = newValue;
-      recalc();
     }
   }
+  function handleKeydown(e) {
+    // 检测是否按下了 Enter 键
+    if (e.key === 'Enter') {
+      // 阻止默认行为（换行）
+      e.preventDefault();
 
-  function updateRate(e, row) {
-    const newValue = parseFloat(e.target.textContent);
-    const clampedValue = isNaN(newValue) ? 0 : Math.min(100, Math.max(0, newValue));
+      // 让当前元素失去焦点，触发 @blur
+      e.target.blur();
+    }
+  }
+  function  // 失焦时才进行校验和更新
+  updateRateOnBlur(e, row) {
+    const inputText = e.target.textContent.trim();
+    const newValue = parseFloat(inputText);
+
+    // 校验：非数字 → 0，超出范围 → 限制
+    const clampedValue = isNaN(newValue)
+      ? 0
+      : Math.min(100, Math.max(0, newValue));
+    let oldValue = row.rate;
+    row.rate = clampedValue;
+    if(totalRate>100){
+      alert('比例不能超过100%');
+      e.target.textContent = oldValue;
+    }
+    // 只有值真正变化时才更新
     if (row.rate !== clampedValue) {
       row.rate = clampedValue;
-      recalc();
+      // ✅ 同步显示（防止用户输入无效值后仍显示错误内容）
+      e.target.textContent = clampedValue;
+    } else {
+      // 如果值没变，确保显示的是正确的 number 格式（比如去掉多余空格）
+      e.target.textContent = row.rate;
     }
   }
 
