@@ -2,9 +2,7 @@ import { defineStore } from 'pinia';
 import axios from '@/axios'
 
 export async function refreshTokens(refreshToken) {
-  const { data } = await axios.post('/auth/refresh', refreshToken, {
-    headers: { 'Content-Type': 'text/plain' }
-  })
+  const { data } = await axios.post('/auth/refresh', refreshToken)
   return data // { accessToken, refreshToken }
 }
 
@@ -16,24 +14,26 @@ function parseJwt(token) {
   }
 }
 
-export const useAuthStore = defineStore('auth', {
+const userAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken') || '',
     refreshToken: localStorage.getItem('refreshToken') || '',
     user: localStorage.getItem('user') || '',
     isLoggedIn: !!localStorage.getItem('accessToken'),
+    id: localStorage.getItem('id') || '',
     logoutTimer: null
   }),
   actions: {
-    setTokens(accessToken, refreshToken, user) {
-      console.log("setTokens已经被执行")
+    setTokens(accessToken, refreshToken, user,id) {
       this.clearTokens();
       this.accessToken = accessToken;
       this.refreshToken = refreshToken;
       this.user = user;
+      this.id=id;
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', user);
+      localStorage.setItem('id', id);
       this.isLoggedIn = true;
       this.scheduleRefresh();
     },
@@ -41,9 +41,11 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = '';
       this.refreshToken = '';
       this.user = '';
+      this.id= '';
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('id');
       this.isLoggedIn = false;
       if (this.logoutTimer) {
         clearTimeout(this.logoutTimer)
@@ -55,7 +57,7 @@ export const useAuthStore = defineStore('auth', {
       if (!decoded) return
 
       // 提前 60 秒刷新
-      const refreshIn = decoded.exp * 1000 - Date.now() - 60_000
+      const refreshIn = decoded.exp * 1000 - Date.now() - 58_000
       if (refreshIn <= 0) {
         this.doRefresh()
         return
@@ -66,8 +68,9 @@ export const useAuthStore = defineStore('auth', {
     async doRefresh() {
       try {
         const newTokens = await refreshTokens(this.refreshToken)
-        this.setTokens(newTokens.accessToken, newTokens.refreshToken)
-      } catch {
+        this.setTokens(newTokens.accessToken, newTokens.refreshToken,this.user,this.id)
+      } catch(e){
+        console.log('doRefreshError:'+e)
         this.logout()
       }
     },
@@ -81,3 +84,5 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 });
+
+export default userAuthStore;

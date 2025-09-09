@@ -1,13 +1,12 @@
 import axios from 'axios';
 import router from '@/router'
-import { useAuthStore } from '@/stores/auth'
+import userAuthStore from "@/stores/auth.js";
 
 const api = axios.create({
   baseURL: 'http://192.168.235.8:5051/api',
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' }
 });
-
 // 请求拦截器：自动带上 Access Token
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('accessToken');
@@ -27,6 +26,7 @@ api.interceptors.response.use(
       original._retry = true
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
+        const auth = userAuthStore()
         try {
           //改为纯文本
           const { data } = await axios.post(
@@ -35,12 +35,11 @@ api.interceptors.response.use(
             { headers: { 'Content-Type': 'text/plain' } }
           )
           // 交给 Pinia 统一处理
-          const auth = useAuthStore()
           auth.setTokens(data.accessToken, data.refreshToken)
-          original.headers['Authorization'] = `Bearer ${data.accessToken}`
+          original.headers['Authorization'] = `${data.accessToken}`
           return api(original)      // 重试原请求
         } catch {
-          useAuthStore().logout()   // 统一登出
+          auth.logout()   // 统一登出
           router.replace('/login')
         }
       }

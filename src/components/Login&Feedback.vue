@@ -83,10 +83,10 @@
 </template>
 
 <script setup>
-  import { reactive } from 'vue'
+  import { reactive,inject} from 'vue'
   import { useRouter } from 'vue-router'
   import axios from '@/axios'
-  import { useAuthStore } from '@/stores/auth';
+  const authStore = inject('userAuthStore');
   const router = useRouter()
 /* 状态：两个面板的开关 */
 const open = reactive({
@@ -134,7 +134,6 @@ function leave(el, done) {
     localStorage.setItem('accessToken', accessToken);   // 用于请求
     localStorage.setItem('refreshToken', refreshToken); // 续用
     localStorage.setItem('user', user);
-    const authStore = useAuthStore();
     authStore.setTokens(accessToken, refreshToken, user);
     location.reload();
   } catch (error) {

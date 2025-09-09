@@ -176,7 +176,7 @@
 
 
   <div :class="['search-form-wrapper', { open: isSearchVisible }]">
-    <div class="search-trigger sigma_close"@click="ShutDowntoggleSearch()">
+    <div class="search-trigger sigma_close" @click="ShutDowntoggleSearch()">
       <span></span>
       <span></span>
     </div>
@@ -194,15 +194,14 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref,inject} from 'vue';
   import { useRouter } from 'vue-router';
-  import { useAuthStore } from '@/stores/auth';
   import axios from '@/axios';
 
   const isSearchVisible = ref(false);
   const searchQuery = ref('');
   const router = useRouter(); // 使用 Vue Router
-
+  const authStore = inject('userAuthStore');
   function toggleSearch() {
     isSearchVisible.value = !isSearchVisible.value;
   }
@@ -214,7 +213,7 @@
   async function submitSearch() {
     try {
       // 发送 POST 请求
-      const response = await axios.post('/search/main', 
+      const response = await axios.post('/search/main',
         searchQuery.value,{
         headers: {
           'Content-Type': 'application/json'
@@ -239,10 +238,7 @@
 
 
   const Logout = async () => {
-    const authStore = useAuthStore();
     authStore.clearTokens();
-    const isLoggedIn = authStore.isLoggedIn;
-    console.log("Logout Result:", isLoggedIn)
     router.push('/Login');
   }
 </script>

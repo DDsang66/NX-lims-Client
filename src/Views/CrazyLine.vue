@@ -1,18 +1,17 @@
 <script setup>
-  import { ref, computed } from 'vue'
-  import { useAuthStore } from '@/stores/auth';
+  import { ref, computed,inject} from 'vue'
   import Feedback from '@/components/Login&Feedback.vue'
   import BuyerInfo from '@/components/BuyerInfo.vue'
   import CheckList from '@/components/CheckList.vue'
   import RequireLabel from '@/components/RequireLabel.vue'
   import SubmitCheckList from '@/components/SubmitCheckList.vue'
 
-  const authStore = useAuthStore()
+  const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const itemToTable = new Map();
   const currentBuyer = ref("CrazyLine");
   const menuName = ref();
-  const orderNumber = ref(); 
+  const orderNumber = ref();
   const menuOptions = ref([
     { value: 'Woven(CrazyLine)', label: 'Woven' },
     { value: 'Knit(CrazyLine)', label: 'Knit' }

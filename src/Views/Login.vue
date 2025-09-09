@@ -136,11 +136,10 @@
 </template>
 
 <script setup>
-  import { ref, reactive } from 'vue'
+  import { ref, reactive,inject } from 'vue'
   import { useRouter } from 'vue-router'
   import axios from '@/axios'
-  import { useAuthStore } from '@/stores/auth';
-
+  const authStore = inject('userAuthStore');
   const currentMode = ref('login')
   const router = useRouter()
   const form = reactive({
@@ -186,20 +185,21 @@
         }
       });
       // 在登录成功时
-      const { tokens, user } = response.data;
-      console.log('Login Succeed:', response.data.user);
+      const { tokens, reviewer,id } = response.data;
+      console.log('Login Succeed:',reviewer);
       const { accessToken, refreshToken } = tokens;
       localStorage.setItem('accessToken', accessToken);   // 用于请求
       localStorage.setItem('refreshToken', refreshToken); // 续用
-      localStorage.setItem('user', user);
-      const authStore = useAuthStore();
-      authStore.setTokens(accessToken, refreshToken, user);
+      localStorage.setItem('user', reviewer);
+      localStorage.setItem('id', id)
+
+      authStore.setTokens(accessToken, refreshToken, reviewer,id);
       form.email = '';
       form.password = '';
       router.push('/main/Home');
     } catch (error)
     {
-      alert('The username or password entered is incorrect.');
+      alert('LoginError:'+error);
     }
   }
 

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 
 import Mango from '../views/Mango.vue';
 import CrazyLine from '../views/CrazyLine.vue';
@@ -12,6 +11,7 @@ import OrderEntry from '../views/OrderEnrtry.vue';
 import FAQ from '../views/StaticInterface/FAQ.vue';
 import InstructionManual from '../views/StaticInterface/InstructionManual.vue';
 import MainLayout from '../views/MainLayout.vue';
+import userAuthStore from "@/stores/auth.js";
 
 const routes = [
   {
@@ -23,7 +23,7 @@ const routes = [
     path: '/',redirect: '/Login' // 默认路径重定向到登录页面
   },
   {
-    path: '/main/Home', name: 'Home', component: Home, 
+    path: '/main/Home', name: 'Home', component: Home,
   },
   {
     path: '/main/Profile', name: 'Profile', component: Profile,
@@ -56,7 +56,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
+  const authStore = userAuthStore();
   const isLoggedIn = authStore.isLoggedIn;
 
   if (!isLoggedIn && to.path !== '/Login') {

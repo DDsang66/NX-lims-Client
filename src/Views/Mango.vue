@@ -1,6 +1,5 @@
 <script setup>
-  import { ref, computed } from 'vue'
-  import { useAuthStore } from '@/stores/auth';
+  import { ref, computed,inject} from 'vue'
   import Feedback from '@/components/Login&Feedback.vue'
   import BuyerInfo from '@/components/BuyerInfo.vue'
   import CheckList from '@/components/CheckList.vue'
@@ -10,10 +9,10 @@
 
   const itemToTable = new Map();
   const currentBuyer = ref("Mango");
-  const authStore = useAuthStore()
+  const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const menuName = ref();
-  const orderNumber = ref(); 
+  const orderNumber = ref();
   const menuOptions = ref([
     { value: 'Woven(Mango)', label: 'Woven' },
     { value: 'Knit(Mango)', label: 'Knit' }

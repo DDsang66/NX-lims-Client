@@ -120,12 +120,11 @@
 <script setup>
   import Footer from '@/components/Layout/Footer.vue';
   import Header from '@/components/Layout/Header.vue';
-  import { useAuthStore } from '@/stores/auth';
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, computed, onMounted,inject} from 'vue'
   import axios from '@/axios'
 
 
-  const authStore = useAuthStore()
+  const authStore = inject('userAuthStore')
   console.log(authStore.user)
   const email = ref('');
   const phone = ref('');
