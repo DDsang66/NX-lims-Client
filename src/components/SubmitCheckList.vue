@@ -121,7 +121,8 @@ const cvv          = ref(null)
     const processedRows = (props.selectedRows || []).map(row => ({
       ...row,
       standards: row.standards ? row.standards.join(', ') : '',
-      types: row.types ? row.types.join(', ') : ''
+      types: row.types ? row.types.join(', ') : '',
+      extra: row.extra || null
     }));
   const form =
   {

@@ -15,6 +15,5 @@
   <ItemGroup>
     <Folder Include="src\assets\img\NewImg\" />
     <Folder Include="src\assets\img\unsorted\" />
-    <Folder Include="src\components\ReviewInterface\" />
   </ItemGroup>
 </Project>

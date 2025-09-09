@@ -39,7 +39,8 @@
           <!-- 当 itemName 命中目标值时渲染额外框体 -->
           <tr v-if="[
               'Seam Slippage',
-              'K'
+              'Seam Strength',
+              'Bursting Strength',
               ].includes(row.itemName)">
             <td colspan="5">
               <ExtraForm :type="row.itemName" v-model="row.extra" />
@@ -115,7 +116,7 @@
   }
   watch(
     () => props.list,
-    () => props.list.forEach(r => (r.selected = !!(r.samples || '').trim())),
+    () => props.list.forEach(row => (row.selected = !!(row.samples || '').trim())),
     { deep: true, immediate: true }
   )
 

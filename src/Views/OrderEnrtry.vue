@@ -5,12 +5,13 @@
     <div class="row">
       <div class="col-xl-5">
         <div style="border: 1px solid #cae2e8; padding: 20px;">
+
           <div class="row">
-            <div class="form-group col-xl-2">
+            <div class="form-group col-xl-4">
               <label>ReportNum<span class="text-danger">*</span></label>
               <input type="text" class="form-control" />
             </div>
-            <div class="form-group col-xl-2">
+            <div class="form-group col-xl-4">
               <label>OrderEnrty<span class="text-danger">*</span></label>
               <input type="text" class="form-control" v-model.trim="inputRow.composition" />
               <ul v-if="filteredCompositions.length" class="list-group">
@@ -22,7 +23,7 @@
                 </li>
               </ul>
             </div>
-            <div class="form-group col-xl-2">
+            <div class="form-group col-xl-4">
               <label>Express<span class="text-danger">*</span></label>
               <select class="form-control">
                 <option value="Regular">Regular</option>
@@ -34,35 +35,34 @@
 
             <div class="form-group col-xl-6">
               <label>Lab-Out<span class="text-danger">*</span></label>
-              <input type="datetime-local" placeholder="出单时间" class="form-control"
-                     v-model.number="inputRow.rate" />
+              <input type="datetime-local" placeholder="出单时间" class="form-control" />
             </div>
-            <div class="form-group col-xl-2">
+            <div class="form-group col-xl-3">
               <label>PC<span class="text-danger">*</span></label>
               <select class="form-control">
-                <option value="Regular">Regular</option>
-                <option value="Express">Express</option>
-                <option value="Shuttle">Shuttle</option>
-                <option value="Same Date">Same Date</option>
+                <option value="Regular">PC_1</option>
+                <option value="Express">PC_2</option>
+                <option value="Shuttle">PC_3</option>
+                <option value="Same Date">PC_4</option>
               </select>
             </div>
 
-            <div class="form-group col-xl-2">
+            <div class="form-group col-xl-3">
               <label>Group<span class="text-danger">*</span></label>
               <select class="form-control">
+                <option value="All">All</option>
                 <option value="Physics">Physics</option>
                 <option value="Wet">Wet</option>
                 <option value="Fiber">Fiber</option>
                 <option value="Flame">Flame</option>
               </select>
             </div>
-            <div class="form-group col-xl-4">
+            <div class="form-group col-xl-6">
               <label>Lab-In<span class="text-danger">*</span></label>
-              <input type="datetime-local" placeholder="进单时间" class="form-control"
-                     v-model.number="inputRow.rate" />
+              <input type="datetime-local" class="form-control" v-model="orderDate"/>
             </div>
 
-            <div class="form-group col-xl-4">
+            <div class="form-group col-xl-6">
               <label>Review Finish<span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="datetime-local" placeholder="审单完成时间" class="form-control"
@@ -73,12 +73,11 @@
               </div>
             </div>
           </div>
-
           <div class="row">
             <div class="form-group col-xl-12">
               <table class="sigma_responsive-table">
                 <thead>
-                  <tr><th>Composition</th><th>Rate(%)</th><th style="width:40px;">Delete</th></tr>
+                  <tr><th>RepoNum</th><th>Group</th><th style="width:40px;">Delete</th></tr>
                 </thead>
                 <tbody>
                   <tr v-for="(row, idx) in rows" :key="idx">
@@ -130,6 +129,19 @@
   import { ListTable, PivotTable, TYPES, themes } from '@visactor/vtable';
   import * as VTable from '@visactor/vtable'
   const emit = defineEmits(['confirm']);
+
+  const orderDate = ref('')
+  /* 生成当前本地时间字符串（YYYY-MM-DDTHH:mm） */
+  function nowLocal() {
+    const d = new Date()
+    const Y = d.getFullYear()
+    const M = String(d.getMonth() + 1).padStart(2, '0')
+    const D = String(d.getDate()).padStart(2, '0')
+    const h = String(d.getHours()).padStart(2, '0')
+    const m = String(d.getMinutes()).padStart(2, '0')
+    return `${Y}-${M}-${D}T${h}:${m}`
+  }
+
 
 
   /* 折叠开关 */
@@ -243,7 +255,7 @@
   /* ---------- 1. 数据 ---------- */
   const tableOptions = ref({
     header: [
-      { field: '0', caption: 'Repo' },
+      { field: '0', caption: 'Repo'},
       { field: '1', caption: 'OrderEntry' },
       { field: '2', caption: 'Lab-Out' },
       { field: '3', caption: 'Lab-In' },
@@ -264,6 +276,7 @@
   })
 
   onUnmounted(() => {
+    orderDate.value = nowLocal()
     tableInstance?.release()
   })
 </script>
@@ -271,5 +284,10 @@
 <style scoped>
   .sigma_btn-custom::before {
     background-color: #18086a;
+  }
+
+  .form-control {
+      border-radius:0px;
+      border-color:#a3a3a3
   }
 </style>
