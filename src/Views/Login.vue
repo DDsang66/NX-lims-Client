@@ -138,7 +138,8 @@
 <script setup>
   import { ref, reactive,inject } from 'vue'
   import { useRouter } from 'vue-router'
-  import axios from '@/axios'
+
+  const request = inject('request');
   const authStore = inject('userAuthStore');
   const currentMode = ref('login')
   const router = useRouter()
@@ -179,11 +180,7 @@
   const handleLogin = async() => {
     // 登录逻辑，例如调用接口
     try {
-      const response = await axios.post('/auth/login', form, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await request.post('/auth/login', form);
       // 在登录成功时
       const { tokens, user,id } = response.data;
       console.log('Login Succeed:', user);
@@ -210,11 +207,7 @@
         return;
       }
 
-      const response = await axios.post('/auth/pwdreset', pwdReset, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await request.post('/auth/pwdreset', pwdReset);
       alert('Reset Succeed,please login.'); // 使用 alert 弹出提示
       currentMode.value = 'login';
     } catch
@@ -233,11 +226,7 @@
         alert('Please check out all the input box were filled.');
         return;
       }
-      const response = await axios.post('/auth/register', register, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await request.post('/auth/register', register);
       // 注册成功
       alert('Register Succeed,please login.'); // 使用 alert 弹出提示
       currentMode.value = 'login';

@@ -196,11 +196,11 @@
 <script setup>
   import { ref,inject} from 'vue';
   import { useRouter } from 'vue-router';
-  import axios from '@/axios';
 
   const isSearchVisible = ref(false);
   const searchQuery = ref('');
   const router = useRouter(); // 使用 Vue Router
+  const request=inject('request')
   const authStore = inject('userAuthStore');
   function toggleSearch() {
     isSearchVisible.value = !isSearchVisible.value;
@@ -213,12 +213,7 @@
   async function submitSearch() {
     try {
       // 发送 POST 请求
-      const response = await axios.post('/search/main',
-        searchQuery.value,{
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await request.post('/search/main', searchQuery.value);
 
       console.log('Now loading', response.data);
 

@@ -85,7 +85,8 @@
 <script setup>
   import { reactive,inject} from 'vue'
   import { useRouter } from 'vue-router'
-  import axios from '@/axios'
+
+  const request=inject('request')
   const authStore = inject('userAuthStore');
   const router = useRouter()
 /* 状态：两个面板的开关 */
@@ -123,11 +124,7 @@ function leave(el, done) {
 /* 业务函数（示例） */
   const ChangeAccount = async () => {
   try {
-    const response = await axios.post('/auth/login', login, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await request.post('/auth/login', login);
     // 在登录成功时
     const { tokens, user } = response.data;
     const { accessToken, refreshToken } = tokens;

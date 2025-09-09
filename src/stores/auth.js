@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from '@/axios'
+import axios from '@/utils/request.js'
 
 export async function refreshTokens(refreshToken) {
   const { data } = await axios.post('/auth/refresh', refreshToken)

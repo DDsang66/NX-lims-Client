@@ -75,9 +75,10 @@
 </template>
 
 <script setup>
-  import { ref, defineProps, defineEmits } from 'vue'
-  import axios from '@/axios'
-  const emit = defineEmits(['submit', 'api-response', 'api-error'])
+  import { ref, defineProps, defineEmits,inject} from 'vue'
+
+const request = inject('request')
+const emit = defineEmits(['submit', 'api-response', 'api-error'])
 // 响应式数据
 const masterName   = ref('')
 const finishingTime= ref('')
@@ -134,10 +135,9 @@ const cvv          = ref(null)
   }
 
   try {
-    const response = await axios.post('/receivedata/showExcel', form,
+    const response = await request.post('/receivedata/showExcel', form,
       {
         responseType: 'blob', //axios 返回二进制流
-        headers: { 'Content-Type': 'application/json' }
       });
 
     const blob = new Blob([response.data], { type: 'application/zip' });

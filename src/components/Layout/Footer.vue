@@ -84,7 +84,7 @@
               <h5 class="widget-title">Subscribe</h5>
               <form @submit.prevent="subscribe">
                 <input type="email" v-model="email" class="form-control" placeholder="Email">
-                <button type="submit"style="background-color:#3364d5" class="sigma_btn-custom mt-3 btn-block">Subscribe</button>
+                <button type="submit" style="background-color:#3364d5" class="sigma_btn-custom mt-3 btn-block">Subscribe</button>
                 <p class="mb-0 mt-3">Get The Latest Updates via email. Any time you may unsubscribe</p>
               </form>
             </div>

@@ -17,6 +17,8 @@ import App from './App.vue'
 import router from './router';
 import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
+import request from "@/utils/request.js";
+
 const app = createApp(App);
 const pinia = createPinia();
 
@@ -26,6 +28,7 @@ app.use(ElementPlus)
 //使用provide全局提供
 const auth = userAuthStore()
 app.provide('userAuthStore',auth)
+app.provide('request',request)
 auth.init()
 
 app.mount('#mycontent');

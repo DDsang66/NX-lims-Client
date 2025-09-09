@@ -88,9 +88,9 @@
 </template>
 
 <script setup>
-  import { defineProps, defineEmits, ref, watch } from 'vue'
-  import axios from '@/axios'
+  import { defineProps, defineEmits, ref, watch,inject} from 'vue'
 
+  const request= inject('request')
   // 定义接收的props
   const props = defineProps({
     buyer: {
@@ -117,9 +117,9 @@
     reviewer: props.reviewer,
     buyer: props.buyer,
     menuName: '',
-    remark: '',       
-    extraItem: '',    
-    standard: ''      
+    remark: '',
+    extraItem: '',
+    standard: ''
   })
 
   // 其他选项数据
@@ -158,7 +158,7 @@
   const submitForm = async () => {
     try {
       //直接调用API - 修正了变量名 formData → form
-      const response = await axios.post('/buyer/confirm', form.value)
+      const response = await request.post('/buyer/confirm', form.value)
       console.log('API Response:', response.data);
       // 将完整API响应发送给父组件
       emit('api-response', response.data)

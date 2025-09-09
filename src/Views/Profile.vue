@@ -51,43 +51,43 @@
               <div class="col-lg-8">
                 <div class="form-group">
                   <i class="far fa-user"></i>
-                  <input type="text" placeholder="Employee Id" class="form-control"v-model="form.employeeId" name="employeeId">
+                  <input type="text" placeholder="Employee Id" class="form-control" v-model="form.employeeId" name="employeeId">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <i class="far fa-user"></i>
-                  <input type="text" placeholder="Full Name" class="form-control"v-model="form.realName"name="realName">
+                  <input type="text" placeholder="Full Name" class="form-control" v-model="form.realName" name="realName">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <i class="far fa-envelope"></i>
-                  <input type="email" placeholder="Email" class="form-control" v-model="form.email"name="email">
+                  <input type="email" placeholder="Email" class="form-control" v-model="form.email" name="email">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <i class="far fa-pencil"></i>
-                  <input type="text" placeholder="Phone" class="form-control"v-model="form.phone" name="phone">
+                  <input type="text" placeholder="Phone" class="form-control" v-model="form.phone" name="phone">
                 </div>
               </div>
 
               <div class="col-lg-4">
                 <div class="form-group">
                   <i class="far fa-user"></i>
-                  <input type="text" placeholder="Gender" class="form-control" v-model="form.gender"name="gender">
+                  <input type="text" placeholder="Gender" class="form-control" v-model="form.gender" name="gender">
                 </div>
               </div>
 
               <div class="col-lg-8">
                 <div class="form-group">
-                  <input type="datetime-local" placeholder="Birthday" class="form-control"v-model="form.birth" name="birth">
+                  <input type="datetime-local" placeholder="Birthday" class="form-control" v-model="form.birth" name="birth">
                 </div>
               </div>
               <div class="col-lg-8">
                 <div class="form-group">
-                  <input type="password" placeholder="ID Card" class="form-control"v-model="form.idCard" name="idCard">
+                  <input type="password" placeholder="ID Card" class="form-control" v-model="form.idCard" name="idCard">
                 </div>
               </div>
               <div class="col-lg-3 form-group">
@@ -121,9 +121,8 @@
   import Footer from '@/components/Layout/Footer.vue';
   import Header from '@/components/Layout/Header.vue';
   import { ref, computed, onMounted,inject} from 'vue'
-  import axios from '@/axios'
 
-
+  const request = inject('request')
   const authStore = inject('userAuthStore')
   console.log(authStore.user)
   const email = ref('');
@@ -152,11 +151,7 @@
   const edit = async () => {
     console.log(form.value)
     try {
-      const response = await axios.post('/profile/edit', form.value, {
-        headers: {
-          'Content-Type': 'application/json' // 明确设置请求头
-        }
-      });
+      const response = await request.post('/profile/edit', form.value);
       fetchProfileData();
       alert('Your profile information has been updated.');
     } catch (error) {
@@ -167,12 +162,7 @@
 
   const fetchProfileData = async () => {
     try {
-      const response = await axios.post('/profile/render', name.value, {
-          headers: {
-            'Content-Type': 'application/json' // 明确设置请求头
-          }
-        }
-      );
+      const response = await request.post('/profile/render', name.value);
       if (response.status == 404)
       {
         email.value = "";

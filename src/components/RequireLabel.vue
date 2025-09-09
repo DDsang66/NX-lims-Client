@@ -29,12 +29,12 @@
 </template>
 
 <script setup>
-  import { ref, defineComponent } from 'vue'
-  import axios from '@/axios'
+  import { ref, defineComponent,inject} from 'vue'
   import WetCareLabel from '@/components/WetCareLabel.vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
 
+  const request = inject('request');
   const props = defineProps({
     buyer: String,
     orderNumber: String,
@@ -49,7 +49,7 @@
   const additionalRequire = ref('');
   const sampleDescription = ref('');
   const handleWetCarelabelUpdate = (data) => {
-  wetCareData.value = data; 
+  wetCareData.value = data;
 };
   const handleRows = (rows)=> {
    fiberRows.value = rows;
@@ -78,11 +78,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       sampleDescription: sampleDescription.value
   };
   try{
-    const response = await axios.post('/buyer/parameter', payload, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await request.post('/buyer/parameter', payload, );
       emit('api-response', response.data)
       emit('submit', payload)
   }
