@@ -1,18 +1,18 @@
 <template>
   <Header />
-  <div class="split-box">
-    <!-- 左侧面板 -->
-    <div class="panel left" :style="{ width: leftWidth + 'px' }">
-      <div class="scale-box" :style="{ zoom: scale }">
-        <div class="container-fluid inner-row">
+
+  <div class="container-fluid"style="padding:3%">
+    <div class="row">
+      <div class="col-xl-5">
+        <div style="border: 1px solid #cae2e8; padding: 20px;">
           <div class="row">
             <div class="form-group col-xl-2">
               <label>ReportNum<span class="text-danger">*</span></label>
-              <input type="text" placeholder="报告号" class="form-control" />
+              <input type="text" class="form-control" />
             </div>
             <div class="form-group col-xl-2">
               <label>OrderEnrty<span class="text-danger">*</span></label>
-              <input type="text" placeholder="进单人" class="form-control" v-model.trim="inputRow.composition" />
+              <input type="text" class="form-control" v-model.trim="inputRow.composition" />
               <ul v-if="filteredCompositions.length" class="list-group">
                 <li v-for="item in filteredCompositions"
                     :key="item"
@@ -112,19 +112,14 @@
           </div>
         </div>
         </div>
-      </div>
-      <div class="divider"
-           @mousedown="startDrag"
-           :style="{ left: leftWidth + 'px' }" />
 
-      <!-- 右侧面板 -->
-      <div class="panel right" :style="{ left: leftWidth + dividerWidth + 'px' }">
-        <div class="inner">
-          <div ref="tableRef" style="height:600px;width:100%;"></div>
+
+        <div class="col-xl-7">
+          <div ref="tableRef" style="height:100%;width:100%;"></div>
         </div>
       </div>
-    </div>
-    <Footer />
+  </div>
+  <Footer />
 </template>
 
 <script setup>
@@ -244,44 +239,6 @@
     }
   }
 
-  /* ===== 分割线逻辑 ===== */
-  const leftWidth = ref(400)        // 左侧初始宽度
-  const dividerWidth = 1            // 分割线厚度（px）
-  const minLeft = 400               // 左侧最小宽度
-  const maxLeft = 1600               // 左侧最大宽度
-
-  let dragging = false
-  let startX = 0
-  let startLeft = 0
-
-  function startDrag(e) {
-    dragging = true
-    startX = e.clientX
-    startLeft = leftWidth.value
-    document.addEventListener('mousemove', onDrag)
-    document.addEventListener('mouseup', stopDrag)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }
-
-  function onDrag(e) {
-    if (!dragging) return
-    const delta = e.clientX - startX
-    const newLeft = startLeft + delta
-    leftWidth.value = Math.min(Math.max(newLeft, minLeft), maxLeft)
-  }
-
-  function stopDrag() {
-    dragging = false
-    document.removeEventListener('mousemove', onDrag)
-    document.removeEventListener('mouseup', stopDrag)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }
-
-
-
-
 
   /* ---------- 1. 数据 ---------- */
   const tableOptions = ref({
@@ -294,9 +251,8 @@
       { field: '5', caption: 'PC' },
       { field: '6', caption: 'Group' },
       { field: '7', caption: 'Review Finish' },
-
     ],
-    records: Array.from({ length: 8 }, () => ['10001', '进单人1', '', '', '', '', '', '', ''])
+    records: Array.from({ length: 100 }, () => ['10001', '进单人1', '', '', '', '', '', '', ''])
   })
 
   /* ---------- 2. 挂载 ---------- */
@@ -310,67 +266,10 @@
   onUnmounted(() => {
     tableInstance?.release()
   })
-
-
-  const baseWidth = 1200
-  const scale = computed(() => leftWidth.value / baseWidth)
 </script>
 
 <style scoped>
   .sigma_btn-custom::before {
     background-color: #18086a;
-  }
-
-  .split-box {
-    position: relative;
-    width: 100%;
-    height: 80vh;
-    overflow: hidden;
-    display: flex;
-  }
-
-  .panel {
-    position: absolute;
-    top: 10%;
-    bottom: 0;
-    box-sizing: border-box;
-    padding: 6px;
-    overflow: auto;
-  }
-
-    .panel.left {
-      left: 0;
-      border-right: 1px solid #e0e0e0;
-    }
-
-    .panel.right {
-      right: 0;
-      background: #fafafa;
-    }
-
-  .divider {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #1890ff;
-    cursor: col-resize;
-    z-index: 1;
-    transition: background 0.2s;
-  }
-
-    .divider:hover {
-      background: #096dd9;
-    }
-
-  .inner {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .scale-box {
-    width: baseWidth; /* 固定内部画布宽度 */
-    transform-origin: top left;
-    overflow-x: hidden; /* 禁止横向滚动 */
   }
 </style>
