@@ -181,7 +181,7 @@
       : Math.min(100, Math.max(0, newValue));
     let oldValue = row.rate;
     row.rate = clampedValue;
-    if(totalRate.value>100){
+    if(totalRate>100){
       alert('比例不能超过100%');
       e.target.textContent = oldValue;
     }
