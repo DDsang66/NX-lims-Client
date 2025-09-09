@@ -185,15 +185,15 @@
         }
       });
       // 在登录成功时
-      const { tokens, reviewer,id } = response.data;
-      console.log('Login Succeed:',reviewer);
+      const { tokens, user,id } = response.data;
+      console.log('Login Succeed:', user);
       const { accessToken, refreshToken } = tokens;
       localStorage.setItem('accessToken', accessToken);   // 用于请求
       localStorage.setItem('refreshToken', refreshToken); // 续用
-      localStorage.setItem('user', reviewer);
+      localStorage.setItem('user', user);
       localStorage.setItem('id', id)
 
-      authStore.setTokens(accessToken, refreshToken, reviewer,id);
+      authStore.setTokens(accessToken, refreshToken, user,id);
       form.email = '';
       form.password = '';
       router.push('/main/Home');
