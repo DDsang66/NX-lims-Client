@@ -188,6 +188,11 @@
 </script>
 
 <style scoped>
+/**个人简介整体大小**/
+  .col-xl-7{
+    flex: 0 0 80%;
+    max-width: 80%;
+  }
   .sigma_btn-custom::before {
     background-color: #18086a;
   }
