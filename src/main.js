@@ -10,7 +10,6 @@ import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
 import '@/assets/css/cssVariable.css'
 
-
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { createApp } from 'vue'
@@ -23,11 +22,9 @@ const pinia = createPinia();
 app.use(router);
 app.use(pinia);
 app.use(ElementPlus)
-
 import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 auth.init()
-
 app.mount('#mycontent');
 
 
