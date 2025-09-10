@@ -1,7 +1,14 @@
 <template>
   <div class="alert mb-0" :class="`alert-${type}`">
     <label>{{ type }} Garment Only：</label>
-    <input v-model="desc" placeholder="Select the Components below." class="form-control mb-2" readonly />
+    <div class="row">
+      <div class="form-group col-xl-9">
+        <input v-model="desc" placeholder="Select the Components below." class="form-control mb-2" readonly />
+      </div>
+      <div class="form-group col-xl-3">
+        <button class="sigma_btn-custom" @click="confirm" style="border-radius:0px;">ok</button>
+      </div>
+    </div>
     <div class="row">
       <div class="form-group col-xl-2">
         <input v-model="inputVal" class="form-control mb-2" />
@@ -41,51 +48,77 @@
 </template>
 
 <script setup>
-  import { ref, reactive, computed, watch } from 'vue'
-  const props = defineProps({ type: String, modelValue: Object })
+  import { ref, watch } from 'vue'
+
+  /* ---------------- props / emit ---------------- */
+  const props = defineProps({
+    type: String,
+    modelValue: Array        // 现在是数组
+  })
   const emit = defineEmits(['update:modelValue'])
+
+  /* ---------------- 本地录入状态 ---------------- */
   const desc = ref('')
   const inputVal = ref('')
   const Layout = ref('')
   const Component = ref('')
 
+  /* ---------------- 「+」只负责拼 desc ---------------- */
   function addWord() {
     const text = inputVal.value.trim()
     const lay = Layout.value.trim()
     const comp = Component.value.trim()
     if (!text && !lay && !comp) return
-    const oldDesc = desc.value
+
     const headParts = []
     if (text) headParts.push(text)
     if (lay) headParts.push(lay)
     const headStr = headParts.join('-')
 
-    /* ---------- 只拼 Component 的条件 ---------- */
-    // 已经存在 headStr，并且本次 Component 有值
-    const canAppendOnlyComp = headStr &&
-      oldDesc.includes(headStr) &&
-      comp
+    const canAppendOnlyComp = headStr && desc.value.includes(headStr) && comp
 
     if (canAppendOnlyComp) {
-      desc.value = `${oldDesc}-${comp}`
+      desc.value = `${desc.value}-${comp}`
     } else {
-      /* 如果是第一次 or headStr 变了：整行重写 */
       const allParts = []
       if (headStr) allParts.push(headStr)
       if (comp) allParts.push(comp)
       desc.value = allParts.join('-')
     }
 
-    // 回传父组件
-    emit('update:modelValue', {
-      ...props.modelValue,
-      Param: desc.value
-    })
-
-    // 清空输入
-    Component.value = ''
+    Component.value = ''   // 每次选完 component 后清空下拉框
   }
 
+  /* ---------------- 「OK」把当前 desc 存成对象 ---------------- */
+  function confirm() {
+    if (!desc.value.trim()) return
+
+    /* --- 拼出整条 Param --- */
+    const newItem = {
+      Param: desc.value.trim(),
+      input: inputVal.value.trim(),
+      layout: Layout.value.trim(),
+      component: ''               // 先留空
+    }
+
+    /* --- 反向解析：把 Param 除第一段外全部写回 component --- */
+    const parts = newItem.Param.split('-')
+    // 只有 ≥3 段才需要反填
+    if (parts.length > 2) {
+      newItem.component = parts.slice(2).join('-')
+      // 去掉「input-layout」后剩下的
+    }
+
+    /* --- 继续原来的追加逻辑 --- */
+    const currentList = Array.isArray(props.modelValue) ? props.modelValue : []
+    emit('update:modelValue', [...currentList, newItem])
+
+    /* --- 清空录入区（保持原样） --- */
+    desc.value = ''
+    inputVal.value = ''
+    Layout.value = ''
+    Component.value = ''
+  }
 </script>
 
 <style scoped>
