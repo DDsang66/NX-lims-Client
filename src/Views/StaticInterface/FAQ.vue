@@ -42,32 +42,20 @@
 
   <div class="container-fluid" style="background-color: #f7f7f7; padding:60px 0">
     <h2 style="text-align:center;padding:3%">Write your feedback here.</h2>
-    <form class="sigma_box box-lg mf_form_validate ajax_submit m-0" action="sendmail.php" method="post" enctype="multipart/form-data" novalidate="novalidate">
+    <form class="sigma_box box-lg mf_form_validate ajax_submit m-0" novalidate="novalidate">
       <div class="row">
-        <div class="col-lg-4">
-          <div class="form-group">
-            <i class="far fa-user"></i>
-            <input type="text" placeholder="Full Name" class="form-control dark" name="name">
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="form-group">
-            <i class="far fa-envelope"></i>
-            <input type="email" placeholder="Email Address" class="form-control dark" name="email">
-          </div>
-        </div>
-        <div class="col-lg-4">
+        <div class="col-lg-12">
           <div class="form-group">
             <i class="far fa-pencil"></i>
-            <input type="text" placeholder="Subject" class="form-control dark" name="subject">
+            <input type="text" placeholder="Subject" class="form-control dark" v-model="feedbackForm.Subject">
           </div>
         </div>
       </div>
       <div class="form-group">
-        <textarea name="message" placeholder="Enter Message" cols="45" rows="5" class="form-control dark"></textarea>
+        <textarea v-model="feedbackForm.Message" placeholder="Enter Message" cols="45" rows="5" class="form-control dark"></textarea>
       </div>
       <div class="text-center">
-        <button type="submit" class="sigma_btn-custom secondary" name="button">Submit Now <i class="far fa-paper-plane"></i> </button>
+        <button type="submit" class="sigma_btn-custom secondary" name="button" @click="feedbackCommit">Submit Now <i class="far fa-paper-plane"></i> </button>
         <div class="server_response w-100">
         </div>
       </div>
@@ -82,14 +70,35 @@
 <script setup>
   import Footer from '@/components/Layout/Footer.vue';
   import Header from '@/components/Layout/Header.vue';
-  import { ref } from 'vue'
+  import { ref,inject,reactive } from 'vue'
 
+const request=inject('request')
 const openIdx = ref(null)
-
+const feedbackForm = reactive({
+  Subject :'',
+  Message :'',
+  userId:inject('userAuthStore').id
+})
 function toggle(idx) {
   openIdx.value = openIdx.value === idx ? null : idx
 }
-
+// 提交反馈
+  async function  feedbackCommit(){
+    //判断Subject和Message同时为空
+    if(!feedbackForm.Subject&&!feedbackForm.Message){
+      alert('Please enter the subject and message.')
+    }else {
+      let req=await request.post('/feedback',feedbackForm)
+      //清空输入
+      feedbackForm.Message=''
+      feedbackForm.Subject=''
+      if(req.data.code===1){
+        alert('Feedback submitted successfully.')
+      }else{
+        alert(req.data.message)
+      }
+    }
+  }
 // 常见问题数据
 const faqList = ref([
   {
