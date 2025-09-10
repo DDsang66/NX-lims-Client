@@ -209,7 +209,7 @@
             <td style="text-align:center">4G</td>
             <td style="text-align:center" colspan="2">
               <img src="../assets/img/USA Wet Care Label/Machine Wash Warm Permanent Press_1.jpg"> &
-              <img src="../assets/img/USA Wet Care Label/Machine Wash Warm Permanent.jpg">
+              <img src="../assets/img/USA Wet Care Label/Machine Wash Warm Permanent Press.jpg">
             </td>
             <td>Machine Wash Warm(Permanent Press)</td>
           </tr>
