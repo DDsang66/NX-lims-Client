@@ -1,8 +1,9 @@
 <script setup>
+  import hometest from '@/assets/img/hometest.png';
 </script>
 
 <template>
-  <div class="sigma_subheader dark-overlay dark-overlay-2" style="background-image: url(/src/assets/img/hometest.png)">
+  <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${hometest})` }">
 
     <div class="container">
       <div class="sigma_subheader-inner">

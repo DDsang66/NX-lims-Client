@@ -1,6 +1,6 @@
 <template>
   <Header />
-  <div class="sigma_subheader dark-overlay dark-overlay-2" style="background-image: url(/src/assets/img/scale_1200.png)">
+  <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${imgUrl})` }">
 
     <div class="container">
       <div class="sigma_subheader-inner">
@@ -71,7 +71,7 @@
   import Footer from '@/components/Layout/Footer.vue';
   import Header from '@/components/Layout/Header.vue';
   import { ref,inject,reactive } from 'vue'
-
+  import imgUrl from '@/assets/img/scale_1200.png';
 const request=inject('request')
 const openIdx = ref(null)
 const feedbackForm = reactive({

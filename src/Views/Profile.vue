@@ -1,6 +1,6 @@
 <template>
   <Header />
-  <div class="sigma_subheader dark-overlay dark-overlay-2" style="background-image: url(/src/assets/img/scale_1200.png)">
+  <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${imgUrl})` }">
 
     <div class="container">
       <div class="sigma_subheader-inner">
@@ -121,10 +121,9 @@
   import Footer from '@/components/Layout/Footer.vue';
   import Header from '@/components/Layout/Header.vue';
   import { ref, computed, onMounted,inject} from 'vue'
-
+  import imgUrl from '@/assets/img/scale_1200.png';
   const request = inject('request')
   const authStore = inject('userAuthStore')
-  console.log(authStore.user)
   const email = ref('');
   const phone = ref('');
   const ep = ref('');
