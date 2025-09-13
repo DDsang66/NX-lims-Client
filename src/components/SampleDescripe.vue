@@ -132,24 +132,26 @@
   const property = ref([
     { value: 'AfterWash', label: 'AfterWash' },
     { value: 'Structure', label: 'Structure' },
-    { value: 'Season', label: 'Season' },
+    { value: 'Batch', label: 'Batch' },
     { value: 'State', label: 'State' },
+    { value: 'Season', label: 'Season' },
     { value: 'Age', label: 'Age' },
     { value: 'Style', label: 'Style' },
     { value: 'Category', label: 'Category' },
-    { value: 'Country', label: 'Country' },
+    { value: 'Area', label: 'Area' },
     { value: 'Other', label: 'Other' },
   ]);
 
   const wordMap = {
     Structure: ['Woven', 'Knit', 'Non-Woven'],
     Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
-    State: ['Fabric', 'Garment', 'Component', '1st Bulk', 'Development'],
+    State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
     Age: ['Baby', 'Child', 'Adult'],
     Style: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear'],
-    Category: ['Top', 'Bottom', 'Shoes'],
-    Country: ['CN', 'US', 'JP', 'EN'],
+    Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
+    Area: ['CN', 'US', 'JP', 'EN'],
     AfterWash: ['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash'],
+    Batch: ['1st Bulk','Repeat Order'],
     Other: ['Fill the InputBox']
   }
 

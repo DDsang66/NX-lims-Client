@@ -227,7 +227,7 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <div class="section secondary-overlay bg-center bg-cover pt-0" style="background-image:url(/src/assets/img/banner/2.jpg)">
+  <div class="section secondary-overlay bg-center bg-cover pt-0":style="{ backgroundImage: `url(${banner2})` }">
 
     <div class="spacer white-bg spacer-lg d-none d-lg-block"></div>
 

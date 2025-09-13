@@ -10,15 +10,6 @@
              readonly />
     </div>
 
-    <!--<div class="form-group">
-      <label>N/A</label>
-      <input type="text"
-             class="form-control"
-             name="master-name"
-             placeholder="N/A"
-             v-model="masterName" />
-    </div>-->
-
     <div class="row">
       <div class="col-xl-6 form-group">
         <label>Finishing Time</label>
