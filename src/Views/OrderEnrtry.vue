@@ -11,8 +11,8 @@
               <input type="text" class="form-control" v-model="inputRow.reportNum" />
             </div>
             <div class="form-group col-xl-4">
-              <label>OrderEntry<span class="text-danger" >*</span></label>
-              <input type="text" class="form-control" v-model.trim="inputRow.orderEntry" readonly/>
+              <label>OrderEntry<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" v-model.trim="inputRow.orderEntry" readonly />
             </div>
             <div class="form-group col-xl-4">
               <label>Express<span class="text-danger">*</span></label>
@@ -24,12 +24,12 @@
               </select>
             </div>
             <div class="form-group col-xl-6">
-              <label>Lab-Out<span class="text-danger">*</span></label>
-              <input type="datetime-local" placeholder="出单时间" class="form-control" v-model="inputRow.labOut"/>
+              <label>Due-Date<span class="text-danger">*</span></label>
+              <input type="datetime-local" placeholder="出单时间" class="form-control" v-model="inputRow.dueDate" />
             </div>
             <div class="form-group col-xl-3">
-              <label>PC<span class="text-danger">*</span></label>
-              <select class="form-control" v-model="inputRow.PC">
+              <label>CS<span class="text-danger">*</span></label>
+              <select class="form-control" v-model="inputRow.CS">
                 <option value="Regular">Regular</option>
                 <option value="Express">Express</option>
                 <option value="Shuttle">Shuttle</option>
@@ -47,16 +47,10 @@
                 <option value="Flam">Flam</option>
               </select>
             </div>
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-11">
               <label>Lab-In<span class="text-danger">*</span></label>
-              <input type="text" class="form-control" :value="formatTime(inputRow.labIn)" readonly/>
-            </div>
-
-            <div class="form-group col-xl-6">
-              <label>Review Finish<span class="text-danger">*</span></label>
               <div class="input-group">
-                <input type="datetime-local" placeholder="审单完成时间" class="form-control"
-                       v-model="inputRow.reviewFinish" />
+                <input type="text" class="form-control" :value="formatTime(inputRow.labIn)" readonly />
                 <div class="input-group-append">
                   <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="addRow">+</button>
                 </div>
@@ -68,7 +62,7 @@
             <div class="form-group col-xl-12">
               <table class="sigma_responsive-table">
                 <thead>
-                  <tr><th>ReportNo.</th><th>Group</th><th>Lab-Out</th><th style="width:40px;">Delete</th></tr>
+                  <tr><th>ReportNo.</th><th>Group</th><th>Due-Date</th><th style="width:40px;">Delete</th></tr>
                 </thead>
                 <tbody>
                   <tr v-for="(row, idx) in rows" :key="idx">
@@ -76,7 +70,7 @@
                       {{ row.reportNum }}
                     </td>
                     <td v-text="row.group"></td>
-                    <td><input type="datetime-local"  class="form-control" v-model="row.labOut"/></td>
+                    <td><input type="datetime-local"  class="form-control" v-model="row.dueDate"/></td>
                     <td style="text-align:center">
                       <button class="btn btn-link text-danger p-0" @click="removeRow(idx)">
                         ×
@@ -133,11 +127,10 @@
     reportNum:'',
     orderEntry:'',
     express:'',
-    labOut:null,
-    PC:'',
+    dueDate:null,
+    CS:'',
     group:'',
     labIn:new Date(),
-    reviewFinish:''
   })
   //remark
   const remark = ref('')
@@ -157,7 +150,7 @@
   /* 添加行 */
   function addRow() {
     //判断inputRow的任何部分为空
-    if(!inputRow.reportNum||!inputRow.express||!inputRow.labOut||!inputRow.PC||!inputRow.group||!inputRow.reviewFinish){
+    if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.CS||!inputRow.group){
       alert('Please fill in all fields.')
     }
     if(inputRow.group==='All'){
@@ -168,26 +161,6 @@
     }else{
       rows.push({...inputRow})
     }
-  }
-
-  /* 实时计算总比例 & MaxComposition */
-  // const totalRate = computed(() => rows.reduce((s, r) => s + r.rate, 0))
-  // const maxComposition = computed(() => {
-  //   const synth = rows.filter(r => isSynth(r.composition)).reduce((s, r) => s + r.rate, 0)
-  //   const nat = rows.filter(r => isNatural(r.composition)).reduce((s, r) => s + r.rate, 0)
-  //   return synth > 50 ? 'Synth' : nat > 50 ? 'Natural' : ''
-  // })
-
-  /* 判断类别 */
-  const synthList = ['Acetate', 'Polyester', 'Polyamide', 'Polyurethane', 'Polyethylene', 'Elastane', 'Spandex', 'Viscose', 'Acrylic', 'Modal', 'Tencel', 'Meraklon', 'Lycra', 'Lyocell', 'Modacrylic', 'Nylon', 'Rayon', 'Vinylon']
-  const naturalList = ['Cotton', 'Wool', 'Silk', 'Ramie', 'Mohair', 'Tussah', 'Linen', 'Asbestos']
-  const isSynth = str => synthList.includes(str)
-  const isNatural = str => naturalList.includes(str)
-
-  const allCompositions = ref([...synthList, ...naturalList]);
-
-  function selectComposition(item) {
-    inputRow.composition = item;
   }
   //删除行
   function removeRow(idx) {
@@ -227,10 +200,10 @@
     header: [
       { field: '0', caption: 'Repo'},
       { field: '1', caption: 'OrderEntry' },
-      { field: '2', caption: 'Lab-Out' },
+      { field: '2', caption: 'Due-Date' },
       { field: '3', caption: 'Lab-In' },
       { field: '4', caption: 'Express' },
-      { field: '5', caption: 'PC' },
+      { field: '5', caption: 'CS' },
       { field: '6', caption: 'Group' },
       { field: '7', caption: 'Review Finish' },
     ],
@@ -242,6 +215,10 @@
   let tableInstance = null
 
   onMounted(() => {
+
+    //后端完成后需要把V-Table数据实时替换成后端传入的数据
+    //在页面加载时获取当前user完成的进单数据，并渲染到V-Table中
+
     //立即获取当前时间
     const now = new Date()
     inputRow.labIn = now
