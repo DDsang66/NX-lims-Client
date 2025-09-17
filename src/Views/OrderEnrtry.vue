@@ -25,11 +25,11 @@
             </div>
             <div class="form-group col-xl-6">
               <label>Due-Date<span class="text-danger">*</span></label>
-              <input type="datetime-local" placeholder="出单时间" class="form-control" v-model="inputRow.dueDate" />
+              <input type="date" placeholder="出单时间" class="form-control" v-model="inputRow.dueDate" />
             </div>
             <div class="form-group col-xl-3">
-              <label>CS<span class="text-danger">*</span></label>
-              <select class="form-control" v-model="inputRow.CS">
+              <label>cs<span class="text-danger">*</span></label>
+              <select class="form-control" v-model="inputRow.cs">
                 <option value="Regular">Regular</option>
                 <option value="Express">Express</option>
                 <option value="Shuttle">Shuttle</option>
@@ -70,7 +70,7 @@
                       {{ row.reportNum }}
                     </td>
                     <td v-text="row.group"></td>
-                    <td><input type="datetime-local"  class="form-control" v-model="row.dueDate"/></td>
+                    <td><input type="date"  class="form-control" v-model="row.dueDate"/></td>
                     <td style="text-align:center">
                       <button class="btn btn-link text-danger p-0" @click="removeRow(idx)">
                         ×
@@ -128,7 +128,7 @@
     orderEntry:'',
     express:'',
     dueDate:null,
-    CS:'',
+    cs:'',
     group:'',
     labIn:new Date(),
   })
@@ -150,7 +150,7 @@
   /* 添加行 */
   function addRow() {
     //判断inputRow的任何部分为空
-    if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.CS||!inputRow.group){
+    if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!inputRow.group){
       alert('Please fill in all fields.')
     }
     if(inputRow.group==='All'){
@@ -166,19 +166,11 @@
   function removeRow(idx) {
     rows.splice(idx, 1);
   }
-//进单提交
-//   async function Confirm() {
-//     try {
-//       emit('confirm', rows);   // 把 rows 发出去
-//       alert('提交成功！');
-//     } catch (e) {
-//       console.error(e);
-//     }
-//   }
+
   async function Confirm() {
     try {
       // console.log({rows: rows, id: id,remark:remark})
-      const res=await request.post('/order/add', JSON.parse(JSON.stringify({rows: rows, id: id,remark:remark.value})))
+      const res = await request.post('/order/add', JSON.parse(JSON.stringify({rows: rows, id:id,remark:remark.value})))
       if(res.data.status===1)
         alert('提交成功！');
       else alert('提交失败！');
@@ -187,12 +179,6 @@
     }
   }
 
-  // function updateComposition(e, row) {
-  //   const newValue = e.target.textContent.trim();
-  //   if (row.composition !== newValue) {
-  //     row.composition = newValue;
-  //   }
-  // }
 
 
   /* ---------- 1. 数据 ---------- */
