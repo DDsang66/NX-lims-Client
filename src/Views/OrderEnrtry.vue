@@ -16,36 +16,44 @@
             </div>
             <div class="form-group col-xl-4">
               <label>Express<span class="text-danger">*</span></label>
-              <select class="form-control" v-model="inputRow.express">
-                <option value="Regular">Regular</option>
-                <option value="Express">Express</option>
-                <option value="Shuttle">Shuttle</option>
-                <option value="Same Day">Same Day</option>
-              </select>
+              <el-select class="form-control custom-el-select" v-model="inputRow.express" filterable placeholder="">
+                <el-option value="Regular">Regular</el-option>
+                <el-option value="Express">Express</el-option>
+                <el-option value="Shuttle">Shuttle</el-option>
+                <el-option value="Same Day">Same Day</el-option>
+              </el-select>
             </div>
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-4">
               <label>Due-Date<span class="text-danger">*</span></label>
               <input type="date" placeholder="出单时间" class="form-control" v-model="inputRow.dueDate" />
             </div>
             <div class="form-group col-xl-3">
-              <label>cs<span class="text-danger">*</span></label>
-              <select class="form-control" v-model="inputRow.cs">
-                <option value="Regular">Regular</option>
-                <option value="Express">Express</option>
-                <option value="Shuttle">Shuttle</option>
-                <option value="Same Day">Same Day</option>
-              </select>
+              <label>CS<span class="text-danger">*</span></label>
+              <el-select class="form-control custom-el-select" v-model="inputRow.cs" filterable placeholder="">
+                <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
+              </el-select>
             </div>
 
-            <div class="form-group col-xl-3">
+            <div class="form-group col-xl-5">
               <label>Group<span class="text-danger">*</span></label>
-              <select class="form-control" v-model="inputRow.group">
-                <option value="All">All</option>
-                <option value="Physics">Physics</option>
-                <option value="Wet">Wet</option>
-                <option value="Fiber">Fiber</option>
-                <option value="Flam">Flam</option>
-              </select>
+              <el-select class="form-control custom-el-select" v-model="groups"
+                         @change="groupsChange"
+                         filterable multiple placeholder="" >
+<!--                自定义头部-->
+                <template #header>
+                  <el-checkbox
+                    v-model="checkAll"
+                    :indeterminate="indeterminate"
+                    @change="handleCheckAll"
+                  >
+                    All
+                  </el-checkbox>
+                </template>
+                <el-option value="Physics">Physics</el-option>
+                <el-option value="Wet">Wet</el-option>
+                <el-option value="Fiber">Fiber</el-option>
+                <el-option value="Flam">Flam</el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-11">
               <label>Lab-In<span class="text-danger">*</span></label>
@@ -118,6 +126,10 @@
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
   }
+  //Group是否全选
+  const checkAll = ref(false)
+  //Group是否半选
+  const indeterminate = ref(false)
   //定时器
   var timer=null;
   //第一个定时器
@@ -127,16 +139,36 @@
     reportNum:'',
     orderEntry:'',
     express:'',
-    dueDate:null,
+    dueDate:'',
     cs:'',
     group:'',
     labIn:new Date(),
   })
+  //CS列表
+  var CSList=ref( [])
+  //多选group
+  const groups=ref([])
   //remark
   const remark = ref('')
 
-  /* 表格数据 */
-  const rows = reactive([])
+  /* 进单数据 */
+  var rows = reactive([])
+  /* group数组 */
+  const groupSelectList=['Physics','Wet','Fiber','Flam']
+
+  //获取CSList
+  const getCSList = async () => {
+    const res = await request.get('/search/getCs')
+      if(res.data.success){
+        CSList.value=res.data.data
+      }else{
+        alert(res.data.message)
+      }
+  }
+  /*group选择修改时触发事件*/
+  const groupsChange = () => {
+    groups.value.sort((a,b)=>{return groupSelectList.indexOf(a)-groupSelectList.indexOf(b) })
+  }
 
   // 格式化为: 2025-09-07 16:45
   const formatTime = (date) => {
@@ -150,35 +182,48 @@
   /* 添加行 */
   function addRow() {
     //判断inputRow的任何部分为空
-    if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!inputRow.group){
+    if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
       alert('Please fill in all fields.')
-    }
-    if(inputRow.group==='All'){
-      rows.push({...inputRow,group:'Physics'})
-      rows.push({...inputRow,group:'Wet'})
-      rows.push({...inputRow,group:'Fiber'})
-      rows.push({...inputRow,group:'Flame'})
     }else{
-      rows.push({...inputRow})
+      for (const group of groups.value) {
+        rows.push({...inputRow, group: group})
+      }
     }
+
   }
   //删除行
   function removeRow(idx) {
     rows.splice(idx, 1);
   }
-
+//进单提交
+//   async function Confirm() {
+//     try {
+//       emit('confirm', rows);   // 把 rows 发出去
+//       alert('提交成功！');
+//     } catch (e) {
+//       console.error(e);
+//     }
+//   }
   async function Confirm() {
     try {
       // console.log({rows: rows, id: id,remark:remark})
-      const res = await request.post('/order/add', JSON.parse(JSON.stringify({rows: rows, id:id,remark:remark.value})))
-      if(res.data.status===1)
+      const res=await request.post('/order/add', {rows: rows, id: id,remark:remark.value})
+      if(res.data.success){
         alert('提交成功！');
+        rows=[]
+      }
       else alert('提交失败！');
     } catch (e) {
       console.error(e);
     }
   }
 
+  // function updateComposition(e, row) {
+  //   const newValue = e.target.textContent.trim();
+  //   if (row.composition !== newValue) {
+  //     row.composition = newValue;
+  //   }
+  // }
 
 
   /* ---------- 1. 数据 ---------- */
@@ -199,7 +244,27 @@
   /* ---------- 2. 挂载 ---------- */
   const tableRef = ref(null)
   let tableInstance = null
-
+  //group全选
+  const handleCheckAll = () => {
+    indeterminate.value = false
+    if (groups.value.length===0) {
+      groups.value = ['Physics', 'Wet', 'Fiber', 'Flam']
+    } else {
+      groups.value = []
+    }
+  }
+//监听group
+  watch(groups, (val) => {
+    if (val.length === 0) {
+      checkAll.value = false
+      indeterminate.value = false
+    } else if (val.length === 4) {
+      checkAll.value = true
+      indeterminate.value = false
+    } else {
+      indeterminate.value = true
+    }
+  })
   onMounted(() => {
 
     //后端完成后需要把V-Table数据实时替换成后端传入的数据
@@ -218,6 +283,9 @@
     }, delay)
     //获取user并赋值给orderEntry
     inputRow.orderEntry=authStore.user
+    //获取CSList
+    getCSList()
+
     tableInstance = new VTable.ListTable(tableRef.value, tableOptions.value)
   })
 
@@ -238,5 +306,24 @@
   .form-control {
       border-radius:0px;
       border-color:#a3a3a3
+  }
+  /*自定义el-select的样式*/
+  .custom-el-select {
+    padding: 0;
+  }
+  .custom-el-select :deep(.el-select__wrapper){
+    height: 100% ;
+    box-shadow:none !important;
+  }
+  /*自定义el-select的下箭头的样式*/
+  .custom-el-select :deep(svg){
+    color: #0e2a47;
+  }
+  /*恢复删除按钮*/
+  .form-group :deep(.el-tag__close) {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    transform: none !important;
   }
 </style>
