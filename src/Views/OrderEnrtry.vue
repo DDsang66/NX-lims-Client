@@ -6,22 +6,36 @@
       <div class="col-xl-5">
         <div style="border: 1px solid #cae2e8; padding: 20px;">
           <div class="row">
-            <div class="form-group col-xl-4">
+            <div class="form-group col-xl-8">
               <label>ReportNo.<span class="text-danger">*</span></label>
-              <input type="text" class="form-control" v-model="inputRow.reportNum" />
+<!--              <input type="text" class="form-control" v-model="inputRow.reportNum" />-->
+              <div style="display: flex">
+                <input type="text" class="form-control" :value="reportNums.data1"  readonly style="width: 50px;"/>
+                <div style="width: 55px">
+                  <el-select v-model="reportNums.data2"
+                             class="form-control custom-el-select no-arrow-elselect"
+                             filterable
+                             style="width: 55px;" >
+                    <el-option value="405.">405.</el-option>
+                    <el-option value="441.">441.</el-option>
+                  </el-select>
+                </div>
+                <div style="width: 50px">
+                  <el-select v-model="reportNums.data3"
+                             class="form-control custom-el-select no-arrow-elselect"
+                             filterable
+                             style="width: 50px;" >
+                    <el-option :value="twoDigitYear+'.'" ></el-option>
+                    <el-option :value="twoDigitYear-1+'.'"></el-option>
+                  </el-select>
+                </div>
+                <input type="text" class="form-control" v-model="reportNums.data4" style="width: 80px" @keydown="data4Keydown" @blur="data4Blur"/>
+                <input type="text" class="form-control" v-model="reportNums.data5" style="width: 80px" />
+              </div>
             </div>
             <div class="form-group col-xl-4">
               <label>OrderEntry<span class="text-danger">*</span></label>
               <input type="text" class="form-control" v-model.trim="inputRow.orderEntry" readonly />
-            </div>
-            <div class="form-group col-xl-4">
-              <label>Express<span class="text-danger">*</span></label>
-              <el-select class="form-control custom-el-select" v-model="inputRow.express" filterable placeholder="">
-                <el-option value="Regular">Regular</el-option>
-                <el-option value="Express">Express</el-option>
-                <el-option value="Shuttle">Shuttle</el-option>
-                <el-option value="Same Day">Same Day</el-option>
-              </el-select>
             </div>
             <div class="form-group col-xl-4">
               <label>Due-Date<span class="text-danger">*</span></label>
@@ -45,6 +59,7 @@
                     v-model="checkAll"
                     :indeterminate="indeterminate"
                     @change="handleCheckAll"
+                    style="width: 100%;"
                   >
                     All
                   </el-checkbox>
@@ -55,7 +70,16 @@
                 <el-option value="Flam">Flam</el-option>
               </el-select>
             </div>
-            <div class="form-group col-xl-11">
+            <div class="form-group col-xl-3">
+              <label>Express<span class="text-danger">*</span></label>
+              <el-select class="form-control custom-el-select" v-model="inputRow.express" filterable placeholder="">
+                <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
+                <el-option value="Express" :disabled="expressDisable">Express</el-option>
+                <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
+                <el-option value="Same Day">Same Day</el-option>
+              </el-select>
+            </div>
+            <div class="form-group col-xl-8">
               <label>Lab-In<span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="text" class="form-control" :value="formatTime(inputRow.labIn)" readonly />
@@ -101,7 +125,17 @@
         </div>
         </div>
         <div class="col-xl-7">
-          <div ref="tableRef" style="height:100%;width:100%;"></div>
+          <el-table :data="todayReport" style="width:100%;">
+            <el-table-column prop="reportNum" label="ReportNo." width="180" />
+            <el-table-column prop="orderEntry" label="OrderEntry" width="180"/>
+            <el-table-column prop="dueDate" label="Due-Date" width="180"/>
+            <el-table-column prop="labIn" label="Lab-In" width="180"/>
+            <el-table-column prop="express" label="Express" width="180"/>
+            <el-table-column prop="cs" label="CS" width="180"/>
+            <el-table-column prop="testGroup" label="Group" width="180"/>
+            <el-table-column prop="remark" label="Remark" width="180"/>
+            <el-table-column prop="status" label="Status" width="180"></el-table-column>
+          </el-table>
         </div>
       </div>
   </div>
@@ -113,19 +147,36 @@
   import Footer from '@/components/Layout/Footer.vue'
   import '@/assets/css/style.css';
   import { ref, reactive, computed, watch, onMounted, onUnmounted,inject } from 'vue'
-  import { ListTable, PivotTable, TYPES, themes } from '@visactor/vtable';
-  import * as VTable from '@visactor/vtable'
+  // import { ListTable, PivotTable, TYPES, themes } from '@visactor/vtable';
+  // import * as VTable from '@visactor/vtable'
+  import {ElMessage} from "element-plus";
 
   // const emit = defineEmits(['confirm']);
   const authStore=inject('userAuthStore')
   const request = inject('request')
 
+  //express禁选
+  var expressDisable=ref(false)
+  var regularDisable=ref(false)
+  var shuttleDisable=ref(false)
+//单号
+  //两位年份
+  var twoDigitYear=ref(new Date().getFullYear()%100)
+  const reportNums=reactive({
+    data1:'87.',
+    data2:"405.",
+    data3:twoDigitYear.value+'.',
+    data4:'',
+    data5:'.01',
+  })
+//今日进单
+  const todayReport=ref([])
   const id=authStore.id
   /* 折叠开关 */
-  const isNoticeOpen = ref(false)
-  function toggleNotice() {
-    isNoticeOpen.value = !isNoticeOpen.value;
-  }
+  // const isNoticeOpen = ref(false)
+  // function toggleNotice() {
+  //   isNoticeOpen.value = !isNoticeOpen.value;
+  // }
   //Group是否全选
   const checkAll = ref(false)
   //Group是否半选
@@ -156,6 +207,29 @@
   /* group数组 */
   const groupSelectList=['Physics','Wet','Fiber','Flam']
 
+  //失去焦点，判断四位数
+  function data4Blur(){
+    //先判断是不是数字
+    if(!/^\d+$/.test(reportNums.data4)){
+      reportNums.data4=''
+      alert('Please enter a pure number in the fourth item of the report number.')
+    }else{
+      //不到四位则补零
+      if(reportNums.data4.length<4){
+        reportNums.data4=String(reportNums.data4).padStart(4,'0')
+      }
+    }
+  }
+  //按下enter
+  function data4Keydown(e){
+    // 检测是否按下了 Enter 键
+    if (e.key === 'Enter') {
+      // 阻止默认行为（换行）
+      e.preventDefault();
+      // 让当前元素失去焦点，触发 @blur
+      e.target.blur();
+    }
+  }
   //获取CSList
   const getCSList = async () => {
     const res = await request.get('/search/getCs')
@@ -181,41 +255,70 @@
   }
   /* 添加行 */
   function addRow() {
+    // console.log("dueDate:"+inputRow.dueDate)
+    // console.log("LabIN:"+inputRow.labIn)
+    inputRow.reportNum=reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5
     //判断inputRow的任何部分为空
     if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
       alert('Please fill in all fields.')
     }else{
+      //备份初始状态
+      let originalRows=[...rows]
+      //存储重复数据
+      let duplicateRows=[]
       for (const group of groups.value) {
-        rows.push({...inputRow, group: group})
+        let rowAdd={...inputRow, group: group}
+        //判断重复
+        if(!isObjectContain(rows, rowAdd)){
+          rows.push(rowAdd)
+        }
+        else
+          duplicateRows.push(group)
+      }
+      if(duplicateRows.length>0){
+        alert('The report with reportNumber '+inputRow.reportNum+' and Group '+duplicateRows.join(',')+' already exists, adding failed.')
+        rows.length=0
+        rows.push(...originalRows)
       }
     }
-
+  }
+  //简易判断数组是否包含某个对象
+  function isObjectContain(rows, obj) {
+    for (const row of rows) {
+      if(JSON.stringify(row)===JSON.stringify(obj))
+        return true
+    }
+    return false
   }
   //删除行
   function removeRow(idx) {
     rows.splice(idx, 1);
   }
 //进单提交
-//   async function Confirm() {
-//     try {
-//       emit('confirm', rows);   // 把 rows 发出去
-//       alert('提交成功！');
-//     } catch (e) {
-//       console.error(e);
-//     }
-//   }
   async function Confirm() {
     try {
-      // console.log({rows: rows, id: id,remark:remark})
+      if(rows.length===0){
+        alert('Please add at least one order.')
+        return
+      }
       const res=await request.post('/order/add', {rows: rows, id: id,remark:remark.value})
       if(res.data.success){
-        alert('提交成功！');
-        rows=[]
+        //清空rows
+        rows.length=0
+        // ElMessage.success('Submission successful!')
+        alert('Submission successful!');
       }
-      else alert('提交失败！');
+      else alert('Submission failed!');
     } catch (e) {
       console.error(e);
     }
+  }
+  //获取今日进单
+  async function getTodayReport() {
+    const res=await request.post('/order/getorder',authStore.id)
+    if(res.data.success){
+      todayReport.value=res.data.data
+    }else alert(res.data.message)
   }
 
   // function updateComposition(e, row) {
@@ -226,24 +329,24 @@
   // }
 
 
-  /* ---------- 1. 数据 ---------- */
-  const tableOptions = ref({
-    header: [
-      { field: '0', caption: 'Repo'},
-      { field: '1', caption: 'OrderEntry' },
-      { field: '2', caption: 'Due-Date' },
-      { field: '3', caption: 'Lab-In' },
-      { field: '4', caption: 'Express' },
-      { field: '5', caption: 'CS' },
-      { field: '6', caption: 'Group' },
-      { field: '7', caption: 'Review Finish' },
-    ],
-    records: Array.from({ length: 100 }, () => ['10001', '进单人1', '', '', '', '', '', '', ''])
-  })
+  // /* ---------- 1. 数据 ---------- */
+  // const tableOptions = ref({
+  //   header: [
+  //     { field: '0', caption: 'Repo'},
+  //     { field: '1', caption: 'OrderEntry' },
+  //     { field: '2', caption: 'Due-Date' },
+  //     { field: '3', caption: 'Lab-In' },
+  //     { field: '4', caption: 'Express' },
+  //     { field: '5', caption: 'CS' },
+  //     { field: '6', caption: 'Group' },
+  //     { field: '7', caption: 'Review Finish' },
+  //   ],
+  //   records: Array.from({ length: 100 }, () => ['10001', '进单人1', '', '', '', '', '', '', ''])
+  // })
 
   /* ---------- 2. 挂载 ---------- */
-  const tableRef = ref(null)
-  let tableInstance = null
+  // const tableRef = ref(null)
+  // let tableInstance = null
   //group全选
   const handleCheckAll = () => {
     indeterminate.value = false
@@ -253,6 +356,26 @@
       groups.value = []
     }
   }
+
+//监听日期，限制express
+  watch(()=>{
+    let dueDate =new Date(inputRow.dueDate)
+    let labIn = new Date(inputRow.labIn)
+    return Math.ceil((dueDate-labIn) / (1000 * 60 * 60 * 24))+1;
+  }, (days) => {
+    shuttleDisable.value   = days <= 2
+    expressDisable.value   = days <= 3
+    regularDisable.value   = days <= 4
+    const disableMap={
+      Shuttle: shuttleDisable.value,
+      Express: expressDisable.value,
+      Regular: regularDisable.value
+    }
+    if(disableMap[inputRow.express]){
+      inputRow.express=''
+      alert('Please select an allowed Express.')
+    }
+  })
 //监听group
   watch(groups, (val) => {
     if (val.length === 0) {
@@ -267,9 +390,8 @@
   })
   onMounted(() => {
 
-    //后端完成后需要把V-Table数据实时替换成后端传入的数据
-    //在页面加载时获取当前user完成的进单数据，并渲染到V-Table中
-
+    //获取今日进单
+    getTodayReport()
     //立即获取当前时间
     const now = new Date()
     inputRow.labIn = now
@@ -285,12 +407,13 @@
     inputRow.orderEntry=authStore.user
     //获取CSList
     getCSList()
+    //获取
 
-    tableInstance = new VTable.ListTable(tableRef.value, tableOptions.value)
+    // tableInstance = new VTable.ListTable(tableRef.value, tableOptions.value)
   })
 
   onUnmounted(() => {
-    tableInstance?.release()
+    // tableInstance?.release()
     //存在则清楚计时器
     //立即清除
     if(firstTimeout) clearTimeout(firstTimeout)
@@ -325,5 +448,9 @@
     top: auto !important;
     right: auto !important;
     transform: none !important;
+  }
+  /*去除选择框箭头*/
+  .no-arrow-elselect :deep(.el-select__suffix) {
+    display: none !important;
   }
 </style>
