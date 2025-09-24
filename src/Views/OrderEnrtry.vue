@@ -82,7 +82,7 @@
             <div class="form-group col-xl-8">
               <label>Lab-In<span class="text-danger">*</span></label>
               <div class="input-group">
-                <input type="text" class="form-control" :value="formatTime(inputRow.labIn)" readonly />
+                <input type="text" class="form-control" :value="formatTime(new Date(inputRow.labIn))" readonly />
                 <div class="input-group-append">
                   <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="addRow">+</button>
                 </div>
@@ -125,16 +125,20 @@
         </div>
         </div>
         <div class="col-xl-7">
-          <el-table :data="todayReport" style="width:100%;">
-            <el-table-column prop="reportNum" label="ReportNo." width="180" />
-            <el-table-column prop="orderEntry" label="OrderEntry" width="180"/>
-            <el-table-column prop="dueDate" label="Due-Date" width="180"/>
-            <el-table-column prop="labIn" label="Lab-In" width="180"/>
-            <el-table-column prop="express" label="Express" width="180"/>
-            <el-table-column prop="cs" label="CS" width="180"/>
-            <el-table-column prop="testGroup" label="Group" width="180"/>
-            <el-table-column prop="remark" label="Remark" width="180"/>
-            <el-table-column prop="status" label="Status" width="180"></el-table-column>
+          <el-table class="removeTableGaps" :data="todayReport" style="width:100%;" max-height="626px" default-sort="{ prop: 'labIn', order: 'descending' }">
+            <el-table-column prop="reportNum" label="ReportNo." width="150" />
+            <el-table-column prop="orderEntry" label="OrderEntry" width="140"/>
+            <el-table-column prop="dueDate" label="Due-Date" width="100"/>
+              <el-table-column label="Lab-In" width="100">
+                <template #default="scope">
+                  {{formatTime(new Date(scope.row.labIn))}}
+                </template>
+              </el-table-column>
+            <el-table-column prop="express" label="Express" width="90"/>
+            <el-table-column prop="cs" label="CS" width="100"/>
+            <el-table-column prop="testGroup" label="Group" width="100"/>
+            <el-table-column prop="remark" label="Remark" width="100"/>
+            <el-table-column prop="status" label="Status" width="100"></el-table-column>
           </el-table>
         </div>
       </div>
@@ -147,9 +151,6 @@
   import Footer from '@/components/Layout/Footer.vue'
   import '@/assets/css/style.css';
   import { ref, reactive, computed, watch, onMounted, onUnmounted,inject } from 'vue'
-  // import { ListTable, PivotTable, TYPES, themes } from '@visactor/vtable';
-  // import * as VTable from '@visactor/vtable'
-  import {ElMessage} from "element-plus";
 
   // const emit = defineEmits(['confirm']);
   const authStore=inject('userAuthStore')
@@ -172,11 +173,7 @@
 //今日进单
   const todayReport=ref([])
   const id=authStore.id
-  /* 折叠开关 */
-  // const isNoticeOpen = ref(false)
-  // function toggleNotice() {
-  //   isNoticeOpen.value = !isNoticeOpen.value;
-  // }
+
   //Group是否全选
   const checkAll = ref(false)
   //Group是否半选
@@ -210,6 +207,8 @@
   //失去焦点，判断四位数
   function data4Blur(){
     //先判断是不是数字
+    if(!reportNums.data4)
+      return
     if(!/^\d+$/.test(reportNums.data4)){
       reportNums.data4=''
       alert('Please enter a pure number in the fourth item of the report number.')
@@ -244,15 +243,6 @@
     groups.value.sort((a,b)=>{return groupSelectList.indexOf(a)-groupSelectList.indexOf(b) })
   }
 
-
-  function ExpressfilterHandler(value, row) {
-    return row.express === value
-  }
-  function GroupfilterHandler(value, row) {
-    return row.testGroup === value
-  }
-
-
   // 格式化为: 2025-09-07 16:45
   const formatTime = (date) => {
     const year = date.getFullYear()
@@ -265,8 +255,10 @@
   /* 添加行 */
   function addRow() {
     // console.log("dueDate:"+inputRow.dueDate)
-    // console.log("LabIN:"+inputRow.labIn)
+    // console.log(inputRow.labIn)
     inputRow.reportNum=reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5
+    inputRow.labIn=new Date()
+    console.log(inputRow.labIn)
     //判断inputRow的任何部分为空
     if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
       alert('Please fill in all fields.')
@@ -280,6 +272,7 @@
         //判断重复
         if(!isObjectContain(rows, rowAdd)){
           rows.push(rowAdd)
+          // console.log(rowAdd)
         }
         else
           duplicateRows.push(group)
@@ -310,10 +303,13 @@
         alert('Please add at least one order.')
         return
       }
+      // console.log(rows)
       const res=await request.post('/order/add', {rows: rows, id: id,remark:remark.value})
       if(res.data.success){
         //清空rows
-        rows.length=0
+        // rows.length=0
+        //刷新右侧列表
+        await getTodayReport()
         // ElMessage.success('Submission successful!')
         alert('Submission successful!');
       }
@@ -324,38 +320,13 @@
   }
   //获取今日进单
   async function getTodayReport() {
-    const res=await request.post('/order/getorder',authStore.id)
+    const res=await request.get('/order/getorder',{params:{userId:authStore.id}})
     if(res.data.success){
       todayReport.value=res.data.data
+      console.log(todayReport.value)
     }else alert(res.data.message)
   }
 
-  // function updateComposition(e, row) {
-  //   const newValue = e.target.textContent.trim();
-  //   if (row.composition !== newValue) {
-  //     row.composition = newValue;
-  //   }
-  // }
-
-
-  // /* ---------- 1. 数据 ---------- */
-  // const tableOptions = ref({
-  //   header: [
-  //     { field: '0', caption: 'Repo'},
-  //     { field: '1', caption: 'OrderEntry' },
-  //     { field: '2', caption: 'Due-Date' },
-  //     { field: '3', caption: 'Lab-In' },
-  //     { field: '4', caption: 'Express' },
-  //     { field: '5', caption: 'CS' },
-  //     { field: '6', caption: 'Group' },
-  //     { field: '7', caption: 'Review Finish' },
-  //   ],
-  //   records: Array.from({ length: 100 }, () => ['10001', '进单人1', '', '', '', '', '', '', ''])
-  // })
-
-  /* ---------- 2. 挂载 ---------- */
-  // const tableRef = ref(null)
-  // let tableInstance = null
   //group全选
   const handleCheckAll = () => {
     indeterminate.value = false
@@ -418,11 +389,9 @@
     getCSList()
     //获取
 
-    // tableInstance = new VTable.ListTable(tableRef.value, tableOptions.value)
   })
 
   onUnmounted(() => {
-    // tableInstance?.release()
     //存在则清楚计时器
     //立即清除
     if(firstTimeout) clearTimeout(firstTimeout)
@@ -461,5 +430,9 @@
   /*去除选择框箭头*/
   .no-arrow-elselect :deep(.el-select__suffix) {
     display: none !important;
+  }
+  /*去除表格标题和内容之间的空隙*/
+  .removeTableGaps :deep(table){
+    margin-bottom: 0 !important;
   }
 </style>
