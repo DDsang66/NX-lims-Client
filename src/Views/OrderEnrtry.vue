@@ -127,13 +127,24 @@
         <div class="col-xl-7">
           <el-table :data="todayReport" style="width:100%;">
             <el-table-column prop="reportNum" label="ReportNo." width="180" />
-            <el-table-column prop="orderEntry" label="OrderEntry" width="150"/>
-            <el-table-column prop="dueDate" label="Due-Date" width="100"/>
-            <el-table-column prop="labIn" label="Lab-In" width="100"/>
-            <el-table-column prop="express" label="Express" width="100"/>
-            <el-table-column prop="cs" label="CS" width="100"/>
-            <el-table-column prop="testGroup" label="Group" width="100"/>
-            <el-table-column prop="remark" label="Remark" width="100"/>
+            <el-table-column prop="orderEntry" label="OrderEntry" width="150" />
+            <el-table-column prop="dueDate" label="Due-Date" width="100" />
+            <el-table-column prop="labIn" label="Lab-In" width="200" />
+            <el-table-column prop="express" :filters="[
+                             { text: 'Regular', value: 'Regular' },
+                             { text: 'Express', value: 'Express' },
+                             { text: 'Shuttle', value: 'Shuttle' },
+                             { text: 'SameDay', value: 'SameDay' }]"
+                             :filter-method="ExpressfilterHandler"label="Express" width="100" />
+            <el-table-column prop="cs" label="CS" width="100" />
+            <el-table-column prop="testGroup"
+                             :filters="[
+                             { text: 'Phy', value: 'Physics' },
+                             { text: 'Wet', value: 'Wet' },
+                             { text: 'Flam', value: 'Flam' },
+                             { text: 'Fiber', value: 'Fiber' }]"
+                             :filter-method="GroupfilterHandler" label="Group" width="100" />
+            <el-table-column prop="remark" label="Remark" width="300" />
             <el-table-column prop="status" label="Status" width="100"></el-table-column>
           </el-table>
         </div>
@@ -236,6 +247,15 @@
   const groupsChange = () => {
     groups.value.sort((a,b)=>{return groupSelectList.indexOf(a)-groupSelectList.indexOf(b) })
   }
+
+
+  function ExpressfilterHandler(value, row) {
+    return row.express === value
+  }
+  function GroupfilterHandler(value, row) {
+    return row.testGroup === value
+  }
+
 
   // 格式化为: 2025-09-07 16:45
   const formatTime = (date) => {
