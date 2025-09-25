@@ -125,7 +125,7 @@
         </div>
         </div>
         <div class="col-xl-7">
-          <el-table class="removeTableGaps" :data="todayReport" style="width:100%;" max-height="626px">
+          <el-table class="removeTableGaps removeTableBorder" :data="todayReport"  max-height="626px">
             <el-table-column type="expand">
               <template #default="props">
                 <div style="margin-left: 50px">
@@ -283,7 +283,7 @@
       for (const group of groups.value) {
         let rowAdd={...inputRow, group: group}
         //判断重复
-        if(!isObjectContain(rows, rowAdd)){
+        if(!isRowsContain(rows, rowAdd)){
           rows.push(rowAdd)
           // console.log(rowAdd)
         }
@@ -298,9 +298,17 @@
     }
   }
   //简易判断数组是否包含某个对象
-  function isObjectContain(rows, obj) {
+  // function isObjectContain(rows, obj) {
+  //   for (const row of rows) {
+  //     if(JSON.stringify(row)===JSON.stringify(obj))
+  //       return true
+  //   }
+  //   return false
+  // }
+  //判断订单数组是否包含某订单
+  function isRowsContain(rows, row1) {
     for (const row of rows) {
-      if(JSON.stringify(row)===JSON.stringify(obj))
+      if(row.reportNum===row1.reportNum&&row.group===row1.group)
         return true
     }
     return false
@@ -448,4 +456,9 @@
   .removeTableGaps :deep(table){
     margin-bottom: 0 !important;
   }
+  /*去除表格的边框*/
+  .removeTableBorder :deep(table){
+    border: none !important;
+  }
+  /*设置单元格的右侧边框*/
 </style>
