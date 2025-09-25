@@ -7,7 +7,7 @@ import Jako from '../views/Jako.vue';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
 import Profile from '../views/Profile.vue';
-import OrderEntry from '../views/OrderEnrtry.vue';
+import OrderEntry from '../Views/OrderEntry.vue';
 import FAQ from '../views/StaticInterface/FAQ.vue';
 import InstructionManual from '../views/StaticInterface/InstructionManual.vue';
 import MainLayout from '../views/MainLayout.vue';

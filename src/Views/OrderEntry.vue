@@ -126,19 +126,29 @@
         </div>
         <div class="col-xl-7">
           <el-table class="removeTableGaps" :data="todayReport" style="width:100%;" max-height="626px" default-sort="{ prop: 'labIn', order: 'descending' }">
-            <el-table-column prop="reportNum" label="ReportNo." width="150" />
-            <el-table-column prop="orderEntry" label="OrderEntry" width="140"/>
-            <el-table-column prop="dueDate" label="Due-Date" width="100"/>
-              <el-table-column label="Lab-In" width="100">
-                <template #default="scope">
-                  {{formatTime(new Date(scope.row.labIn))}}
-                </template>
-              </el-table-column>
-            <el-table-column prop="express" label="Express" width="90"/>
-            <el-table-column prop="cs" label="CS" width="100"/>
-            <el-table-column prop="testGroup" label="Group" width="100"/>
-            <el-table-column prop="remark" label="Remark" width="100"/>
-            <el-table-column prop="status" label="Status" width="100"></el-table-column>
+            <el-table-column type="expand">
+              <template #default="props">
+                <div style="margin-left: 50px">
+                  <el-table :data="props.row.groups">
+                    <el-table-column label="group" prop="group" width="100"/>
+                    <el-table-column label="Lab-In" width="100">
+                      <template #default="scope">
+                        {{formatTime(new Date(scope.row.labIn))}}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="dueDate" label="Due-Date" width="100"/>
+                    <el-table-column prop="express" label="Express" width="90"/>
+                    <el-table-column prop="remark" label="Remark" width="300"/>
+                    <el-table-column prop="status" label="Status" width="100"></el-table-column>
+                  </el-table>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="reportNum" label="ReportNo." width="200" />
+            <el-table-column prop="orderEntry" label="OrderEntry" width="200"/>
+            <el-table-column prop="cs" label="CS" width="200"/>
+            <el-table-column prop="testGroups" label="Groups" width="200">
+            </el-table-column>
           </el-table>
         </div>
       </div>
@@ -206,13 +216,16 @@
 
   //失去焦点，判断四位数
   function data4Blur(){
-    //先判断是不是数字
+    //先判断为空
     if(!reportNums.data4)
       return
+    //先判断数字
     if(!/^\d+$/.test(reportNums.data4)){
       reportNums.data4=''
       alert('Please enter a pure number in the fourth item of the report number.')
     }else{
+      //先转为数字，再转回字符串。以此去掉0
+      reportNums.data4=String(Number(reportNums.data4))
       //不到四位则补零
       if(reportNums.data4.length<4){
         reportNums.data4=String(reportNums.data4).padStart(4,'0')
@@ -258,7 +271,7 @@
     // console.log(inputRow.labIn)
     inputRow.reportNum=reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5
     inputRow.labIn=new Date()
-    console.log(inputRow.labIn)
+    // console.log(inputRow.labIn)
     //判断inputRow的任何部分为空
     if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
       alert('Please fill in all fields.')
@@ -307,7 +320,7 @@
       const res=await request.post('/order/add', {rows: rows, id: id,remark:remark.value})
       if(res.data.success){
         //清空rows
-        // rows.length=0
+        rows.length=0
         //刷新右侧列表
         await getTodayReport()
         // ElMessage.success('Submission successful!')
@@ -323,7 +336,7 @@
     const res=await request.get('/order/getorder',{params:{userId:authStore.id}})
     if(res.data.success){
       todayReport.value=res.data.data
-      console.log(todayReport.value)
+      // console.log(todayReport.value)
     }else alert(res.data.message)
   }
 
@@ -405,7 +418,7 @@
   }
 
   .form-control {
-      border-radius:0px;
+      border-radius:0;
       border-color:#a3a3a3
   }
   /*自定义el-select的样式*/
