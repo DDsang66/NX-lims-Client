@@ -125,7 +125,7 @@
         </div>
         </div>
         <div class="col-xl-7">
-          <el-table class="removeTableGaps" :data="todayReport" style="width:100%;" max-height="626px" default-sort="{ prop: 'labIn', order: 'descending' }">
+          <el-table class="removeTableGaps" :data="todayReport" style="width:100%;" max-height="626px">
             <el-table-column type="expand">
               <template #default="props">
                 <div style="margin-left: 50px">
