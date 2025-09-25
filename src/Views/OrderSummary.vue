@@ -1,54 +1,64 @@
 <template>
   <Header />
   <div class="container-fluid" style="padding:3%;margin-left: auto ;display: flex;flex-direction: column;align-items: center">
-    <div style="display: flex;gap: 5px ;margin-bottom: 30px;width: 100%;align-items: center;justify-content: center;flex-shrink: 0;flex-wrap: wrap;">
-      <el-text size="large">ReportNo.</el-text>
-      <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
-      <el-button type="primary" @click="search">Search</el-button>
-      <el-text size="large" class="searchGap">TimeOpt</el-text>
-      <el-select v-model="searchParams.timeOpt" style="width: 100px">
-        <el-option value="all">All</el-option>
-        <el-option value="anyOne">AnyOne</el-option>
-        <el-option value="dueDate">DueDate</el-option>
-        <el-option value="labIn">LabIn</el-option>
-      </el-select>
-      <el-text size="large" >TimeType</el-text>
-      <el-select v-model="searchParams.timeType" style="width: 100px">
-        <el-option v-for="type in DatePickerType" :key="type" :value="type" ></el-option>
-<!--        <el-option label="year" value="year"></el-option>-->
-<!--        <el-option label="month" value="month"></el-option>-->
-<!--        <el-option label="day" value="day"></el-option>-->
-<!--        <el-option label="week" value="week"></el-option>-->
-<!--        <el-option label="dateTime" value="dateTime"></el-option>-->
-      </el-select>
-      <el-text size="large">Time Range</el-text>
-      <el-date-picker
-        v-model="searchParams.timeRange"
-        :type="searchParams.timeType"
-        placeholder=""
-      />
-      <el-text class="searchGap">Group</el-text>
-      <el-select v-model="searchParams.group" style="width: 100px;">
-        <el-option value="All">All</el-option>
-        <el-option value="Physics">Physics</el-option>
-        <el-option value="Wet">Wet</el-option>
-        <el-option value="Fiber">Fiber</el-option>
-        <el-option value="Flam">Flam</el-option>
-      </el-select>
-      <el-text class="searchGap">Status</el-text>
-      <el-select v-model="searchParams.status" style="width: 100px">
-        <el-option value="All">All</el-option>
-        <el-option value="In Lab">In Lab</el-option>
-      </el-select>
-      <el-text class="searchGap">Express</el-text>
-      <el-select v-model="searchParams.express" style="width: 100px">
-        <el-option value="All" >All</el-option>
-        <el-option value="Regular" >Regular</el-option>
-        <el-option value="Express" >Express</el-option>
-        <el-option value="Shuttle" >Shuttle</el-option>
-        <el-option value="Same Day">Same Day</el-option>
-      </el-select>
-      <div class="searchGap">
+    <div class="mainSelectContainer">
+      <div>
+        <el-text size="large">ReportNo.</el-text>
+        <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+        <el-button type="primary" @click="search">Search</el-button>
+      </div>
+      <div>
+        <el-text size="large" >TimeOpt</el-text>
+        <el-select v-model="searchParams.timeOpt" style="width: 100px">
+          <el-option value="all">All</el-option>
+          <el-option value="anyOne">AnyOne</el-option>
+          <el-option value="dueDate">DueDate</el-option>
+          <el-option value="labIn">LabIn</el-option>
+        </el-select>
+        <el-text size="large" >TimeType</el-text>
+        <el-select v-model="searchParams.timeType" style="width: 100px">
+          <el-option v-for="type in DatePickerType" :key="type" :value="type" ></el-option>
+          <!--        <el-option label="year" value="year"></el-option>-->
+          <!--        <el-option label="month" value="month"></el-option>-->
+          <!--        <el-option label="day" value="day"></el-option>-->
+          <!--        <el-option label="week" value="week"></el-option>-->
+          <!--        <el-option label="dateTime" value="dateTime"></el-option>-->
+        </el-select>
+        <el-text size="large">Time Range</el-text>
+        <el-date-picker
+          v-model="searchParams.timeRange"
+          :type="searchParams.timeType"
+          placeholder=""
+        />
+      </div>
+      <div>
+        <el-text >Group</el-text>
+        <el-select v-model="searchParams.group" style="width: 100px;">
+          <el-option value="All">All</el-option>
+          <el-option value="Physics">Physics</el-option>
+          <el-option value="Wet">Wet</el-option>
+          <el-option value="Fiber">Fiber</el-option>
+          <el-option value="Flam">Flam</el-option>
+        </el-select>
+      </div>
+      <div>
+        <el-text >Status</el-text>
+        <el-select v-model="searchParams.status" style="width: 100px">
+          <el-option value="All">All</el-option>
+          <el-option value="In Lab">In Lab</el-option>
+        </el-select>
+      </div>
+      <div>
+        <el-text >Express</el-text>
+        <el-select v-model="searchParams.express" style="width: 100px">
+          <el-option value="All" >All</el-option>
+          <el-option value="Regular" >Regular</el-option>
+          <el-option value="Express" >Express</el-option>
+          <el-option value="Shuttle" >Shuttle</el-option>
+          <el-option value="Same Day">Same Day</el-option>
+        </el-select>
+      </div>
+      <div>
         <el-text>OrderEntry</el-text>
         <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
       </div>
@@ -192,6 +202,15 @@ const DatePickerType =[
 async function search() {
 
 }
+//时间格式化
+const formatTime = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')  // 月份从0开始，+1
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
 /* 生命周期函数------------------------------------------------------------------------------------- */
 /* watch------------------------------------------------------------------------------------------ */
 </script>
@@ -200,8 +219,21 @@ async function search() {
 .removeTableGaps :deep(table){
   margin-bottom: 0 !important;
 }
-/*查询条件各项间距*/
-.searchGap{
-  margin-left: 9px;
+/*查询条件主要容器*/
+.mainSelectContainer{
+  display: flex;
+  gap: 5px ;
+  margin-bottom: 30px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+/*查询条件中各项间距*/
+.mainSelectContainer > div{
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 </style>
