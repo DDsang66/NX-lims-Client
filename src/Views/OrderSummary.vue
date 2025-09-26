@@ -95,7 +95,11 @@
       <el-table-column prop="reportNum" label="ReportNo."  :formatter="funcs.emptyDisplay"/>
       <el-table-column prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
       <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay"/>
-      <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay">
+      <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay"/>
+      <el-table-column label="Operations" width="120">
+        <template #default="scope">
+          <el-button link type="primary"  @click="openEdit(scope.row)" >Edit</el-button>
+        </template>
       </el-table-column>
     </el-table>
 <!--    全展示单-->
@@ -137,6 +141,100 @@
       pager-count="12"
     />
   </div>
+<!--编辑框-->
+  <el-dialog
+    top="5vh"
+    v-model="editDialogOpen"
+    title="Edit"
+    width="50%"
+    :before-close="editDialogBeforeClose"
+  >
+    <el-form  :model="editForm" label-width="80px">
+      <el-descriptions :column="2" border>
+        <!-- Report 基本信息 -->
+        <el-descriptions-item label="Report No.">
+          {{ editForm.reportNum }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Order Entry">
+          <el-input v-model="editForm.orderEntry" />
+        </el-descriptions-item>
+        <el-descriptions-item label="CS">
+          <el-input v-model="editForm.cs" />
+        </el-descriptions-item>
+        <el-descriptions-item label="Test Groups">
+          <el-input v-model="editForm.testGroups" />
+        </el-descriptions-item>
+        <el-descriptions-item label="Status">
+          <el-input v-model="editForm.status" />
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <!-- 多个 Group 的编辑 -->
+      <b>Groups</b>
+      <div v-for="(group, index) in editForm.groups" :key="index" style="margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px;">
+        <el-descriptions :column="2" size="small" border>
+          <el-descriptions-item label="Group">
+            {{ group.group }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Lab-In">
+            <el-date-picker
+              v-model="group.labIn"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              placeholder="选择时间"
+            />
+          </el-descriptions-item>
+          <el-descriptions-item label="Due Date">
+            <el-date-picker
+              v-model="group.dueDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+            />
+          </el-descriptions-item>
+          <el-descriptions-item label="Express">
+            <el-input v-model="group.express" />
+          </el-descriptions-item>
+          <el-descriptions-item label="Test Sample Num">
+            <el-input v-model="group.testSampleNum" />
+          </el-descriptions-item>
+          <el-descriptions-item label="Test Item Num">
+            <el-input v-model="group.testItemNum" />
+          </el-descriptions-item>
+          <el-descriptions-item label="Reviewer">
+            <el-input v-model="group.Reviewer" />
+          </el-descriptions-item>
+          <el-descriptions-item label="Review Finish">
+            <el-date-picker
+              v-model="group.reviewFinish"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+            />
+          </el-descriptions-item>
+          <el-descriptions-item label="Lab Out">
+            <el-date-picker
+              v-model="group.labOut"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="选择日期"
+            />
+          </el-descriptions-item>
+          <el-descriptions-item label="Remark">
+            <el-input v-model="group.remark" type="textarea" :rows="2" />
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="editDialogOpen = false">Cancel</el-button>
+        <el-button type="primary" @click="editDialogOpen = false">
+          Confirm
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
   <Footer />
 </template>
 
@@ -146,6 +244,10 @@ import Footer from "@/components/Layout/Footer.vue";
 import {inject, onMounted, reactive, ref} from "vue";
 
 /* Data------------------------------------------------------------------------------------------- */
+const request=inject('request')
+
+var editForm={}
+var editDialogOpen=ref(false)
 //表格数据
 const reportList=ref([
   {
@@ -243,6 +345,14 @@ const DatePickerType =[
 //小表格的ref
 const innerTableRef=ref(null)
 /* function--------------------------------------------------------------------------------------- */
+function editDialogBeforeClose(){
+
+}
+//打开编辑框
+function openEdit(row){
+  editForm=JSON.parse(JSON.stringify(row))
+  editDialogOpen.value=true
+}
 function timeTypeChange(){
   searchParams.timeRange=''
 }
@@ -254,7 +364,10 @@ function handleSizeChange(){
   search()
 }
 async function search() {
-
+  let req=await request.post('/order/ordersummary',{QueryParam:searchParams,PageSize:pageSize.value,PageNum:currentPage.value})
+  if (req.data.success){
+    reportList.value=req.data.data
+  }
 }
 //时间格式化
 const formatTime = (date) => {
@@ -296,5 +409,8 @@ onMounted(()=>{
 /* 让所有 el-table 的单元格内容居中 */
 .el-table :deep(.cell) {
   text-align: center;
+}
+button:focus {
+  outline: none;
 }
 </style>
