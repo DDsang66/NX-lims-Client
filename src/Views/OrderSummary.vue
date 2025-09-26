@@ -1,6 +1,7 @@
 <template>
   <Header />
-  <div class="container-fluid" style="padding:3%;margin-left: auto ;display: flex;flex-direction: column;align-items: center">
+  <div class="container-fluid" style="padding:3%;margin-left: auto ;
+  display: flex;flex-direction: column;align-items: center;gap: 20px">
     <div class="mainSelectContainer">
       <div>
         <el-text size="large">ReportNo.</el-text>
@@ -16,7 +17,7 @@
           <el-option value="labIn">LabIn</el-option>
         </el-select>
         <el-text size="large" >TimeType</el-text>
-        <el-select v-model="searchParams.timeType" style="width: 100px">
+        <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange">
           <el-option v-for="type in DatePickerType" :key="type" :value="type" ></el-option>
           <!--        <el-option label="year" value="year"></el-option>-->
           <!--        <el-option label="month" value="month"></el-option>-->
@@ -63,42 +64,77 @@
         <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
       </div>
     </div>
-    <el-table class="removeTableGaps" :data="reportList" style="width:100%;" height="600px" default-sort="{ prop: 'reportNum', order: 'descending' }">
+    <el-table class="removeTableGaps"
+              :data="reportList"
+              border
+              style="width:100%;" height="600px"
+              v-if="searchParams.group==='All'">
       <el-table-column type="expand">
         <template #default="props">
-          <div style="margin-left: 50px">
-            <el-table :data="props.row.groups">
-              <el-table-column label="group" prop="group" width="100"/>
-              <el-table-column label="Lab-In" width="100">
+          <div style="margin-left: 50px;">
+            <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
+              <el-table-column label="group" prop="group" :formatter="funcs.emptyDisplay"/>
+              <el-table-column label="Lab-In" >
                 <template #default="scope">
-                  {{formatTime(new Date(scope.row.labIn))}}
+                  {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
                 </template>
               </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" width="100"/>
-              <el-table-column prop="express" label="Express" width="90"/>
-              <el-table-column prop="remark" label="Remark" width="300"/>
-              <el-table-column prop="status" label="Status" width="100"></el-table-column>
+              <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="testSampleNum" label="TestSampleNum" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
             </el-table>
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo."  />
-      <el-table-column prop="orderEntry" label="OrderEntry" />
-      <el-table-column prop="cs" label="CS" />
-      <el-table-column prop="testGroups" label="Groups" >
+      <el-table-column prop="reportNum" label="ReportNo."  :formatter="funcs.emptyDisplay"/>
+      <el-table-column prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
+      <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay"/>
+      <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay">
       </el-table-column>
     </el-table>
+<!--    全展示单-->
+    <el-table class="removeTableGaps"
+              :data="reportList"
+              border
+              style="width:100%;" height="600px"
+              v-if="searchParams.group!=='All'">
+      <el-table-column fixed width="160" prop="reportNum" label="ReportNo."  :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="120" prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="200" prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" label="group" prop="group" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="150" label="Lab-In" >
+        <template #default="scope">
+          {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
+        </template>
+      </el-table-column>
+      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="express" label="Express"  :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="testSampleNum" label="TestSampleNum" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="120" prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="300" prop="remark" label="Remark"  :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
+    </el-table>
     <el-pagination
-      v-model:current-page="currentPage4"
-      v-model:page-size="pageSize4"
-      :page-sizes="[100, 200, 300, 400]"
-      :size="size"
-      :disabled="disabled"
-      :background="background"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="400"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :page-sizes="[10, 20, 30, 40]"
+      size="large"
+      background
+      layout="total, sizes, pager, jumper"
+      :total="total"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
+      pager-count="12"
     />
   </div>
   <Footer />
@@ -107,7 +143,7 @@
 <script setup>
 import Header from "@/components/Layout/Header.vue";
 import Footer from "@/components/Layout/Footer.vue";
-import {reactive, ref} from "vue";
+import {inject, onMounted, reactive, ref} from "vue";
 
 /* Data------------------------------------------------------------------------------------------- */
 //表格数据
@@ -174,6 +210,7 @@ const reportList=ref([
     ]
   }
 ])
+const funcs=inject('funcs')
 const searchParams=reactive({
   reportNum: "",
   timeType: "month",
@@ -182,8 +219,13 @@ const searchParams=reactive({
   status: "All",
   timeOpt: "All",
   express: "All",
-  orderEntry: ""
+  orderEntry: "",
 })
+//分页数据
+const currentPage=ref(1)
+const pageSize=ref(10)
+//总数
+const total=ref(100)
 const DatePickerType =[
   'year',
   'years',
@@ -198,7 +240,19 @@ const DatePickerType =[
   'monthrange',
   'yearrange',
 ]
+//小表格的ref
+const innerTableRef=ref(null)
 /* function--------------------------------------------------------------------------------------- */
+function timeTypeChange(){
+  searchParams.timeRange=''
+}
+//分页函数
+function handleCurrentChange(){
+  search()
+}
+function handleSizeChange(){
+  search()
+}
 async function search() {
 
 }
@@ -212,6 +266,9 @@ const formatTime = (date) => {
   return `${year}-${month}-${day} ${hour}:${minute}`
 }
 /* 生命周期函数------------------------------------------------------------------------------------- */
+onMounted(()=>{
+  search()
+})
 /* watch------------------------------------------------------------------------------------------ */
 </script>
 <style scoped>
@@ -222,18 +279,22 @@ const formatTime = (date) => {
 /*查询条件主要容器*/
 .mainSelectContainer{
   display: flex;
-  gap: 5px ;
-  margin-bottom: 30px;
+  gap: 15px ;
   width: 100%;
   align-items: center;
-  justify-content: center;
   flex-shrink: 0;
   flex-wrap: wrap;
+  border: 1px solid #ebeef5;
+  padding: 10px;
 }
 /*查询条件中各项间距*/
 .mainSelectContainer > div{
   display: flex;
   align-items: center;
   gap: 5px;
+}
+/* 让所有 el-table 的单元格内容居中 */
+.el-table :deep(.cell) {
+  text-align: center;
 }
 </style>

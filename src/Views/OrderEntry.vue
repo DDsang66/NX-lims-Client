@@ -125,7 +125,7 @@
         </div>
         </div>
         <div class="col-xl-7">
-          <el-table class="removeTableGaps removeTableBorder" :data="todayReport"  max-height="626px">
+          <el-table class="removeTableGaps removeTableBorder" :data="todayReport"  max-height="626px" border>
             <el-table-column type="expand">
               <template #default="props">
                 <div style="margin-left: 50px">
@@ -144,10 +144,10 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="reportNum" label="ReportNo." width="200" />
-            <el-table-column prop="orderEntry" label="OrderEntry" width="200"/>
-            <el-table-column prop="cs" label="CS" width="200"/>
-            <el-table-column prop="testGroups" label="Groups" width="200">
+            <el-table-column prop="reportNum" label="ReportNo." />
+            <el-table-column prop="orderEntry" label="OrderEntry" />
+            <el-table-column prop="cs" label="CS" />
+            <el-table-column prop="testGroups" label="Groups" >
             </el-table-column>
           </el-table>
         </div>

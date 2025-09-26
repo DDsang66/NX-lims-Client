@@ -18,6 +18,7 @@ import router from './router';
 import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
 import request from "@/utils/request.js";
+import globalFunctions from "@/utils/globalFunctions.js";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -30,7 +31,7 @@ const auth = userAuthStore()
 app.provide('userAuthStore',auth)
 app.provide('request',request)
 auth.init()
-
+app.provide('funcs',globalFunctions)
 app.mount('#mycontent');
 
 
