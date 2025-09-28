@@ -15,6 +15,8 @@
           <el-option value="anyOne">AnyOne</el-option>
           <el-option value="dueDate">DueDate</el-option>
           <el-option value="labIn">LabIn</el-option>
+          <el-option value="ReviewFinish">ReviewFinish</el-option>
+          <el-option value="LabOut">LabOut</el-option>
         </el-select>
         <el-text size="large" >TimeType</el-text>
         <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange">
@@ -34,7 +36,7 @@
       </div>
       <div>
         <el-text >Group</el-text>
-        <el-select v-model="searchParams.group" style="width: 100px;">
+        <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange">
           <el-option value="All">All</el-option>
           <el-option value="Physics">Physics</el-option>
           <el-option value="Wet">Wet</el-option>
@@ -44,14 +46,16 @@
       </div>
       <div>
         <el-text >Status</el-text>
-        <el-select v-model="searchParams.status" style="width: 100px">
+        <el-select v-model="searchParams.status" style="width: 150px" @change="search">
           <el-option value="All">All</el-option>
           <el-option value="In Lab">In Lab</el-option>
+          <el-option value="Review Finished">Review Finished</el-option>
+          <el-option value="Test Done">Test Done</el-option>
         </el-select>
       </div>
       <div>
         <el-text >Express</el-text>
-        <el-select v-model="searchParams.express" style="width: 100px">
+        <el-select v-model="searchParams.express" style="width: 100px" @change="search">
           <el-option value="All" >All</el-option>
           <el-option value="Regular" >Regular</el-option>
           <el-option value="Express" >Express</el-option>
@@ -81,7 +85,7 @@
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay"/>
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay"/>
-              <el-table-column prop="testSampleNum" label="TestSampleNum" :formatter="funcs.emptyDisplay"/>
+              <el-table-column prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay"/>
               <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay"/>
               <el-table-column prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay"/>
               <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay"/>
@@ -96,6 +100,11 @@
       <el-table-column prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
       <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay"/>
       <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay"/>
+      <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
+        <template #default="scope">
+          {{getExpresses(scope.row)}}
+        </template>
+      </el-table-column>
       <el-table-column label="Operations" width="120">
         <template #default="scope">
           <el-button link type="primary"  @click="openEdit(scope.row)" >Edit</el-button>
@@ -104,15 +113,14 @@
     </el-table>
 <!--    全展示单-->
     <el-table class="removeTableGaps"
-              :data="reportList"
+              :data="reportGroupList"
               border
               style="width:100%;" height="600px"
               v-if="searchParams.group!=='All'">
       <el-table-column fixed width="160" prop="reportNum" label="ReportNo."  :formatter="funcs.emptyDisplay"/>
-      <el-table-column width="120" prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="140" prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay"/>
-      <el-table-column width="200" prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay"/>
-      <el-table-column width="100" label="group" prop="group" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" label="group" prop="testGroup" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="150" label="Lab-In" >
         <template #default="scope">
           {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -120,13 +128,18 @@
       </el-table-column>
       <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="100" prop="express" label="Express"  :formatter="funcs.emptyDisplay"/>
-      <el-table-column width="100" prop="testSampleNum" label="TestSampleNum" :formatter="funcs.emptyDisplay"/>
+      <el-table-column width="100" prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="120" prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay"/>
       <el-table-column width="300" prop="remark" label="Remark"  :formatter="funcs.emptyDisplay"/>
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
+      <el-table-column label="Operations" width="120" fixed="right">
+        <template #default="scope">
+          <el-button link type="primary"  @click="openEdit(scope.row)" >Edit</el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <el-pagination
       v-model:current-page="currentPage"
@@ -147,31 +160,28 @@
     v-model="editDialogOpen"
     title="Edit"
     width="50%"
-    :before-close="editDialogBeforeClose"
+    :before-close="editBeforeClose"
   >
-    <el-form  :model="editForm" label-width="80px">
+    <el-form v-if="searchParams.group==='All'">
       <el-descriptions :column="2" border>
         <!-- Report 基本信息 -->
         <el-descriptions-item label="Report No.">
-          {{ editForm.reportNum }}
+          {{ reportEdit.reportNum }}
         </el-descriptions-item>
         <el-descriptions-item label="Order Entry">
-          <el-input v-model="editForm.orderEntry" />
+          {{reportEdit.orderEntry}}
         </el-descriptions-item>
         <el-descriptions-item label="CS">
-          <el-input v-model="editForm.cs" />
+          {{reportEdit.cs}}
         </el-descriptions-item>
         <el-descriptions-item label="Test Groups">
-          <el-input v-model="editForm.testGroups" />
-        </el-descriptions-item>
-        <el-descriptions-item label="Status">
-          <el-input v-model="editForm.status" />
+          {{reportEdit.testGroups}}
         </el-descriptions-item>
       </el-descriptions>
 
       <!-- 多个 Group 的编辑 -->
       <b>Groups</b>
-      <div v-for="(group, index) in editForm.groups" :key="index" style="margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px;">
+      <div v-for="(group, index) in reportEdit.groups" :key="index" style="margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px;">
         <el-descriptions :column="2" size="small" border>
           <el-descriptions-item label="Group">
             {{ group.group }}
@@ -193,9 +203,14 @@
             />
           </el-descriptions-item>
           <el-descriptions-item label="Express">
-            <el-input v-model="group.express" />
+            <el-select  v-model="group.express" filterable placeholder="">
+              <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
+              <el-option value="Express" :disabled="expressDisable">Express</el-option>
+              <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
+              <el-option value="Same Day">Same Day</el-option>
+            </el-select>
           </el-descriptions-item>
-          <el-descriptions-item label="Test Sample Num">
+          <el-descriptions-item label="No. of test">
             <el-input v-model="group.testSampleNum" />
           </el-descriptions-item>
           <el-descriptions-item label="Test Item Num">
@@ -207,17 +222,17 @@
           <el-descriptions-item label="Review Finish">
             <el-date-picker
               v-model="group.reviewFinish"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="选择日期"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              placeholder=""
             />
           </el-descriptions-item>
           <el-descriptions-item label="Lab Out">
             <el-date-picker
               v-model="group.labOut"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="选择日期"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              placeholder=""
             />
           </el-descriptions-item>
           <el-descriptions-item label="Remark">
@@ -226,10 +241,112 @@
         </el-descriptions>
       </div>
     </el-form>
+    <el-form v-if="searchParams.group !== 'All'">
+      <!--        无嵌套-->
+      <el-descriptions :column="2" border>
+        <!-- ReportNo. -->
+        <el-descriptions-item label="ReportNo.">
+          <el-input v-model="reportGroupEdit.reportNum" />
+        </el-descriptions-item>
+
+        <!-- OrderEntry -->
+        <el-descriptions-item label="OrderEntry">
+          <el-input v-model="reportGroupEdit.orderEntry" />
+        </el-descriptions-item>
+
+        <!-- CS -->
+        <el-descriptions-item label="CS">
+          <el-input v-model="reportGroupEdit.cs" />
+        </el-descriptions-item>
+
+        <!-- Groups -->
+        <el-descriptions-item label="Groups">
+          <el-input v-model="reportGroupEdit.testGroups" />
+        </el-descriptions-item>
+
+        <!-- Group -->
+        <el-descriptions-item label="Group">
+          <el-input v-model="reportGroupEdit.group" />
+        </el-descriptions-item>
+
+        <!-- Lab-In -->
+        <el-descriptions-item label="Lab-In">
+          <el-date-picker
+            v-model="reportGroupEdit.labIn"
+            type="datetime"
+            placeholder=""
+            style="width: 100%"
+          >
+          </el-date-picker>
+        </el-descriptions-item>
+
+        <!-- Due-Date -->
+        <el-descriptions-item label="Due-Date">
+          <el-input v-model="reportGroupEdit.dueDate" />
+        </el-descriptions-item>
+
+        <!-- Express -->
+        <el-descriptions-item label="Express">
+          <el-select v-model="reportGroupEdit.express" filterable placeholder="">
+            <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
+            <el-option value="Express" :disabled="expressDisable">Express</el-option>
+            <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
+            <el-option value="Same Day">Same Day</el-option>
+          </el-select>
+        </el-descriptions-item>
+
+        <!-- TestSampleNum -->
+        <el-descriptions-item label="No. of test">
+          <el-input v-model="reportGroupEdit.testSampleNum" />
+        </el-descriptions-item>
+
+        <!-- TestItemNum -->
+        <el-descriptions-item label="TestItemNum">
+          <el-input v-model="reportGroupEdit.testItemNum" />
+        </el-descriptions-item>
+
+        <!-- Reviewer -->
+        <el-descriptions-item label="Reviewer">
+          <el-input v-model="reportGroupEdit.Reviewer" />
+        </el-descriptions-item>
+
+        <!-- ReviewFinish -->
+        <el-descriptions-item label="ReviewFinish">
+          <el-date-picker
+            v-model="reportGroupEdit.reviewFinish"
+            type="datetime"
+            placeholder=""
+            style="width: 100%"
+          >
+          </el-date-picker>
+        </el-descriptions-item>
+
+        <!-- LabOut -->
+        <el-descriptions-item label="LabOut">
+          <el-date-picker
+            v-model="reportGroupEdit.labOut"
+            type="datetime"
+            placeholder=""
+            style="width: 100%"
+          >
+          </el-date-picker>
+        </el-descriptions-item>
+
+        <!-- Status -->
+        <el-descriptions-item label="Status">
+          <el-input v-model="reportGroupEdit.status" />
+        </el-descriptions-item>
+
+        <!-- Remark -->
+        <el-descriptions-item label="Remark" :span="2">
+          <el-input v-model="reportGroupEdit.remark" type="textarea" :rows="3" />
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-form>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="editDialogOpen = false">Cancel</el-button>
-        <el-button type="primary" @click="editDialogOpen = false">
+        <el-button type="primary" @click="editDialogConfirm">
           Confirm
         </el-button>
       </div>
@@ -246,72 +363,12 @@ import {inject, onMounted, reactive, ref} from "vue";
 /* Data------------------------------------------------------------------------------------------- */
 const request=inject('request')
 
-var editForm={}
+var reportEdit=ref({})
+var reportGroupEdit=ref({})
 var editDialogOpen=ref(false)
 //表格数据
-const reportList=ref([
-  {
-    "reportNum": "87.405.25.10001.01",
-    "orderEntry": "GuangXv,Chen",
-    "cs": "TestCS",
-    "testGroups": "Physics,Wet,Fiber",
-    "groups": [
-      {
-        "recodeId": 1971026855154679800,
-        "express": "Express",
-        "group": "Physics",
-        "remark": "测试时间",
-        "labIn": "2025-09-25 09:39:32",
-        "dueDate": "2025-09-28",
-        "status": "In Lab"
-      },
-      {
-        "recodeId": 1971026855578304500,
-        "express": "Express",
-        "group": "Wet",
-        "remark": "测试时间",
-        "labIn": "2025-09-25 09:39:32",
-        "dueDate": "2025-09-28",
-        "status": "In Lab"
-      },
-      {
-        "recodeId": 1971026855657996300,
-        "express": "Express",
-        "group": "Fiber",
-        "remark": "测试时间",
-        "labIn": "2025-09-25 09:39:32",
-        "dueDate": "2025-09-28",
-        "status": "In Lab"
-      }
-    ]
-  },
-  {
-    "reportNum": "87.405.25.10002.01",
-    "orderEntry": "GuangXv,Chen",
-    "cs": "TestCS",
-    "testGroups": "Fiber,Physics",
-    "groups": [
-      {
-        "recodeId": 1971027002634797000,
-        "express": "Same Day",
-        "group": "Fiber",
-        "remark": "测试时间",
-        "labIn": "2025-09-25 09:40:00",
-        "dueDate": "2025-09-26",
-        "status": "In Lab"
-      },
-      {
-        "recodeId": 1971027002731266000,
-        "express": "Same Day",
-        "group": "Physics",
-        "remark": "测试时间",
-        "labIn": "2025-09-25 09:40:00",
-        "dueDate": "2025-09-26",
-        "status": "In Lab"
-      }
-    ]
-  }
-])
+const reportList=ref([])
+const reportGroupList=ref([])
 const funcs=inject('funcs')
 const searchParams=reactive({
   reportNum: "",
@@ -345,12 +402,32 @@ const DatePickerType =[
 //小表格的ref
 const innerTableRef=ref(null)
 /* function--------------------------------------------------------------------------------------- */
-function editDialogBeforeClose(){
-
+function getExpresses(row){
+  let expresses=new Set()
+  for (const group of row.groups){
+    expresses.add(group.express)
+  }
+  let expressesString=''
+  expresses.forEach(express=>{
+    expressesString+=express+' '
+  })
+  return expressesString.trim()
+}
+function searchGroupChange(){
+  search()
+}
+function editBeforeClose(){
+  editDialogOpen.value=false
+}
+function editDialogConfirm(){
+  editDialogOpen.value=false
 }
 //打开编辑框
 function openEdit(row){
-  editForm=JSON.parse(JSON.stringify(row))
+  if(searchParams.group==='All')
+  reportEdit.value=JSON.parse(JSON.stringify(row))
+  else
+    reportGroupList.value=JSON.parse(JSON.stringify(row))
   editDialogOpen.value=true
 }
 function timeTypeChange(){
@@ -366,7 +443,11 @@ function handleSizeChange(){
 async function search() {
   let req=await request.post('/order/ordersummary',{QueryParam:searchParams,PageSize:pageSize.value,PageNum:currentPage.value})
   if (req.data.success){
-    reportList.value=req.data.data
+    if(searchParams.group==='All')
+    reportList.value=req.data.data.items
+    else
+      reportGroupList.value=req.data.data.items
+    total.value=req.data.data.totalCount
   }
 }
 //时间格式化
