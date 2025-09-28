@@ -402,16 +402,13 @@ const DatePickerType =[
 //小表格的ref
 const innerTableRef=ref(null)
 /* function--------------------------------------------------------------------------------------- */
-function getExpresses(row){
-  let expresses=new Set()
-  for (const group of row.groups){
+function getExpresses(row) {
+  let expresses = new Set()
+  for (const group of row.groups) {
     expresses.add(group.express)
   }
-  let expressesString=''
-  expresses.forEach(express=>{
-    expressesString+=express+' '
-  })
-  return expressesString.trim()
+
+  return [...expresses].join(',')
 }
 function searchGroupChange(){
   search()
