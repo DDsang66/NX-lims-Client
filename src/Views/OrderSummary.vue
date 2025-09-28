@@ -425,9 +425,9 @@ function editDialogConfirm(){
 //打开编辑框
 function openEdit(row){
   if(searchParams.group==='All')
-  reportEdit.value=JSON.parse(JSON.stringify(row))
+    reportEdit.value=JSON.parse(JSON.stringify(row))
   else
-    reportGroupList.value=JSON.parse(JSON.stringify(row))
+    reportGroupEdit.value=JSON.parse(JSON.stringify(row))
   editDialogOpen.value=true
 }
 function timeTypeChange(){
