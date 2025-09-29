@@ -401,7 +401,7 @@ var reportEdit=ref({})
   var reportGroupEdit = ref({})
   var editDialogOpen = ref(false)
   //删除
-  const reportGroupDelete = ref < { recordId: number } > ({ recordId: 0 })  /* 当前行数据（来自 scope.row） */
+  const reportGroupDelete = ref < { recordId: string } > ({ recordId: '' })  /* 当前行数据（来自 scope.row） */
   const reason = ref('')  /* 删除理由 */
   var deleteDialogOpen = ref(false)
 //表格数据
@@ -470,7 +470,7 @@ function openEdit(row){
 }
   /* delete--------------------------------------------------------------------------------------- */
   //点击删除按钮
-  function openDelete(row:{ recordId: number }) {
+  function openDelete(row:{ recordId: string }) {
     reportGroupEdit.value = row
     reason.value = ''
     deleteDialogOpen.value = true
@@ -491,13 +491,11 @@ function openEdit(row){
       userId: authStore.id
     }
     console.log(dto)
-    let req = await request.post('/order/ordersummary', dto)
+    let req = await request.post('/order/delete', dto)
     if (req.data.success) {
-      if (searchParams.group === 'All') {
-        ElMessage.success('Deleted successfully')
-        deleteDialogOpen.value = false
-        search()
-      }
+      ElMessage.success('Deleted successfully')
+      deleteDialogOpen.value = false
+      search()
     }
   }
   /* delete--------------------------------------------------------------------------------------- */
