@@ -124,7 +124,7 @@
               border
               style="width:100%;" height="600px"
               v-if="searchParams.group!=='All'">
-      <!--这里是订单id埋点，scope.row.recordId读取-->
+      <!--订单id埋点，scope.row.recordId读取-->
       <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
       <el-table-column width="140" prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
@@ -173,7 +173,7 @@
       <el-descriptions :column="2" border>
         <!-- 订单id-->
         <el-descriptions-item label="RecordId.">
-          <el-input v-model="reportGroupEdit.recordId" readonly />
+          <el-input v-model="reportGroupDelete.recordId" readonly />
         </el-descriptions-item>
         <!--申请人，应该直接取store中的User-->
         <el-descriptions-item label="Applicant">
@@ -270,7 +270,7 @@
             <el-date-picker v-model="group.labOut"
                             type="datetime"
                             value-format="YYYY-MM-DD HH:mm:ss"
-                            placeholder="" />
+                            placeholder=""/>
           </el-descriptions-item>
           <el-descriptions-item label="Remark">
             <el-input v-model="group.remark" type="textarea" :rows="2" />
@@ -388,90 +388,138 @@
 </template>
 
 <script setup lang="ts">
-import Header from "@/components/Layout/Header.vue";
-import Footer from "@/components/Layout/Footer.vue";
-import { inject, onMounted, reactive, ref } from "vue";
+  import Header from "@/components/Layout/Header.vue";
+  import Footer from "@/components/Layout/Footer.vue";
+  import { inject, onMounted, reactive, ref } from "vue";
+  import globalFunctions from '@/utils/globalFunctions';
   import { ElMessage } from 'element-plus'
 
-/* Data------------------------------------------------------------------------------------------- */
+  /* Data------------------------------------------------------------------------------------------- */
   const request = inject('request')
   const authStore = inject('userAuthStore')
-//编辑
-var reportEdit=ref({})
+  //编辑
+  var reportEdit = ref({})
   var reportGroupEdit = ref({})
   var editDialogOpen = ref(false)
   //删除
-  const reportGroupDelete = ref < { recordId: string } > ({ recordId: '' })  /* 当前行数据（来自 scope.row） */
+  const reportGroupDelete = ref<{ recordId: string }>({ recordId: '' })  /* 当前行数据（来自 scope.row） */
   const reason = ref('')  /* 删除理由 */
   var deleteDialogOpen = ref(false)
-//表格数据
-const reportList=ref([])
-const reportGroupList=ref([])
-const funcs=inject('funcs')
+  //表格数据
+  const reportList = ref([])
+  const reportGroupList = ref([])
+  const funcs = inject('funcs')
   const searchParams = reactive({
-  recordId: "",
-  reportNum: "",
-  timeType: "month",
-  timeRange: '',
-  group: "All",
-  status: "All",
-  timeOpt: "All",
-  express: "All",
-  orderEntry: "",
-})
-//分页数据
-const currentPage=ref(1)
-const pageSize=ref(10)
-//总数
-const total=ref(100)
-const DatePickerType =[
-  'year',
-  'years',
-  'month',
-  'months',
-  'date',
-  'dates',
-  'week',
-  'datetime',
-  'datetimerange',
-  'daterange',
-  'monthrange',
-  'yearrange',
-]
-//小表格的ref
-const innerTableRef=ref(null)
-/* function--------------------------------------------------------------------------------------- */
-function getExpresses(row) {
-  let expresses = new Set()
-  for (const group of row.groups) {
-    expresses.add(group.express)
-  }
+    recordId: "",
+    reportNum: "",
+    timeType: "month",
+    timeRange: '',
+    group: "All",
+    status: "All",
+    timeOpt: "All",
+    express: "All",
+    orderEntry: "",
+  })
+  //分页数据
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  //总数
+  const total = ref(100)
+  const DatePickerType = [
+    'year',
+    'years',
+    'month',
+    'months',
+    'date',
+    'dates',
+    'week',
+    'datetime',
+    'datetimerange',
+    'daterange',
+    'monthrange',
+    'yearrange',
+  ]
+  //小表格的ref
+  const innerTableRef = ref(null)
+  /* function--------------------------------------------------------------------------------------- */
 
-  return [...expresses].join(',')
-}
-function searchGroupChange(){
-  search()
-}
+  function getExpresses(row) {
+    let expresses = new Set()
+    for (const group of row.groups) {
+      expresses.add(group.express)
+    }
+
+    return [...expresses].join(',')
+  }
+  function searchGroupChange() {
+    search()
+  }
+  /* edit--------------------------------------------------------------------------------------- */
+  //打开编辑框
+  function openEdit(row) {
+    if (searchParams.group === 'All')
+      reportEdit.value = JSON.parse(JSON.stringify(row))
+    else
+      reportGroupEdit.value = JSON.parse(JSON.stringify(row))
+    editDialogOpen.value = true
+  }
 
   function editBeforeClose() {
     editDialogOpen.value = false
   }
-  function editDialogConfirm() {
-    editDialogOpen.value = false
+
+  async function editDialogConfirm() {
+    let dto: OrderUpdateDto
+
+    if (searchParams.group === 'All') {
+      // 嵌套场景：一个 Report 里可能有多条 group
+      const rows = (reportEdit.value.groups || []).map(groupToOrderUpdate)
+      dto = buildOrderUpdateDto(rows)
+    } else {
+      // 扁平场景：当前就是单条
+      dto = buildOrderUpdateDto([groupToOrderUpdate(reportGroupEdit.value)])
+    }
+    console.log(dto)
+    try {
+      await request.post('/order/update', dto)
+      ElMessage.success('Update success')
+      editDialogOpen.value = false
+      // 刷新表格
+      await search()
+    } catch (e) {
+      ElMessage.error('Update failed')
+    }
+  }
+  //转化数据
+  // 把单个 group 对象映射成 OrderUpdate
+  function groupToOrderUpdate(g: any): OrderUpdate {
+    return {
+      recordId: String(g.recordId ?? g.id),
+      reviewer: g.Reviewer || null,
+      testEngineer: g.testEngineer || null,
+      status: g.status ?? null,
+      testGroup: g.group || g.testGroup || null,
+      testSampleNum: g.testSampleNum ?? 0,
+      testItemNum: g.testItemNum ?? 0,
+      remark: g.remark || null,
+      express: g.express || null,
+      reportDueDate: g.dueDate ? new Date(g.dueDate).toISOString() : null,
+      orderInTime: g.labIn ? new Date(g.labIn).toISOString() : null,
+      reviewFinishTime: g.reviewFinish ? new Date(g.reviewFinish).toISOString() : null,
+      labOutTime: g.labOut ? new Date(g.labOut).toISOString() : null
+    }
   }
 
-//打开编辑框
-function openEdit(row){
-  if(searchParams.group==='All')
-    reportEdit.value=JSON.parse(JSON.stringify(row))
-  else
-    reportGroupEdit.value=JSON.parse(JSON.stringify(row))
-  editDialogOpen.value=true
-}
+  // 构造最终 DTO
+  function buildOrderUpdateDto(list: OrderUpdate[]): OrderUpdateDto {
+    return { rows: list }
+  }
+  /* edit--------------------------------------------------------------------------------------- */
+
   /* delete--------------------------------------------------------------------------------------- */
   //点击删除按钮
-  function openDelete(row:{ recordId: string }) {
-    reportGroupEdit.value = row
+  function openDelete(row: { recordId: string }) {
+    reportGroupDelete.value = row
     reason.value = ''
     deleteDialogOpen.value = true
   }
@@ -487,7 +535,7 @@ function openEdit(row){
       return
     }
     const dto = {
-      items: [{ recordId: reportGroupEdit.value.recordId, reason: reason.value }],
+      items: [{ recordId: reportGroupDelete.value.recordId, reason: reason.value }],
       userId: authStore.id
     }
     console.log(dto)
@@ -497,43 +545,46 @@ function openEdit(row){
       deleteDialogOpen.value = false
       search()
     }
+    else {
+      ElMessage.error('Delete failed')
+    }
   }
   /* delete--------------------------------------------------------------------------------------- */
 
-function timeTypeChange(){
-  searchParams.timeRange=''
-}
-//分页函数
-function handleCurrentChange(){
-  search()
-}
-function handleSizeChange(){
-  search()
-}
-async function search() {
-  let req=await request.post('/order/ordersummary',{QueryParam:searchParams,PageSize:pageSize.value,PageNum:currentPage.value})
-  if (req.data.success){
-    if(searchParams.group==='All')
-    reportList.value=req.data.data.items
-    else
-      reportGroupList.value=req.data.data.items
-    total.value=req.data.data.totalCount
+  function timeTypeChange() {
+    searchParams.timeRange = ''
   }
-}
-//时间格式化
-const formatTime = (date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')  // 月份从0开始，+1
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}`
-}
-/* 生命周期函数------------------------------------------------------------------------------------- */
-onMounted(()=>{
-  search()
-})
-/* watch------------------------------------------------------------------------------------------ */
+  //分页函数
+  function handleCurrentChange() {
+    search()
+  }
+  function handleSizeChange() {
+    search()
+  }
+  async function search() {
+    let req = await request.post('/order/ordersummary', { QueryParam: searchParams, PageSize: pageSize.value, PageNum: currentPage.value })
+    if (req.data.success) {
+      if (searchParams.group === 'All')
+        reportList.value = req.data.data.items
+      else
+        reportGroupList.value = req.data.data.items
+      total.value = req.data.data.totalCount
+    }
+  }
+  //时间格式化
+  const formatTime = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')  // 月份从0开始，+1
+    const day = String(date.getDate()).padStart(2, '0')
+    const hour = String(date.getHours()).padStart(2, '0')
+    const minute = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hour}:${minute}`
+  }
+  /* 生命周期函数------------------------------------------------------------------------------------- */
+  onMounted(() => {
+    search()
+  })
+  /* watch------------------------------------------------------------------------------------------ */
 </script>
 <style scoped>
 /*去除表格标题和内容之间的空隙*/
