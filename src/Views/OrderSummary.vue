@@ -85,7 +85,7 @@
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
@@ -138,7 +138,7 @@
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="120" prop="Reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
