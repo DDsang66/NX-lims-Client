@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-  import { ref, defineProps, defineEmits,inject} from 'vue'
+  import { ref,inject} from 'vue'
 
 const request = inject('request')
 const emit = defineEmits(['submit', 'api-response', 'api-error'])

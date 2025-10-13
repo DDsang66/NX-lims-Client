@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-  import { defineProps, defineEmits, ref, watch,inject} from 'vue'
+  import { ref, watch,inject} from 'vue'
 
   const request= inject('request')
   // 定义接收的props

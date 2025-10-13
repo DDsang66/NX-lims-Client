@@ -527,7 +527,6 @@
 
 <script setup>
   import { ref, watch } from 'vue';
-  import { defineEmits } from 'vue';
 
   const selectedWashingProcedure = ref('');
   const selectedDryProcedure = ref('');
