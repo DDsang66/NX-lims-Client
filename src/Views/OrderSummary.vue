@@ -11,15 +11,14 @@
       <div>
         <el-text size="large">TimeOpt</el-text>
         <el-select v-model="searchParams.timeOpt" style="width: 100px">
-          <el-option value="all">All</el-option>
-          <el-option value="anyOne">AnyOne</el-option>
-          <el-option value="dueDate">DueDate</el-option>
-          <el-option value="labIn">LabIn</el-option>
-          <el-option value="ReviewFinish">ReviewFinish</el-option>
-          <el-option value="LabOut">LabOut</el-option>
+          <el-option value="default" label="Default">Default</el-option>
+          <el-option value="dueDate" label="DueDate">DueDate</el-option>
+          <el-option value="labIn" label="LabIn">LabIn</el-option>
+          <el-option value="ReviewFinish" label="ReviewFinish">ReviewFinish</el-option>
+          <el-option value="LabOut" label="LabOut">LabOut</el-option>
         </el-select>
         <el-text size="large">TimeType</el-text>
-        <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange">
+        <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange" :disabled="searchParams.timeOpt==='default'">
           <el-option v-for="type in DatePickerType" :key="type" :value="type"></el-option>
           <!--        <el-option label="year" value="year"></el-option>-->
           <!--        <el-option label="month" value="month"></el-option>-->
@@ -30,7 +29,8 @@
         <el-text size="large">Time Range</el-text>
         <el-date-picker v-model="searchParams.timeRange"
                         :type="searchParams.timeType"
-                        placeholder="" />
+                        placeholder=""
+                        :disabled="searchParams.timeOpt==='default'"/>
       </div>
       <div>
         <el-text>Group</el-text>
@@ -90,7 +90,7 @@
               <el-table-column prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column width="60" label="Delete">
+              <el-table-column width="70" label="Delete">
                 <template #default="scope">
                   <el-button type="danger"
                              text
@@ -229,7 +229,12 @@
                    @click="reportEdit.groups.splice(index, 1)">×</el-button>
         <el-descriptions :column="2" size="small" border>
           <el-descriptions-item label="Group">
-            {{ group.group }}
+            <el-select v-model="group.group" filterable placeholder="">
+              <el-option value="Physics">Physics</el-option>
+              <el-option value="Wet">Wet</el-option>
+              <el-option value="Fiber">Fiber</el-option>
+              <el-option value="Flam">Flam</el-option>
+            </el-select>
           </el-descriptions-item>
           <el-descriptions-item label="Lab-In">
             <el-date-picker v-model="group.labIn"
@@ -298,27 +303,35 @@
         </el-descriptions-item>
 
         <!-- Groups -->
-        <el-descriptions-item label="Groups">
-          <el-input v-model="reportGroupEdit.testGroups" />
-        </el-descriptions-item>
+<!--        <el-descriptions-item label="Groups">-->
+<!--          <el-input v-model="reportGroupEdit.testGroups" />-->
+<!--        </el-descriptions-item>-->
 
         <!-- Group -->
         <el-descriptions-item label="Group">
-          <el-input v-model="reportGroupEdit.group" />
+          <el-select v-model="reportGroupEdit.group" filterable placeholder="">
+            <el-option value="Physics">Physics</el-option>
+            <el-option value="Wet">Wet</el-option>
+            <el-option value="Fiber">Fiber</el-option>
+            <el-option value="Flam">Flam</el-option>
+          </el-select>
+
         </el-descriptions-item>
 
         <!-- Lab-In -->
         <el-descriptions-item label="Lab-In">
           <el-date-picker v-model="reportGroupEdit.labIn"
                           type="datetime"
-                          placeholder=""
-                          style="width: 100%">
+                          placeholder="">
           </el-date-picker>
         </el-descriptions-item>
 
         <!-- Due-Date -->
         <el-descriptions-item label="Due-Date">
-          <el-input v-model="reportGroupEdit.dueDate" />
+          <el-date-picker v-model="reportGroupEdit.dueDate"
+                          type="date"
+                          placeholder="">
+          </el-date-picker>
         </el-descriptions-item>
 
         <!-- Express -->
@@ -350,8 +363,7 @@
         <el-descriptions-item label="ReviewFinish">
           <el-date-picker v-model="reportGroupEdit.reviewFinish"
                           type="datetime"
-                          placeholder=""
-                          style="width: 100%">
+                          placeholder="">
           </el-date-picker>
         </el-descriptions-item>
 
@@ -359,8 +371,7 @@
         <el-descriptions-item label="LabOut">
           <el-date-picker v-model="reportGroupEdit.labOut"
                           type="datetime"
-                          placeholder=""
-                          style="width: 100%">
+                          placeholder="">
           </el-date-picker>
         </el-descriptions-item>
 
@@ -416,7 +427,7 @@
     timeRange: '',
     group: "All",
     status: "All",
-    timeOpt: "All",
+    timeOpt: "default",
     express: "All",
     orderEntry: "",
   })
