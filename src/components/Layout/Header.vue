@@ -116,6 +116,9 @@
               <a href="#">Order</a>
               <ul class="sub-menu">
                 <li class="menu-item">
+                  <router-link to="/main/OrderHome">Order Home</router-link>
+                </li>
+                <li class="menu-item">
                   <router-link to="/main/OrderSummary">Order Summary</router-link>
                 </li>
                 <li class="menu-item">

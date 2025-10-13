@@ -10,6 +10,8 @@ import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
 import '@/assets/css/cssVariable.css'
 
+import VChart from 'vue-echarts'
+import 'echarts'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { createApp } from 'vue'
@@ -22,6 +24,8 @@ import globalFunctions from "@/utils/globalFunctions.js";
 
 const app = createApp(App);
 const pinia = createPinia();
+
+app.component('v-chart', VChart)
 
 app.use(router);
 app.use(pinia);

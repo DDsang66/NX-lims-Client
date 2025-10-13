@@ -13,6 +13,7 @@ import InstructionManual from '../views/StaticInterface/InstructionManual.vue';
 import MainLayout from '../views/MainLayout.vue';
 import userAuthStore from "@/stores/auth.js";
 import OrderSummary from "@/Views/OrderSummary.vue";
+import OrderHome from "@/Views/OrderHome.vue";
 
 const routes = [
   {
@@ -37,6 +38,9 @@ const routes = [
   },
   {
     path: '/main/OrderSummary', name: 'OrderSummary', component: OrderSummary
+  },
+  {
+    path: '/main/OrderHome', name: 'OrderHOme', component: OrderHome
   },
   {
     path: '/main/InstructionManual', name: 'InstructionManual', component: InstructionManual
