@@ -68,14 +68,14 @@
               </table>
             </div>
             <!-- 结果 & 提交 -->
-            <div class="form-group col-xl-8">
+            <div class="form-group col-xl-12">
               <label>Composition > 50%</label>
               <input type="text" class="form-control" :value="maxComposition" readonly />
             </div>
-            <div class="form-group col-xl-4">
-              <label>action </label>
-              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="Confirm">Confirm</button>
-            </div>
+<!--            <div class="form-group col-xl-4">-->
+<!--              <label>action </label>-->
+<!--              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="Confirm">Confirm</button>-->
+<!--            </div>-->
           </div>
         </div>
         </transition>
@@ -90,7 +90,7 @@
 
 
   /* 折叠开关 */
-  const isNoticeOpen = ref(false)
+  const isNoticeOpen = ref(true)
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
 }
@@ -145,15 +145,17 @@
     rows.splice(idx, 1);
   }
 
-  async function Confirm() {
-    try {
-      emit('confirm', rows);   // 把 rows 发出去
-      alert('提交成功！');
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
+  // async function Confirm() {
+  //   try {
+  //     emit('confirm', rows);   // 把 rows 发出去
+  //     alert('提交成功！');
+  //   } catch (e) {
+  //     console.error(e);
+  //   }
+  // }
+  watch(rows,() => {
+    emit('confirm', rows)
+  })
   function updateComposition(e, row) {
     const newValue = e.target.textContent.trim();
     if (row.composition !== newValue) {

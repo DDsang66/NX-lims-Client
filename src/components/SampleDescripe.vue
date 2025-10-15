@@ -52,7 +52,7 @@
               </table>
             </div>
             <!-- 结果 & 提交 -->
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-9">
               <label>Description</label>
               <input type="text" class="form-control" v-model="description" readonly />
             </div>
@@ -60,10 +60,10 @@
               <label>action </label>
               <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="clear">Clear</button>
             </div>
-            <div class="form-group col-xl-3">
-              <label>action </label>
-              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="confirm">Confirm</button>
-            </div>
+<!--            <div class="form-group col-xl-3">-->
+<!--              <label>action </label>-->
+<!--              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="confirm">Confirm</button>-->
+<!--            </div>-->
           </div>
         </div>
       </transition>
@@ -114,7 +114,7 @@
 
 
   /* 折叠开关 */
-  const isNoticeOpen = ref(false)
+  const isNoticeOpen = ref(true)
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
     console.log("Toggle Notice:", isNoticeOpen.value);
@@ -193,14 +193,17 @@
     description.value = "";
   }
 
-  function confirm() {
-    try {
-      emit('confirm', description.value);
-      alert('提交成功！');
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  // function confirm() {
+  //   try {
+  //     emit('confirm', description.value);
+  //     alert('提交成功！');
+  //   } catch (e) {
+  //     console.error(e);
+  //   }
+  // }
+  watch(description, () => {
+    emit('confirm', description.value);
+  })
 </script>
 
 <style scoped>
