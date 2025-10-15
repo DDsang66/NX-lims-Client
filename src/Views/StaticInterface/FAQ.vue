@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${imgUrl})` }">
 
     <div class="container">
@@ -64,7 +63,6 @@
   </div>
 
 </div>
-  <Footer />
 </template>
 
 <script setup>

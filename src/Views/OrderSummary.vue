@@ -85,8 +85,8 @@
               <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.formatTimeAndEmptyDisplay"></el-table-column>
+              <el-table-column prop="labOut" label="LabOut" :formatter="funcs.formatTimeAndEmptyDisplay" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
               <el-table-column width="70" label="Delete">
@@ -138,8 +138,8 @@
       <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.formatTimeAndEmptyDisplay" />
+      <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.formatTimeAndEmptyDisplay" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
       <el-table-column label="Operations" width="150" fixed="right">

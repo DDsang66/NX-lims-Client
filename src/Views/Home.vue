@@ -76,7 +76,6 @@ onUnmounted(() => {
 
 
 <template>
-  <Header />
   <div class="sigma_banner banner-3">
     <!-- Custom Arrows Start -->
     <div class="sigma_arrows sigma_arrows-transparent">
@@ -285,9 +284,6 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
-
-
-  <Footer />
 </template>
 
 <style scoped>

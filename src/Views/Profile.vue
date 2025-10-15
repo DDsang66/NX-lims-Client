@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${imgUrl})` }">
 
     <div class="container">
@@ -112,9 +111,6 @@
     </div>
   </div>
     <!-- ===== Profile Section End ===== -->
-
-
-    <Footer />
 </template>
 
 <script setup>

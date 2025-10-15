@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="sigma_subheader dark-overlay dark-overlay-2" :style="{ backgroundImage: `url(${imgUrl})` }">
 
     <div class="container">
@@ -20,9 +19,7 @@
     <section class="section-faq">
       <h2>What should I do in the review interface?</h2>
     </section>
-    <p>
       <h6>进入选定的买家界面，输入申请单的报告号(ReportNumber),选择买家套餐,点击[Confirm]按钮打印出测试项目</h6>
-    </p>
     <!-- ===== FAQ Section End ===== -->
     <div>
     </div>
@@ -33,7 +30,6 @@
     </div>
 
   </div>
-  <Footer />
 </template>
 
 <script setup>
