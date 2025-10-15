@@ -1,6 +1,4 @@
 <template>
-  <Header />
-
   <div class="container-fluid" style="padding:3%">
     <div class="row">
       <div class="col-xl-5">
@@ -153,14 +151,11 @@
         </div>
       </div>
   </div>
-  <Footer />
 </template>
 
 <script setup>
-  import Header from '@/components/Layout/Header.vue'
-  import Footer from '@/components/Layout/Footer.vue'
   import '@/assets/css/style.css';
-  import { ref, reactive, computed, watch, onMounted, onUnmounted,inject } from 'vue'
+  import { ref, reactive, watch, onMounted, onUnmounted,inject } from 'vue'
 
   // const emit = defineEmits(['confirm']);
   const authStore=inject('userAuthStore')

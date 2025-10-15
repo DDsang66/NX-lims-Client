@@ -10,6 +10,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@visactor/vtable": "^1.19.8",
     "@visactor/vtable-editors": "^1.19.8",
     "@visactor/vue-vtable": "^1.19.8",

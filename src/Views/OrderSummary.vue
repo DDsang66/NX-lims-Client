@@ -1,6 +1,5 @@
 <template>
-  <Header />
-  <div class="container-fluid" style="padding:3%;margin-left: auto ;
+  <div style="margin-left: auto ;
   display: flex;flex-direction: column;align-items: center;gap: 20px">
     <div class="mainSelectContainer">
       <div>
@@ -83,8 +82,8 @@
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+<!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
@@ -136,8 +135,8 @@
       </el-table-column>
       <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testSampleNum" label="No. of test" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+<!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.emptyDisplay" />
@@ -256,12 +255,12 @@
               <el-option value="Same Day">Same Day</el-option>
             </el-select>
           </el-descriptions-item>
-          <el-descriptions-item label="No. of test">
+          <el-descriptions-item label="No. of Sample">
             <el-input v-model="group.testSampleNum" />
           </el-descriptions-item>
-          <el-descriptions-item label="Test Item Num">
-            <el-input v-model="group.testItemNum" />
-          </el-descriptions-item>
+<!--          <el-descriptions-item label="Test Item Num">-->
+<!--            <el-input v-model="group.testItemNum" />-->
+<!--          </el-descriptions-item>-->
           <el-descriptions-item label="Reviewer">
             <el-input v-model="group.Reviewer" />
           </el-descriptions-item>
@@ -345,14 +344,14 @@
         </el-descriptions-item>
 
         <!-- TestSampleNum -->
-        <el-descriptions-item label="No. of test">
+        <el-descriptions-item label="No. of Sample">
           <el-input v-model="reportGroupEdit.testSampleNum" />
         </el-descriptions-item>
 
         <!-- TestItemNum -->
-        <el-descriptions-item label="TestItemNum">
-          <el-input v-model="reportGroupEdit.testItemNum" />
-        </el-descriptions-item>
+<!--        <el-descriptions-item label="TestItemNum">-->
+<!--          <el-input v-model="reportGroupEdit.testItemNum" />-->
+<!--        </el-descriptions-item>-->
 
         <!-- Reviewer -->
         <el-descriptions-item label="Reviewer">
@@ -395,7 +394,6 @@
       </div>
     </template>
   </el-dialog>
-  <Footer />
 </template>
 
 <script setup lang="ts">

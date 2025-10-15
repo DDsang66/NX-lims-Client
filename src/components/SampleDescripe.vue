@@ -130,6 +130,7 @@
   const inputVal = ref('');
   const description = ref('');
   const property = ref([
+    { value: 'ProjectNum', label: 'Project No.' },
     { value: 'AfterWash', label: 'AfterWash' },
     { value: 'Structure', label: 'Structure' },
     { value: 'Batch', label: 'Batch' },

@@ -14,6 +14,7 @@ import MainLayout from '../views/MainLayout.vue';
 import userAuthStore from "@/stores/auth.js";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderHome from "@/Views/OrderHome.vue";
+import Tchibo from "@/Views/Tchibo.vue";
 
 const routes = [
   {
@@ -25,35 +26,22 @@ const routes = [
     path: '/',redirect: '/Login' // 默认路径重定向到登录页面
   },
   {
-    path: '/main/Home', name: 'Home', component: Home,
-  },
-  {
-    path: '/main/Profile', name: 'Profile', component: Profile,
-  },
-  {
-    path: '/main/FAQ', name: 'FAQ', component: FAQ
-  },
-  {
-    path: '/main/OrderEntry', name: 'OrderEntry', component: OrderEntry
-  },
-  {
-    path: '/main/OrderSummary', name: 'OrderSummary', component: OrderSummary
-  },
-  {
-    path: '/main/OrderHome', name: 'OrderHOme', component: OrderHome
-  },
-  {
-    path: '/main/InstructionManual', name: 'InstructionManual', component: InstructionManual
-  },
-  {
     path: '/main',
     name: 'MainLayout',
     component: MainLayout,
     children: [
       { path: 'Mango', name: 'Mango', component: Mango },
+      { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
       { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
       { path: 'Jako', name: 'Jako', component: Jako },
       { path: 'ChatBox', name: 'ChatBox', component: ChatBox },
+      {path:'Home',name:'Home',component:Home},
+      {path:'Profile',name:'Profile',component:Profile},
+      {path:'FAQ',name:'FAQ',component:FAQ},
+      {path:'OrderEntry',name:'OrderEntry',component:OrderEntry},
+      {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
+      {path:'OrderHome',name:'OrderHome',component:OrderHome},
+      {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
     ]
   },
 ];

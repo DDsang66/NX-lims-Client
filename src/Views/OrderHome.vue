@@ -1,6 +1,5 @@
 <template>
-  <Header />
-  <div class="container-fluid" style="padding:3%;margin-left: auto ;">
+  <div style="margin-left: auto ;">
     <div class="this-first-line">
       <div class="todayData this-piece">
         <div class="block-head">
@@ -19,6 +18,7 @@
             <el-option value="Fiber">Fiber</el-option>
             <el-option value="Flam">Flam</el-option>
           </el-select>
+          <el-button :icon="Search" @click="cardsDataReq()" circle style="margin-left: 10px"/>
         </div>
         <div class="line-flex-container this-cards">
           <el-card shadow="hover" class="column-flex-container this-card">
@@ -49,9 +49,9 @@
 
           </el-card>
           <el-card shadow="hover" class="column-flex-container">
-            <h6>No. of test</h6>
+            <h6>No. of Sample</h6>
             <div>
-              <el-text type="primary">{{cardData.numOfTest}}</el-text>
+              <el-text type="primary">{{cardData.numOfSample}}</el-text>
             </div>
           </el-card>
         </div>
@@ -75,6 +75,7 @@
             <el-option value="Fiber">Fiber</el-option>
             <el-option value="Flam">Flam</el-option>
           </el-select>
+          <el-button :icon="Search" @click="fanChartDataReq" circle style="margin-left: 10px"/>
         </div>
         <v-chart
           :option="fanChartOp"
@@ -112,6 +113,7 @@
           <el-option value="delay" label="Delay"></el-option>
           <el-option value="inAdvance" label="InAdvance"></el-option>
         </el-select>
+        <el-button :icon="Search" @click="lineChartDataReq" circle style="margin-left: 20px"/>
       </div>
       <!-- 使用 v-chart 组件 -->
       <v-chart
@@ -121,26 +123,26 @@
       />
     </div>
   </div>
-  <Footer />
 </template>
 <script setup>
 import Header from "@/components/Layout/Header.vue";
 import Footer from "@/components/Layout/Footer.vue";
-import {ref,inject} from "vue";
+import {ref, inject, onMounted, reactive} from "vue";
+import {Search} from '@element-plus/icons-vue'
 
 /* Data-------------------------------------------------------------------------------------------- */
 var request = inject('request');
 
 var cardData=ref({
-  needLabOut:23,
-  actuallyLabOut:17,
-  delayLabOut:6,
-  inAdvanceLabOut:12,
-  numOfTest:14
+  needLabOut:0,
+  actuallyLabOut:0,
+  delayLabOut:0,
+  inAdvanceLabOut:0,
+  numOfSample:0
 });
-var cardTime=ref('');
-var fanChartTime=ref('');
-var lineChartTime=ref('');
+var cardTime=ref(new Date());
+var fanChartTime=ref(new Date());
+var lineChartTime=ref(new Date());
 var cardGroup=ref('All');
 var lineChartGroup=ref('All');
 var fanChartGroup=ref('All');
@@ -148,39 +150,34 @@ var cardTimeType=ref('date');
 var lineChartTimeType=ref('month');
 var fanChartTimeType=ref('month');
 var lineChartType=ref('all');
-const fanChartOp = {
-  color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)'],
-  title: {
-    text: '出单情况',
-    left: 'center'
-  },
-  dataset: {
-    dimensions: ['value', 'category'],
-    source: [
-      ['sales', 'product'],
-      [735,'Delay'],
-      [580,'Normal'],
-      [1048,'InAdvance'],
-    ]
-  },
-  series: [
-    {
-      type: 'pie',
-      radius: '50%',
-
-      // data: [
-      //   { value: 735, name: 'Delay'},
-      //   { value: 580, name: 'Normal'},
-      //   { value: 1048, name: 'InAdvance'},
-      // ],
-      label: {
-        overflow: 'break',
-        formatter: '{b} ({d}%)', // 使用字符串模板显示名称和百分比
-        fontSize: 16
+const fanChartOp = reactive(
+  {
+    color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)'],
+    title: {
+      text: '出单情况',
+      left: 'center'
+    },
+    dataset: {
+      dimensions: ['value', 'category'],
+      source: [
+        [0,'Delay'],
+        [0,'Normal'],
+        [0,'InAdvance'],
+      ]
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: '50%',
+        label: {
+          overflow: 'break',
+          formatter: '{b} ({d}%)', // 使用字符串模板显示名称和百分比
+          fontSize: 16
+        }
       }
-    }
-  ]
-}
+    ]
+  }
+)
 const countLineChartOp = {
   title: {
     text: '单量折线图',
@@ -189,18 +186,25 @@ const countLineChartOp = {
   // X 轴（类别轴）
   xAxis: {
     type: 'category',
-    data: ['1月', '2月', '3月', '4月', '5月', '6月','7月', '8月', '9月', '10月', '11月', '12月'],
+    // data: ['1月', '2月', '3月', '4月', '5月', '6月','7月', '8月', '9月', '10月', '11月', '12月'],
   },
   // Y 轴（数值轴）
   yAxis: {
     type: 'value',
     name: '单量'
   },
+  // dataset:{
+  //   source: [
+  //     ['年份','1月', '2月', '3月', '4月', '5月', '6月','7月', '8月', '9月', '10月', '11月', '12月'],
+  //     ['2025',120, 180, 150,123,123,134,142,230,123,52,23,56],
+  //     // ['2024',144, 120, 130,143,153,124,112,20,53,52,43,52]
+  //   ],
+  //   seriesLayoutBy: 'row'
+  // },
   // 数据系列
   series: [
     {
       type: 'line',        // 图表类型：柱状图
-      data: [120, 180, 150,123,123,134,142,230,123,52,23,56],
       emphasis: {
         label: {
           show: true,
@@ -208,13 +212,18 @@ const countLineChartOp = {
           formatter: '{c}'
         }
       },
-      name: '2024'
+      data:  [
+        { date: '2025-01-01', value: 120 },
+        { date: '2025-01-02', value: 132 },
+        { date: '2025-01-03', value: 101 }
+      ],
+      encode: {
+        x: 'date',
+        y: 'value'
+      }
     },
     {
       type: 'line',
-      //生成十二个测试数据
-      data: [144, 120, 130,143,153,124,112,20,53,52,43,52],
-      name: '2025',
       emphasis: {
         label: {
           show: true,
@@ -222,17 +231,16 @@ const countLineChartOp = {
           formatter: '{c}'
         }
       },
+      data:  [
+        { date: '2025-01-01', value: 130 },
+        { date: '2025-01-02', value: 134 },
+        { date: '2025-01-03', value: 111 }
+      ],
+      encode: {
+        x: 'date',
+        y: 'value'
+      }
     },
-    //柱形图
-    // {
-    //   type: 'bar',        // 图表类型：柱状图
-    //   data: [120, 180, 150,123,123,134,142,230,123,52,23,56],
-    //   label: {
-    //     show: true,
-    //     position: 'top',
-    //     formatter: '{c}'
-    //   },
-    // }
   ],
   legend: { // 👈 添加图例
     show: true,
@@ -241,7 +249,7 @@ const countLineChartOp = {
 }
 /* Methods----------------------------------------------------------------------------------------- */
 async function cardsDataReq(){
-  let req=await request.get('/api/order/cards',{
+  let req=await request.get('/order/cards',{
     params:{
       time:cardTime.value,
       group:cardGroup.value,
@@ -254,7 +262,7 @@ async function cardsDataReq(){
 }
 
 async function fanChartDataReq(){
-  let req=await request.get('/api/order/fanChart',{
+  let req=await request.get('/order/fanChart',{
     params:{
       time:fanChartTime.value,
       group:fanChartGroup.value,
@@ -262,11 +270,15 @@ async function fanChartDataReq(){
     }
   });
   if (req.data.success){
-    fanChartOp.series[0].data=req.data.data;
+    let data=req.data.data;
+    fanChartOp.dataset.source=[[data.delay,'Delay'],[data.normal,'Normal'],[data.inAdvance,'InAdvance']]
   }
 }
 async function lineChartDataReq(){
-  let req=await request.get('/api/order/lineChart',{
+  if(!lineChartTime.value){
+    return alert('Please Select Time')
+  }
+  let req=await request.get('/order/lineChart',{
     params:{
       time:lineChartTime.value,
       group:lineChartGroup.value,
@@ -284,6 +296,12 @@ function lineChartTimeTypeChange(){
 const handleClick = (event) => {
   alert(` ${event.name}：单量: ${event.value} `)
 }
+/* Life Cycle-------------------------------------------------------------------------------------- */
+onMounted(()=>{
+  cardsDataReq();
+  fanChartDataReq();
+  lineChartDataReq();
+})
 </script>
 
 <style lang="scss" scoped>
@@ -331,7 +349,7 @@ const handleClick = (event) => {
 }
 
 .line-chart-wrapper {
-  width: 80%;
+  width: 100%;
   height: 500px;
   margin: 10px auto;
   display: flex;
@@ -347,9 +365,9 @@ const handleClick = (event) => {
   height: 100%;
 }
 .this-first-line{
-  width: 80%;
+  width: 100%;
   height: 500px;
-  margin: 15px auto;
+  margin-bottom:  auto;
   display: flex;
   gap: 15px;
 }
