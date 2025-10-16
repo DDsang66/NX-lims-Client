@@ -123,7 +123,7 @@
     <div class="container">
       <div class="row">
         <div class="col-xl-7">
-          <Feedback />
+<!--          <Feedback />-->
           <BuyerInfo
              :buyer="currentBuyer"
              :reviewer="currentReviewer"
