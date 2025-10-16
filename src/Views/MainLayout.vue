@@ -6,16 +6,17 @@
         <span style="margin-left: auto;">{{userAuth.user}}</span>
         <el-popover
           placement="bottom"
-          popper-class="userPopover"
           :width="100"
-          style="margin-left: 10px"
+          :popper-style="{ minWidth: '100px'}"
           @hide="xiaJianTou=true"
           trigger="click">
-          <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>
-          <el-link :underline="false" @click="gaiMiMa">修改密码</el-link>
-          <el-link :underline="false" @click="logOut">退出登录</el-link>
+          <div style="display: flex;flex-direction: column">
+<!--            <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>-->
+            <el-link underline='never' @click="gaiMiMa" style="font-size: 18px">修改密码</el-link>
+            <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>
+          </div>
           <template #reference>
-            <span>
+            <span style="margin-left: 5px">
               <el-icon
                 style="margin-left: 2px;font-size: 15px"
                 v-show="xiaJianTou"

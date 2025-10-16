@@ -8,6 +8,10 @@ var globalFunctions={
     const minute = String(date.getMinutes()).padStart(2, '0')
     return `${year}-${month}-${day} ${hour}:${minute}`
   },
+  //先转换为Date对象，再格式化
+  toDateAndFormat(date){
+    return globalFunctions.formatTime(new Date(date))
+  },
   //转化为datetimeoffset格式
   toDateTimeOffset: (date) => {
     if (!date) return null;
@@ -21,12 +25,19 @@ var globalFunctions={
       return parsedDate.toISOString();
     }
   },
-  //空值展示处理
+  //表格空值展示处理
   emptyDisplay: (row, column, value) => {
     if (!value) {
       return '-'
     }
     return value
+  },
+  //表格空值处理和时间格式化
+  formatTimeAndEmptyDisplay: (row, column, value) => {
+    if (!value) {
+      return '-'
+    }
+    return globalFunctions.formatTime(new Date(value))
   }
 }
 export default globalFunctions;

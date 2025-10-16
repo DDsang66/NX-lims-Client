@@ -1,6 +1,6 @@
 <template>
   <div style="margin-left: auto ;
-  display: flex;flex-direction: column;align-items: center;gap: 20px">
+  display: flex;flex-direction: column;align-items: center;gap: 20px;width: 100%;height: 100%">
     <div class="mainSelectContainer">
       <div>
         <el-text size="large">ReportNo.</el-text>
@@ -68,7 +68,7 @@
     <el-table class="removeTableGaps"
               :data="reportList"
               border
-              style="width:100%;" height="600px"
+              style="width:100%;" height="75%"
               v-if="searchParams.group==='All'">
       <el-table-column type="expand">
         <template #default="props">
