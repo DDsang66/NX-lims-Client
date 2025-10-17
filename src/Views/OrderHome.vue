@@ -178,7 +178,7 @@ const fanChartOp = reactive(
     ]
   }
 )
-const countLineChartOp = {
+const countLineChartOp = reactive({
   title: {
     text: '单量折线图',
     left: 'center'
@@ -186,67 +186,20 @@ const countLineChartOp = {
   // X 轴（类别轴）
   xAxis: {
     type: 'category',
-    // data: ['1月', '2月', '3月', '4月', '5月', '6月','7月', '8月', '9月', '10月', '11月', '12月'],
+    data:[]
   },
   // Y 轴（数值轴）
   yAxis: {
     type: 'value',
     name: '单量'
   },
-  // dataset:{
-  //   source: [
-  //     ['年份','1月', '2月', '3月', '4月', '5月', '6月','7月', '8月', '9月', '10月', '11月', '12月'],
-  //     ['2025',120, 180, 150,123,123,134,142,230,123,52,23,56],
-  //     // ['2024',144, 120, 130,143,153,124,112,20,53,52,43,52]
-  //   ],
-  //   seriesLayoutBy: 'row'
-  // },
   // 数据系列
-  series: [
-    {
-      type: 'line',        // 图表类型：柱状图
-      emphasis: {
-        label: {
-          show: true,
-          position: 'top',
-          formatter: '{c}'
-        }
-      },
-      data:  [
-        { date: '2025-01-01', value: 120 },
-        { date: '2025-01-02', value: 132 },
-        { date: '2025-01-03', value: 101 }
-      ],
-      encode: {
-        x: 'date',
-        y: 'value'
-      }
-    },
-    {
-      type: 'line',
-      emphasis: {
-        label: {
-          show: true,
-          position: 'top',
-          formatter: '{c}'
-        }
-      },
-      data:  [
-        { date: '2025-01-01', value: 130 },
-        { date: '2025-01-02', value: 134 },
-        { date: '2025-01-03', value: 111 }
-      ],
-      encode: {
-        x: 'date',
-        y: 'value'
-      }
-    },
-  ],
+  series: [],
   legend: { // 👈 添加图例
     show: true,
     bottom: '0%' // 放在底部
   }
-}
+})
 /* Methods----------------------------------------------------------------------------------------- */
 async function cardsDataReq(){
   let req=await request.get('/order/cards',{
@@ -275,19 +228,58 @@ async function fanChartDataReq(){
   }
 }
 async function lineChartDataReq(){
-  if(!lineChartTime.value){
+  if(!lineChartTime.value&&lineChartTimeType.value!=='allYear'){
     return alert('Please Select Time')
   }
-  let req=await request.get('/order/lineChart',{
-    params:{
-      time:lineChartTime.value,
-      group:lineChartGroup.value,
-      timeType:lineChartTimeType.value,
-      type:lineChartType.value
-    }
-  });
+  const url = new URL('http://localhost:5051/api/order/lineChart');
+  if (Array.isArray(lineChartTime.value)) {
+    lineChartTime.value.forEach(date => {
+      url.searchParams.append('time', date.toISOString());
+    });
+  }else if (lineChartTime.value)
+    url.searchParams.append('time', lineChartTime.value.toISOString());
+
+  url.searchParams.append('group', lineChartGroup.value);
+  url.searchParams.append('timeType', lineChartTimeType.value);
+  url.searchParams.append('type', lineChartType.value);
+
+  const req = await request.get(url.toString());
   if (req.data.success){
-    countLineChartOp.series[0].data=req.data.data;
+    countLineChartOp.series=[];
+    countLineChartOp.xAxis.data=req.data.data.timePropertyName;
+    if (req.data.data.timeProperty.length===1){
+      countLineChartOp.series.push({
+        name: req.data.data.timePropertyName[0],
+        type: 'line',
+        data: req.data.data.timeProperty[0].timeValue,
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}',
+        },
+      })
+      // console.log(countLineChartOp.series[0].name)
+      countLineChartOp.series.push({
+        type: 'bar',
+        data: req.data.data.timeProperty[0].timeValue,
+      })
+    }else {
+      for (let timeProperty of req.data.data.timeProperty) {
+        countLineChartOp.series.push({
+          name: timeProperty.timeHead,
+          type: 'line',
+          data: timeProperty.timeValue,
+          emphasis: {
+            focus: 'self',       // 推荐：只高亮当前点
+            label: {
+              show: true,
+              position: 'top',
+              formatter: '{c}',
+            }
+          },
+        })
+      }
+    }
   }
 }
 function lineChartTimeTypeChange(){
