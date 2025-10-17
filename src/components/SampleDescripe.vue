@@ -130,6 +130,7 @@
   const inputVal = ref('');
   const description = ref('');
   const property = ref([
+    { value: 'Color', label: 'Color' },
     { value: 'ProjectNum', label: 'Project No.' },
     { value: 'AfterWash', label: 'AfterWash' },
     { value: 'Structure', label: 'Structure' },
@@ -144,6 +145,7 @@
   ]);
 
   const wordMap = {
+    Color: ['Neon','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
     Structure: ['Woven', 'Knit', 'Non-Woven'],
     Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
     State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
