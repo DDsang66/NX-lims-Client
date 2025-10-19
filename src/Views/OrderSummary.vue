@@ -74,7 +74,7 @@
         <template #default="props">
           <div style="margin-left: 50px;">
             <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="group" prop="group" :formatter="funcs.emptyDisplay" />
+              <el-table-column label="Group" prop="group" :formatter="funcs.emptyDisplay" />
               <el-table-column label="Lab-In">
                 <template #default="scope">
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -85,8 +85,8 @@
               <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="ReviewFinish" :formatter="funcs.formatTimeAndEmptyDisplay"></el-table-column>
-              <el-table-column prop="labOut" label="LabOut" :formatter="funcs.formatTimeAndEmptyDisplay" />
+              <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.formatTimeAndEmptyDisplay"></el-table-column>
+              <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.formatTimeAndEmptyDisplay" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
               <el-table-column width="70" label="Delete">
@@ -103,7 +103,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
       <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
       <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
       <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
@@ -125,9 +125,9 @@
               v-if="searchParams.group!=='All'">
       <!--订单id埋点，scope.row.recordId读取-->
       <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column width="140" prop="orderEntry" label="OrderEntry" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" label="group" prop="testGroup" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" label="Lab-In">
         <template #default="scope">
           {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -138,8 +138,8 @@
       <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="reviewFinish" label="ReviewFinish" :formatter="funcs.formatTimeAndEmptyDisplay" />
-      <el-table-column width="150" prop="labOut" label="LabOut" :formatter="funcs.formatTimeAndEmptyDisplay" />
+      <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.formatTimeAndEmptyDisplay" />
+      <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.formatTimeAndEmptyDisplay" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
       <el-table-column label="Operations" width="150" fixed="right">
@@ -359,7 +359,7 @@
         </el-descriptions-item>
 
         <!-- ReviewFinish -->
-        <el-descriptions-item label="ReviewFinish">
+        <el-descriptions-item label="Review-Finish">
           <el-date-picker v-model="reportGroupEdit.reviewFinish"
                           type="datetime"
                           placeholder="">
@@ -367,7 +367,7 @@
         </el-descriptions-item>
 
         <!-- LabOut -->
-        <el-descriptions-item label="LabOut">
+        <el-descriptions-item label="Lab-Out">
           <el-date-picker v-model="reportGroupEdit.labOut"
                           type="datetime"
                           placeholder="">

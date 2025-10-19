@@ -128,7 +128,7 @@
               <template #default="props">
                 <div style="margin-left: 50px">
                   <el-table :data="props.row.groups">
-                    <el-table-column label="group" prop="group" width="100"/>
+                    <el-table-column label="Group" prop="group" width="100"/>
                     <el-table-column label="Lab-In" width="100">
                       <template #default="scope">
                         {{formatTime(new Date(scope.row.labIn))}}
