@@ -13,7 +13,7 @@ import InstructionManual from '../views/StaticInterface/InstructionManual.vue';
 import MainLayout from '../views/MainLayout.vue';
 import userAuthStore from "@/stores/auth.js";
 import OrderSummary from "@/Views/OrderSummary.vue";
-import OrderHome from "@/Views/OrderHome.vue";
+import OrderReporting from "@/Views/OrderReporting.vue";
 import Tchibo from "@/Views/Tchibo.vue";
 
 const routes = [
@@ -40,7 +40,7 @@ const routes = [
       {path:'FAQ',name:'FAQ',component:FAQ},
       {path:'OrderEntry',name:'OrderEntry',component:OrderEntry},
       {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
-      {path:'OrderHome',name:'OrderHome',component:OrderHome},
+      { path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },
       {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
     ]
   },

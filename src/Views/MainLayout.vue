@@ -69,8 +69,8 @@
             <template #title>
               <span>Order</span>
             </template>
-            <el-menu-item index="/main/OrderHome">
-              <span>Order Home</span>
+            <el-menu-item index="/main/OrderReporting">
+              <span>Order Reporting</span>
             </el-menu-item>
             <el-menu-item index="/main/OrderSummary">
               <span>Order Summary</span>
