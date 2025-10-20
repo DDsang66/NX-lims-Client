@@ -41,6 +41,7 @@
               'Seam Slippage',
               'Seam Strength',
               'Bursting Strength',
+              'Water Resistance-Hydrostatic Pressure',
               ].includes(row.itemName)">
             <td colspan="5">
               <ExtraForm :type="row.itemName" v-model="row.extra" />
