@@ -585,6 +585,7 @@
   ]);
 
   const scis = ref([
+    { value: 'Front Zippers Must be Opened', label: 'Front Zippers Must be Opened' },
     { value: 'Wash Inside Out', label: 'Wash Inside Out' },
     { value: 'Wash in Laundry Bag', label: 'Wash in Laundry Bag' },
     { value: 'Close All Botton and Zipper before Washing', label: 'Close All Botton and Zipper before Washing' },
