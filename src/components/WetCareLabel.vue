@@ -400,18 +400,26 @@
           </tr>
 
           <tr>
-            <td style="text-align:center" colspan="3">
+            <td style="text-align:center" colspan="3" rowspan="2">
               <p style="margin:0; text-align:center;">
                 Notice: When tumble dry is not permitted,<br>
                 the laboratory defaults to line dry for woven fabrics and flat dry for knitted fabrics.<br>
                 Applicable to both ASTM and ISO/EN standards.
               </p>
             </td>
+              <td style="text-align:center" colspan="2" >
+                <img src="../assets/img/USA Wet Care Label/Drip Dry.jpg">
+              </td>
+              <td style="text-align:center">
+                Drip Dry
+              </td>
+          </tr>
+          <tr>
             <td style="text-align:center" colspan="2">
-              <img src="../assets/img/USA Wet Care Label/Drip Dry.jpg">
+              <img src="../assets/img/USA Wet Care Label/Drip Flat Dry.png">
             </td>
             <td style="text-align:center">
-              Drip Dry
+              Drip Flat Dry
             </td>
           </tr>
         </tbody>
@@ -578,6 +586,8 @@
   ]);
 
   const dryProcedures = ref([
+    { value: 'Drip Flat Dry', label: 'Drip Flat Dry' },
+    { value: 'Drip Dry', label: 'Drip Dry' },
     { value: 'Flat Dry', label: 'Flat Dry' },
     { value: 'Line Dry', label: 'Line Dry' },
     { value: 'Tumble Dry', label: 'Tumble Dry' },
