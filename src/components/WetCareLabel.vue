@@ -77,6 +77,14 @@
       </div>
     </div>
     <div class="form-group col-xl-12">
+      <label>Detergent</label>
+      <select class="form-control" v-model="detergent">
+        <option v-for="option in detergentOptions" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+    <div class="form-group col-xl-12">
       <label>Special Care Instruction <span class="text-danger">*</span></label>
       <select class="form-control" v-model="selectedSCI">
         <option value="">N/A</option>
@@ -421,8 +429,8 @@
         <thead>
           <tr>
             <th style="text-align:center" colspan="2">DC Procedure Label</th>
-            <th style="text-align:center"colspan="2">Iron Label</th>
-            <th style="text-align:center"colspan="2">Bleach Label</th>
+            <th style="text-align:center" colspan="2">Iron Label</th>
+            <th style="text-align:center" colspan="2">Bleach Label</th>
           </tr>
         </thead>
         <tbody>
@@ -527,7 +535,7 @@
 
 <script setup>
   import { ref, watch } from 'vue';
-
+  const detergent = ref('');
   const selectedWashingProcedure = ref('');
   const selectedDryProcedure = ref('');
   const selectedDCProcedure = ref('');
@@ -584,7 +592,10 @@
     { value: 'Wash in Laundry Bag,Close All Botton and Zipper before Washing', label: 'Wash Inside Out,Close All Botton and Zipper before Washing' },
     { value: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing' }
   ]);
-
+  const detergentOptions=ref([
+    { value: 'Mild Detergent', label: 'Mild Detergent' },
+    { value: 'Wool Detergent', label: 'Wool Detergent' }
+  ]);
   const ironProcedures = ref([
     { value: 'Hot Iron', label: 'Hot Iron' },
     { value: 'Warm Iron', label: 'Warm Iron' },
@@ -613,6 +624,7 @@
         ironProcedure: selectedIronProcedure.value,
         sci: selectedSCI.value,
         bleachProcedure: selectedBleachProcedure.value
+        ,detergent:detergent.value
       });
     },
     { immediate: true }
