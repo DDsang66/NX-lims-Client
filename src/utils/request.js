@@ -1,8 +1,8 @@
 import axios from 'axios';
-
+import qs from 'qs'
 const api = axios.create({
   baseURL: 'http://localhost:5051/api',
-  timeout: 10000,
+  timeout: 15000,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -11,6 +11,11 @@ api.interceptors.request.use(config => {
   const accessToken = localStorage.getItem('accessToken');
   if (accessToken) {
     config.headers['accessToken'] = accessToken;
+  }
+  if (config.method === 'get') {
+    config.paramsSerializer = function(params) {
+      return qs.stringify(params, { arrayFormat: 'repeat' })
+    }
   }
   return config;
 }, error => {
