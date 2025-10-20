@@ -231,19 +231,14 @@ async function lineChartDataReq(){
   if(!lineChartTime.value&&lineChartTimeType.value!=='allYear'){
     return alert('Please Select Time')
   }
-  const url = new URL('http://localhost:5051/api/order/lineChart');
-  if (Array.isArray(lineChartTime.value)) {
-    lineChartTime.value.forEach(date => {
-      url.searchParams.append('time', date.toISOString());
-    });
-  }else if (lineChartTime.value)
-    url.searchParams.append('time', lineChartTime.value.toISOString());
-
-  url.searchParams.append('group', lineChartGroup.value);
-  url.searchParams.append('timeType', lineChartTimeType.value);
-  url.searchParams.append('type', lineChartType.value);
-
-  const req = await request.get(url.toString());
+  const req=await request.get('/order/lineChart',{
+    params:{
+      time:lineChartTime.value,
+      group:lineChartGroup.value,
+      timeType:lineChartTimeType.value,
+      type:lineChartType.value
+    }
+  });
   if (req.data.success){
     countLineChartOp.series=[];
     countLineChartOp.xAxis.data=req.data.data.timePropertyName;
