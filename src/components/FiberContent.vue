@@ -5,7 +5,7 @@
       <div class="sigma_notice">
         <p>
           <a style="text-align:center;color:#3364d5" href="#" @click.prevent="toggleNotice()">
-            Fiber Content.
+            {{ $t('fiberContent') }}
           </a>
         </p>
       </div>
@@ -15,7 +15,7 @@
           <!-- 输入 -->
           <div class="row">
             <div class="form-group col-xl-6">
-              <label>Composition<span class="text-danger">*</span></label>
+              <label>{{ $t('composition') }}<span class="text-danger">*</span></label>
               <input type="text" placeholder="成分" class="form-control" v-model.trim="inputRow.composition" />
               <ul v-if="filteredCompositions.length" class="list-group">
                 <li v-for="item in filteredCompositions"
@@ -27,7 +27,7 @@
               </ul>
             </div>
             <div class="form-group col-xl-6">
-              <label>Rate<span class="text-danger">*</span></label>
+              <label>{{ $t('rate') }}<span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="number" placeholder="比例" class="form-control"
                        v-model.number="inputRow.rate" min="0" max="100" />
@@ -43,7 +43,7 @@
             <div class="form-group col-xl-12">
               <table class="sigma_responsive-table">
                 <thead>
-                  <tr><th>Composition</th><th>Rate(%)</th><th style="width:40px;">Delete</th></tr>
+                  <tr><th>{{ $t('composition') }}</th><th>{{ $t('rate') }}(%)</th><th style="width:40px;">Delete</th></tr>
                 </thead>
                 <tbody>
                   <tr v-for="(row, idx) in rows" :key="idx">

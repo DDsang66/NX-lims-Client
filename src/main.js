@@ -20,8 +20,10 @@ import App from './App.vue'
 import router from './router';
 import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
+import {globalStore} from '@/stores/globalStore.js'
 import request from "@/utils/request.js";
 import globalFunctions from "@/utils/globalFunctions.js";
+import i18n from './i18n'
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -34,8 +36,10 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(router);
 app.use(pinia);
 app.use(ElementPlus)
+app.use(i18n)
 //使用provide全局提供
 const auth = userAuthStore()
+app.provide('globalStore',globalStore())
 app.provide('userAuthStore',auth)
 app.provide('request',request)
 auth.init()

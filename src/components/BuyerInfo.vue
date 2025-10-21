@@ -5,7 +5,7 @@
     <div class="row">
       <!-- 报告号 -->
       <div class="form-group col-xl-6">
-        <label>Report No.<span class="text-danger">*</span></label>
+        <label>{{$t('reportNumber')}}<span class="text-danger">*</span></label>
         <input v-model="form.reportNumber"
                type="text"
                placeholder="报告号"
@@ -15,7 +15,7 @@
 
       <!-- 审核人 -->
       <div class="form-group col-xl-6">
-        <label>Reviewer<span class="text-danger">*</span></label>
+        <label>{{ $t('reviewer') }}<span class="text-danger">*</span></label>
         <input v-model="form.reviewer"
                type="text"
                placeholder="审核人"
@@ -34,7 +34,7 @@
 
       <!-- 菜单选择 -->
       <div class="form-group col-xl-12">
-        <label>Set Menu<span class="text-danger">*</span></label>
+        <label>{{ $t('set Menu') }}<span class="text-danger">*</span></label>
         <select v-model="form.menuName" class="form-control">
           <option value="">Select a Menu</option>
           <option v-for="m in menuName" :key="m.value" :value="m.value">
@@ -44,7 +44,7 @@
       </div>
       <!-- 备注 -->
       <div class="form-group col-xl-12 mb-0">
-        <label>Remark</label>
+        <label>{{ $t('remark') }}</label>
         <textarea v-model="form.remark"
                   rows="5"
                   class="form-control"
@@ -53,7 +53,7 @@
 
       <!-- 额外项目 -->
       <div class="form-group col-xl-3">
-        <label>Extra Items</label>
+        <label>{{$t('extraItem')}}</label>
         <select v-model="form.extraItem" class="form-control">
           <option value="">Select</option>
           <option v-for="e in extraItems" :key="e.value" :value="e.value">
@@ -64,7 +64,7 @@
 
       <!-- 标准 -->
       <div class="form-group col-xl-6">
-        <label>Standard</label>
+        <label>{{$t('standard')}}</label>
         <select v-model="form.standard" class="form-control">
           <option value="">Select a Standard</option>
           <option v-for="s in standards" :key="s.value" :value="s.value">

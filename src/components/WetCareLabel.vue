@@ -1,13 +1,13 @@
 <template>
   <div class="row">
     <div class="form-group col-xl-2">
-      <label>Details</label>
+      <label>{{$t('details')}}</label>
       <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="showAppend = !showAppend">
         ≡
       </button>
     </div>
     <div class="form-group col-xl-6">
-      <label>Washing Procedure</label>
+      <label>{{$t('washing Procedure')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedWashingProcedure">
           <option value="">No Wash</option>
@@ -23,7 +23,7 @@
       </div>
     </div>
     <div class="form-group col-xl-4">
-      <label>Dry Procedure</label>
+      <label>{{$t('dryProcedure')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedDryProcedure">
           <option value="">Do Not Dry</option>
@@ -39,7 +39,7 @@
       </div>
     </div>
     <div class="form-group col-xl-4">
-      <label>DC Procedure</label>
+      <label>{{$t('DCProcedure')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedDCProcedure">
           <option value="">Do not Dry Clean</option>
@@ -50,7 +50,7 @@
       </div>
     </div>
     <div class="form-group col-xl-4">
-      <label>Iron</label>
+      <label>{{$t('iron')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedIronProcedure">
           <option value="">Do Not Iron</option>
@@ -61,7 +61,7 @@
       </div>
     </div>
     <div class="form-group col-xl-4">
-      <label>Bleaching</label>
+      <label>{{$t('bleaching')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedBleachProcedure">
           <option value="">Do Not Bleach</option>
@@ -77,7 +77,7 @@
       </div>
     </div>
     <div class="form-group col-xl-12">
-      <label>Detergent</label>
+      <label>{{$t('detergent')}}</label>
       <select class="form-control" v-model="detergent">
         <option v-for="option in detergentOptions" :key="option.value" :value="option.value">
           {{ option.label }}
@@ -85,7 +85,7 @@
       </select>
     </div>
     <div class="form-group col-xl-12">
-      <label>Special Care Instruction <span class="text-danger">*</span></label>
+      <label>{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
       <select class="form-control" v-model="selectedSCI">
         <option value="">N/A</option>
         <option v-for="option in scis" :key="option.value" :value="option.value">

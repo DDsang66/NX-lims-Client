@@ -5,7 +5,7 @@
       <div class="sigma_notice">
         <p>
           <a style="text-align:center;color:#ffd800" href="#" @click.prevent="toggleNotice()">
-            Sample Description.
+            {{ $t('sampleDescription') }}
           </a>
         </p>
       </div>
@@ -15,7 +15,7 @@
           <!-- 输入 -->
           <div class="row">
             <div class="form-group col-xl-4">
-              <label>Property<span class="text-danger">*</span></label>
+              <label>{{ $t('property') }}<span class="text-danger">*</span></label>
               <div class="input-group">
                 <select class="form-control" v-model="Property">
                   <option value="">N/A</option>
@@ -29,7 +29,7 @@
               </div>
             </div>
             <div class="form-group col-xl-8">
-              <label>Word Entry<span class="text-danger">*</span></label>
+              <label>{{ $t('word Entry') }}<span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="text" class="form-control" v-model="inputVal" />
                 <select class="form-control" v-model="Word">
@@ -53,7 +53,7 @@
             </div>
             <!-- 结果 & 提交 -->
             <div class="form-group col-xl-9">
-              <label>Description</label>
+              <label>{{ $t('description') }}</label>
               <input type="text" class="form-control" v-model="description" readonly />
             </div>
             <div class="form-group col-xl-3">

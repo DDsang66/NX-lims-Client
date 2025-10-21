@@ -3,19 +3,24 @@
     <el-header style="height: 8%;border-bottom: 1px solid #dcdfe6;">
       <div style="display: flex;align-items: center;width: 100%;height: 100%;">
         <img src="@/assets/img/NX-lims logo-b.png" alt="logo" style="object-fit: contain;max-height: 100%;">
-        <span style="margin-left: auto;">{{userAuth.user}}</span>
-        <el-popover
-          placement="bottom"
-          :width="100"
-          :popper-style="{ minWidth: '100px'}"
-          @hide="xiaJianTou=true"
-          trigger="click">
-          <div style="display: flex;flex-direction: column">
-<!--            <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>-->
-            <el-link underline='never' @click="gaiMiMa" style="font-size: 18px">修改密码</el-link>
-            <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>
+        <div style="height: 100%;margin-left: auto;display: flex;align-items: center;" >
+          <div @click="changeLanguage" style="height: 40%">
+            <img src="/src/assets/svg/中英切换_英.svg"  style="margin:auto;height: 100%;width: auto" v-show="locale==='English'"  alt=""/>
+            <img src="/src/assets/svg/中英切换_中.svg"  style="margin:auto;height: 100%;width: auto" v-show="locale==='Chinese'"  alt=""/>
           </div>
-          <template #reference>
+          <span style="margin-left: 5px">{{userAuth.user}}</span>
+          <el-popover
+            placement="bottom"
+            :width="100"
+            :popper-style="{ minWidth: '100px'}"
+            @hide="xiaJianTou=true"
+            trigger="click">
+            <div style="display: flex;flex-direction: column">
+              <!--            <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>-->
+              <el-link underline='never' @click="gaiMiMa" style="font-size: 18px">修改密码</el-link>
+              <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>
+            </div>
+            <template #reference>
             <span style="margin-left: 5px">
               <el-icon
                 style="margin-left: 2px;font-size: 15px"
@@ -27,8 +32,9 @@
                 @click="xiaJianTou=true"
                 v-show="!xiaJianTou"><ArrowUp /></el-icon>
             </span>
-          </template>
-        </el-popover>
+            </template>
+          </el-popover>
+        </div>
       </div>
     </el-header>
     <el-container style="width: 100%;flex: 1;min-height: 0">
@@ -133,6 +139,7 @@ import '@/assets/css/responsive.css';
   import {inject, ref} from 'vue'
   import router from "@/router/index.js";
   import {ArrowDown, ArrowUp} from "@element-plus/icons-vue";
+  import {useI18n} from "vue-i18n";
 
   export default {
     name: 'MainLayout',
@@ -143,17 +150,25 @@ import '@/assets/css/responsive.css';
       Header
     },
     setup() {
+      const { locale } = useI18n()
       const userAuth = inject('userAuthStore')
       const xiaJianTou = ref(true)
+      const globalStore=inject('globalStore')
       /* function----------------------------------------------------------------------------------- */
       const logOut = async () => {
         userAuth.clearTokens();
         router.push('/Login');
       }
+      const changeLanguage = () => {
+        locale.value= locale.value==='English' ? 'Chinese' : 'English'
+      }
       return {
+        locale,
         userAuth,
         xiaJianTou,
-        logOut
+        logOut,
+        changeLanguage,
+        globalStore
       }
     }
   };

@@ -11,7 +11,7 @@
 
   <div class="row">
     <div class="form-group col-xl-9 mb-0">
-      <label>Additional Require</label>
+      <label>{{ $t('additionalRequire') }}</label>
       <input class="form-control"
              placeholder="Order Notes (Optional)"
              v-model="additionalRequire">
