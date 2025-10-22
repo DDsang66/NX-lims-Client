@@ -18,7 +18,7 @@
             <div style="display: flex;flex-direction: column">
               <!--            <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>-->
               <el-link underline='never' @click="gaiMiMa" style="font-size: 18px">修改密码</el-link>
-              <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>
+<!--              <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>-->
             </div>
             <template #reference>
             <span style="margin-left: 5px">
@@ -34,6 +34,7 @@
             </span>
             </template>
           </el-popover>
+          <img src="/src/assets/svg/退出登录.svg"  style="margin-left: 5px;height: 40%;width: auto" v-show="locale==='Chinese'"  alt="" @click="logOut"/>
         </div>
       </div>
     </el-header>
