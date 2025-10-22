@@ -14,16 +14,17 @@
         <input v-model="inputVal" class="form-control mb-2" />
       </div>
       <div class="form-group col-xl-5">
-        <select class="form-control mb-2" v-model="Layout">
+        <select class="form-control mb-2" v-model="Layout" v-if="type!=='Water Resistance-Hydrostatic Pressure'">
           <option value="Inner Shell">Inner Shell</option>
           <option value="Outer Shell">Outer Shell</option>
           <option value="Inner Lining">Inner Lining</option>
           <option value="Outer Linin'">Outer Lining</option>
         </select>
+        <input v-model="Layout" class="form-control mb-2" v-else/>
       </div>
       <div class="form-group col-xl-5">
         <div class="input-group">
-          <select class="form-control" v-model="Component">
+          <select class="form-control" v-model="Component" v-if="type!=='Water Resistance-Hydrostatic Pressure'">
             <option value="Side">Side Seam</option>
             <option value="Sleeve">Sleeve Seam</option>
             <option value="Armhole">Armhole Seam</option>
@@ -37,6 +38,9 @@
             <option value="Front Crotch">Front Crotch Seam</option>
             <option value="Cross">Cross Seam</option>
           </select>
+          <select class="form-control" v-model="Component" v-else>
+            <option value="mbar">mbar</option>
+          </select>
           <div class="input-group-append">
             <button class="sigma_btn-custom shadow-none btn-sm" @click="addWord">+</button>
           </div>
@@ -49,6 +53,7 @@
 
 <script setup>
   import { ref, watch } from 'vue'
+
 
   /* ---------------- props / emit ---------------- */
   const props = defineProps({
@@ -65,6 +70,7 @@
 
   /* ---------------- 「+」只负责拼 desc ---------------- */
   function addWord() {
+  WaterRHPLayoutBlur()
     const text = inputVal.value.trim()
     const lay = Layout.value.trim()
     const comp = Component.value.trim()
@@ -118,6 +124,12 @@
     inputVal.value = ''
     Layout.value = ''
     Component.value = ''
+  }
+  function WaterRHPLayoutBlur(){
+    //判断Layout是数字，且大于零
+    if(!Number(Layout.value) && Number(Layout.value)<=0){
+      return alert('Please enter a number greater than zero.')
+    }
   }
 </script>
 
