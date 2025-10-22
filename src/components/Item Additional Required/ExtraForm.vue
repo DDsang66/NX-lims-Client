@@ -127,7 +127,7 @@
   }
   function WaterRHPLayoutBlur(){
     //判断Layout是数字，且大于零
-    if(!Number(Layout.value) && Number(Layout.value)<=0){
+    if((!Number(Layout.value) || Number(Layout.value)<=0 )&& props.type==='Water Resistance-Hydrostatic Pressure'){
       return alert('Please enter a number greater than zero.')
     }
   }
