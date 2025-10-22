@@ -70,7 +70,9 @@
 
   /* ---------------- 「+」只负责拼 desc ---------------- */
   function addWord() {
-  WaterRHPLayoutBlur()
+    if(WaterRHPLayout()){
+      return alert('Please enter a number greater than zero.')
+    }
     const text = inputVal.value.trim()
     const lay = Layout.value.trim()
     const comp = Component.value.trim()
@@ -125,11 +127,11 @@
     Layout.value = ''
     Component.value = ''
   }
-  function WaterRHPLayoutBlur(){
+  function WaterRHPLayout(){
     //判断Layout是数字，且大于零
-    if((!Number(Layout.value) || Number(Layout.value)<=0 )&& props.type==='Water Resistance-Hydrostatic Pressure'){
-      return alert('Please enter a number greater than zero.')
-    }
+    return (!Number(Layout.value) || Number(Layout.value)<=0 )&& props.type==='Water Resistance-Hydrostatic Pressure'
+      // alert('Please enter a number greater than zero.')
+
   }
 </script>
 
