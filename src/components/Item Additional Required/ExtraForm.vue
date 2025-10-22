@@ -1,6 +1,7 @@
 <template>
   <div class="alert mb-0" :class="`alert-${type}`">
-    <label>{{ type }} Garment Only：</label>
+    <label v-if="type!=='Water Resistance-Hydrostatic Pressure'">{{ type }} Garment Only：</label>
+    <label v-else>{{ type }}</label>
     <div class="row">
       <div class="form-group col-xl-9">
         <input v-model="desc" placeholder="Select the Components below." class="form-control mb-2" readonly />
@@ -53,7 +54,6 @@
 
 <script setup>
   import { ref, watch } from 'vue'
-
 
   /* ---------------- props / emit ---------------- */
   const props = defineProps({
