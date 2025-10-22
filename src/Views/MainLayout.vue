@@ -34,7 +34,7 @@
             </span>
             </template>
           </el-popover>
-          <img src="/src/assets/svg/退出登录.svg"  style="margin-left: 5px;height: 40%;width: auto" v-show="locale==='Chinese'"  alt="" @click="logOut"/>
+          <img src="/src/assets/svg/退出登录.svg"  style="margin-left: 5px;height: 40%;width: auto" alt="" @click="logOut"/>
         </div>
       </div>
     </el-header>
