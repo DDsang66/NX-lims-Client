@@ -146,7 +146,7 @@
 
   const wordMap = {
     Color: ['Neon','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
-    Structure: ['Woven', 'Knit', 'Non-Woven'],
+    Structure: ['Strip','Loop','Woven', 'Knit', 'Non-Woven'],
     Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
     State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
     Age: ['Baby', 'Child', 'Adult'],
