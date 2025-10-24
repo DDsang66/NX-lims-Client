@@ -89,7 +89,7 @@
               <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.formatTimeAndEmptyDisplay" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column width="70" label="Delete">
+              <el-table-column width="75" label="Delete">
                 <template #default="scope">
                   <el-button type="danger"
                              text
@@ -571,6 +571,9 @@
     search()
   }
   async function search() {
+    if(searchParams.timeOpt!=='default'&&!searchParams.timeRange){
+        return alert('Please select a time range.')
+    }
     let req = await request.post('/order/ordersummary', { QueryParam: searchParams, PageSize: pageSize.value, PageNum: currentPage.value })
     if (req.data.success) {
       if (searchParams.group === 'All')
