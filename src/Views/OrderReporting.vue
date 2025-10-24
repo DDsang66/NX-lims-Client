@@ -243,8 +243,9 @@ async function lineChartDataReq(){
     countLineChartOp.series=[];
     countLineChartOp.xAxis.data=req.data.data.timePropertyName;
     if (req.data.data.timeProperty.length===1){
+      // console.log(req.data.data.timePropertyName[0])
       countLineChartOp.series.push({
-        name: req.data.data.timePropertyName[0],
+        name: req.data.data.timeProperty[0].timeHead,
         type: 'line',
         data: req.data.data.timeProperty[0].timeValue,
         label: {
