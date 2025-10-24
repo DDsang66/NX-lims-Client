@@ -195,7 +195,7 @@ const countLineChartOp = reactive({
   },
   // 数据系列
   series: [],
-  legend: { // 👈 添加图例
+  legend: { //  添加图例
     show: true,
     bottom: '0%' // 放在底部
   }
@@ -265,6 +265,9 @@ async function lineChartDataReq(){
           name: timeProperty.timeHead,
           type: 'line',
           data: timeProperty.timeValue,
+          label:{
+            show: false,
+          },
           emphasis: {
             focus: 'self',       // 推荐：只高亮当前点
             label: {
