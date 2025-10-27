@@ -3,7 +3,7 @@ import Chinese from '../locales/Chinese.js'
 import English from '../locales/English.js'
 
 const i18n = createI18n({
-  locale: 'Chinese', // 使用的语言
+  locale: 'English', // 使用的语言
   fallbackLocale: 'English', // 语言包中不存在时，使用的备用语言
   messages: {
     'Chinese': Chinese,
