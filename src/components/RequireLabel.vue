@@ -76,7 +76,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       itemName: props.itemName,
       additionalRequire: additionalRequire.value,
       sampleDescription: sampleDescription.value,
-      afterWashs:afterWashs.value
+      afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-'))
   };
   try{
     const response = await request.post('/buyer/parameter', payload, );
