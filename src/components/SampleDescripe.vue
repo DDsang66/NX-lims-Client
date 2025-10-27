@@ -132,7 +132,6 @@
   const property = ref([
     { value: 'Color', label: 'Color' },
     { value: 'ProjectNum', label: 'Project No.' },
-    { value: 'AfterWash', label: 'AfterWash' },
     { value: 'Structure', label: 'Structure' },
     { value: 'Batch', label: 'Batch' },
     { value: 'State', label: 'State' },
@@ -153,7 +152,6 @@
     Style: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear'],
     Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
     Area: ['CN', 'US', 'JP', 'EN'],
-    AfterWash: ['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash'],
     Batch: ['1st Bulk','Repeat Order'],
     Other: ['Fill the InputBox']
   }

@@ -1,5 +1,5 @@
 <template>
-  <WetCareLabel @updateData="handleWetCarelabelUpdate" />
+  <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
   <div style="margin-top:15px">
     <FiberContent @confirm="handleRows" />
   </div>
@@ -43,7 +43,7 @@
     itemName: Array
   });
 
-
+  const afterWashs = ref([]);
   const wetCareData = ref({});   // 保存 WetCareLabel 数据
   const fiberRows   = ref([]);   // 保存 FiberContent 数据
   const additionalRequire = ref('');
@@ -75,7 +75,8 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       reviewer: props.reviewer,
       itemName: props.itemName,
       additionalRequire: additionalRequire.value,
-      sampleDescription: sampleDescription.value
+      sampleDescription: sampleDescription.value,
+      afterWashs:afterWashs.value
   };
   try{
     const response = await request.post('/buyer/parameter', payload, );

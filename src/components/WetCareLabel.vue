@@ -84,6 +84,51 @@
         </option>
       </select>
     </div>
+    <div class="form-group col-xl-4">
+      <label>{{$t('testPoint')}}</label>
+      <input type="text" class="form-control" v-model="testPoint">
+    </div>
+    <div class="form-group col-xl-6">
+      <label>{{$t('afterWash')}}</label>
+      <el-select  v-model="selectedAfterWashs"
+                  class="thisMulSelect"
+                  placeholder=""
+                  multiple>
+        <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+          {{ option }}
+        </el-option>
+      </el-select>
+    </div>
+    <div class="form-group col-xl-2" style="display: flex;align-items: center;margin: 0">
+        <el-button @click="addAfterWash">+</el-button>
+    </div>
+    <div class="form-group col-xl-12">
+      <el-table :data="props.afterWashs" border class="removeTableGaps">
+        <el-table-column label="Sample" width="100">
+          <template #default="scope">
+            <el-input v-model="scope.row.testPoint"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="afterWash">
+          <template #default="scope">
+            <el-select  v-model="scope.row.afterWash"
+                        placeholder=""
+                        class="thisMulSelect"
+                        multiple>
+              <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+                {{ option }}
+              </el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="action" width="75">
+          <template #default="scope">
+            <el-button @click="removeAfterWash(scope.$index)" type="danger" link style="margin: auto;display: block">x</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
     <div class="form-group col-xl-12">
       <label>{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
       <select class="form-control" v-model="selectedSCI">
@@ -543,7 +588,14 @@
 
 <script setup>
   import { ref, watch } from 'vue';
+
+  const testPoint=ref('')
   const detergent = ref('');
+  // const afterWashs=ref([])
+  const props = defineProps([
+    "afterWashs"]);
+  const selectedAfterWashs=ref([])
+  const afterWashOptions=['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash','25 Wash','32 Wash','45 Wash'];
   const selectedWashingProcedure = ref('');
   const selectedDryProcedure = ref('');
   const selectedDCProcedure = ref('');
@@ -640,6 +692,15 @@
     },
     { immediate: true }
   );
+  function addAfterWash(){
+    if(props.afterWashs.some(item=>item.testPoint===testPoint.value)){
+      return alert("The test point already exists.")
+    }
+    props.afterWashs.push({testPoint:testPoint.value,afterWash:selectedAfterWashs.value});
+  }
+  function removeAfterWash(index){
+    props.afterWashs.splice(index,1);
+  }
 
   const toggleWashingLabel = () => {
     isWashingLabelVisible.value = !isWashingLabelVisible.value;
@@ -656,6 +717,15 @@
 
 
 <style scoped>
+.thisMulSelect :deep(.el-tag__close) {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  transform: none !important;
+}
+.removeTableGaps :deep(table){
+  margin-bottom: 0 !important;
+}
   .sigma_btn-custom::before {
     background-color: #18086a;
   }
