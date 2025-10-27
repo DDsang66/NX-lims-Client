@@ -9,12 +9,12 @@ var globalFunctions={
     return `${year}-${month}-${day} ${hour}:${minute}`
   },
   //先转换为Date对象，再格式化
-  toDateAndFormat(date){
+  stringTimeFormat(date){
     return globalFunctions.formatTime(new Date(date))
   },
   //转化为datetimeoffset格式
   toDateTimeOffset: (date) => {
-    if (!date) return null;
+    if (!date) return '-';
     if (date instanceof Date) {
       return date.toISOString();
     } else {
@@ -33,10 +33,7 @@ var globalFunctions={
     return value
   },
   //表格空值处理和时间格式化
-  formatTimeAndEmptyDisplay: (row, column, value) => {
-    if (!value) {
-      return '-'
-    }
+  strTimeColumnFormatter: (row, column, value) => {
     return globalFunctions.formatTime(new Date(value))
   }
 }

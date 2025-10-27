@@ -85,8 +85,8 @@
               <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.formatTimeAndEmptyDisplay"></el-table-column>
-              <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.formatTimeAndEmptyDisplay" />
+              <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
+              <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
               <el-table-column width="75" label="Delete">
@@ -138,8 +138,8 @@
       <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.formatTimeAndEmptyDisplay" />
-      <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.formatTimeAndEmptyDisplay" />
+      <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
+      <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
       <el-table-column label="Operations" width="150" fixed="right">
@@ -205,13 +205,25 @@
       <el-descriptions :column="2" border>
         <!-- Report 基本信息 -->
         <el-descriptions-item label="Report No.">
-          {{ reportEdit.reportNum }}
+          <el-input v-model="reportEdit.data1" style="width: 50px;" :size="size" disabled></el-input>
+          <el-select v-model="reportEdit.data2"
+                     filterable
+                     style="width: 80px;" >
+            <el-option value="405.">405.</el-option>
+            <el-option value="441.">441.</el-option>
+          </el-select>
+          <el-input v-model="reportEdit.data3"
+                    style="width: 45px;"></el-input>
+          <el-input v-model="reportEdit.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+          <el-input v-model="reportEdit.data5" style="width: 60px;" :size="size"></el-input>
         </el-descriptions-item>
         <el-descriptions-item label="Order Entry">
           {{reportEdit.orderEntry}}
         </el-descriptions-item>
         <el-descriptions-item label="CS">
-          {{reportEdit.cs}}
+          <el-select  v-model="reportEdit.cs" filterable placeholder="" :size="size" style="width: 150px">
+            <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
+          </el-select>
         </el-descriptions-item>
         <el-descriptions-item label="Test Groups">
           {{reportEdit.testGroups}}
@@ -249,10 +261,10 @@
           </el-descriptions-item>
           <el-descriptions-item label="Express">
             <el-select v-model="group.express" filterable placeholder="">
-              <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
-              <el-option value="Express" :disabled="expressDisable">Express</el-option>
-              <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
-              <el-option value="Same Day">Same Day</el-option>
+              <el-option value="Regular" :disabled="group.regularDisable">Regular</el-option>
+              <el-option value="Express" :disabled="group.expressDisable">Express</el-option>
+              <el-option value="Shuttle" :disabled="group.shuttleDisable">Shuttle</el-option>
+              <el-option value="Same Day" :disabled="group.sameDayDisable">Same Day</el-option>
             </el-select>
           </el-descriptions-item>
           <el-descriptions-item label="No. of Sample">
@@ -262,7 +274,7 @@
 <!--            <el-input v-model="group.testItemNum" />-->
 <!--          </el-descriptions-item>-->
           <el-descriptions-item label="Reviewer">
-            <el-input v-model="group.Reviewer" />
+            <el-input v-model="group.reviewer" />
           </el-descriptions-item>
           <el-descriptions-item label="Review Finish">
             <el-date-picker v-model="group.reviewFinish"
@@ -288,7 +300,18 @@
 
         <!-- ReportNo. -->
         <el-descriptions-item label="ReportNo.">
-          <el-input v-model="reportGroupEdit.reportNum" />
+<!--          <el-input v-model="reportGroupEdit.reportNum" />-->
+          <el-input v-model="reportGroupEdit.data1" style="width: 50px;" :size="size" disabled></el-input>
+          <el-select v-model="reportGroupEdit.data2"
+                     filterable
+                     style="width: 80px;" >
+            <el-option value="405.">405.</el-option>
+            <el-option value="441.">441.</el-option>
+          </el-select>
+          <el-input v-model="reportGroupEdit.data3"
+                    style="width: 45px;"></el-input>
+          <el-input v-model="reportGroupEdit.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+          <el-input v-model="reportGroupEdit.data5" style="width: 60px;" :size="size"></el-input>
         </el-descriptions-item>
 
         <!-- OrderEntry -->
@@ -355,7 +378,7 @@
 
         <!-- Reviewer -->
         <el-descriptions-item label="Reviewer">
-          <el-input v-model="reportGroupEdit.Reviewer" />
+          <el-input v-model="reportGroupEdit.reviewer" />
         </el-descriptions-item>
 
         <!-- ReviewFinish -->
@@ -388,7 +411,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="editDialogOpen = false">Cancel</el-button>
-        <el-button type="primary" @click="editDialogConfirm">
+        <el-button type="primary" @click="editDialogConfirm2">
           Confirm
         </el-button>
       </div>
@@ -407,7 +430,15 @@
   const request = inject('request')
   const authStore = inject('userAuthStore')
   //编辑
-  var reportEdit = ref({})
+  var reportEdit = ref({
+    reportNum: '',
+    data1: '',
+    data2: '',
+    data3: '',
+    data4: '',
+    data5: '',
+  })
+  const CSList=ref( [])
   var reportGroupEdit = ref({})
   var editDialogOpen = ref(false)
   //删除
@@ -466,10 +497,24 @@
   /* edit--------------------------------------------------------------------------------------- */
   //打开编辑框
   function openEdit(row) {
-    if (searchParams.group === 'All')
+    if (searchParams.group === 'All'){
       reportEdit.value = JSON.parse(JSON.stringify(row))
-    else
+      let datas=reportEdit.value.reportNum.split('.')
+      reportEdit.value.data1 = datas[0]+'.'
+      reportEdit.value.data2 = datas[1]+'.'
+      reportEdit.value.data3 = datas[2]+'.'
+      reportEdit.value.data4 = datas[3]
+      reportEdit.value.data5 = '.'+datas[4]
+    }
+    else{
       reportGroupEdit.value = JSON.parse(JSON.stringify(row))
+      let datas=reportGroupEdit.value.reportNum.split('.')
+      reportGroupEdit.value.data1 = datas[0]+'.'
+      reportGroupEdit.value.data2 = datas[1]+'.'
+      reportGroupEdit.value.data3 = datas[2]+'.'
+      reportGroupEdit.value.data4 = datas[3]
+      reportGroupEdit.value.data5 = '.'+datas[4]
+    }
     editDialogOpen.value = true
   }
 
@@ -488,7 +533,7 @@
       // 扁平场景：当前就是单条
       dto = buildOrderUpdateDto([groupToOrderUpdate(reportGroupEdit.value)])
     }
-    console.log(dto)
+    // console.log(dto)
     try {
       await request.post('/order/update', dto)
       ElMessage.success('Update success')
@@ -497,6 +542,14 @@
       await search()
     } catch (e) {
       ElMessage.error('Update failed')
+    }
+  }
+  async function editDialogConfirm2(){
+    console.log(reportEdit.value)
+    if(searchParams.group==='All'){
+      reportEdit.value.reportNum=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
+    }else{
+      reportGroupEdit.value.reportNum=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
     }
   }
   //转化数据
@@ -570,6 +623,14 @@
   function handleSizeChange() {
     search()
   }
+  const getCSList = async () => {
+    const res = await request.get('/search/getCs')
+    if(res.data.success){
+      CSList.value=res.data.data
+    }else{
+      alert(res.data.message)
+    }
+  }
   async function search() {
     if(searchParams.timeOpt!=='default'&&!searchParams.timeRange){
         return alert('Please select a time range.')
@@ -595,6 +656,7 @@
   /* 生命周期函数------------------------------------------------------------------------------------- */
   onMounted(() => {
     search()
+    getCSList()
   })
   /* watch------------------------------------------------------------------------------------------ */
 </script>
