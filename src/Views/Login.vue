@@ -140,6 +140,7 @@
   import { useRouter } from 'vue-router'
 
   const request = inject('request');
+  const roleStore = inject('roleStore');
   const authStore = inject('userAuthStore');
   const currentMode = ref('login')
   const router = useRouter()
@@ -182,13 +183,15 @@
     try {
       const response = await request.post('/auth/login', form);
       // 在登录成功时
-      const { tokens, user,id } = response.data;
+      const { tokens, user,id,role} = response.data;
       console.log('Login Succeed:', user);
       const { accessToken, refreshToken } = tokens;
       localStorage.setItem('accessToken', accessToken);   // 用于请求
       localStorage.setItem('refreshToken', refreshToken); // 续用
       localStorage.setItem('user', user);
       localStorage.setItem('id', id)
+      localStorage.setItem('role', role);
+      roleStore.setRole(role);
 
       authStore.setTokens(accessToken, refreshToken, user,id);
       form.email = '';

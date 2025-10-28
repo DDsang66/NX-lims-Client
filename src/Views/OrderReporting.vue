@@ -11,12 +11,8 @@
           <el-date-picker v-model="cardTime" :type="cardTimeType">
           </el-date-picker>
           <el-text size="large" style="margin-left: 10px;">Group</el-text>
-          <el-select v-model="cardGroup" style="width: 100px;" @change="cardsDataReq">
-            <el-option value="All">All</el-option>
-            <el-option value="Physics">Physics</el-option>
-            <el-option value="Wet">Wet</el-option>
-            <el-option value="Fiber">Fiber</el-option>
-            <el-option value="Flam">Flam</el-option>
+          <el-select v-model="cardGroup" style="width: 100px;" @change="cardsDataReq" :disabled="groups.length===1">
+            <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
           </el-select>
           <el-button :icon="Search" @click="cardsDataReq()" circle style="margin-left: 10px"/>
         </div>
@@ -68,12 +64,8 @@
                           placeholder="">
           </el-date-picker>
           <el-text size="large" style="margin-left: 10px;">Group</el-text>
-          <el-select v-model="fanChartGroup" style="width: 100px;" @change="fanChartDataReq">
-            <el-option value="All">All</el-option>
-            <el-option value="Physics">Physics</el-option>
-            <el-option value="Wet">Wet</el-option>
-            <el-option value="Fiber">Fiber</el-option>
-            <el-option value="Flam">Flam</el-option>
+          <el-select v-model="fanChartGroup" style="width: 100px;" @change="fanChartDataReq" :disabled="groups.length===1">
+            <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
           </el-select>
           <el-button :icon="Search" @click="fanChartDataReq" circle style="margin-left: 10px"/>
         </div>
@@ -99,12 +91,8 @@
         :disabled="lineChartTimeType==='allYear'">
         </el-date-picker>
         <el-text size="large" style="margin-left: 10px;">Group</el-text>
-        <el-select v-model="lineChartGroup" style="width: 100px;" @change="lineChartDataReq">
-          <el-option value="All">All</el-option>
-          <el-option value="Physics">Physics</el-option>
-          <el-option value="Wet">Wet</el-option>
-          <el-option value="Fiber">Fiber</el-option>
-          <el-option value="Flam">Flam</el-option>
+        <el-select v-model="lineChartGroup" style="width: 100px;" @change="lineChartDataReq" :disabled="groups.length===1">
+          <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
         </el-select>
         <el-text size="large" style="margin-left: 10px;">Type</el-text>
         <el-select v-model="lineChartType" style="width: 120px;" @change="lineChartDataReq">
@@ -132,7 +120,8 @@ import {Search} from '@element-plus/icons-vue'
 
 /* Data-------------------------------------------------------------------------------------------- */
 var request = inject('request');
-
+const roleStore = inject('roleStore');
+const groups=roleStore.getGroups;
 var cardData=ref({
   needLabOut:0,
   actuallyLabOut:0,
@@ -143,9 +132,9 @@ var cardData=ref({
 var cardTime=ref(new Date());
 var fanChartTime=ref(new Date());
 var lineChartTime=ref(new Date());
-var cardGroup=ref('All');
-var lineChartGroup=ref('All');
-var fanChartGroup=ref('All');
+var cardGroup=ref(groups[0]);
+var lineChartGroup=ref(groups[0]);
+var fanChartGroup=ref(groups[0]);
 var cardTimeType=ref('date');
 var lineChartTimeType=ref('month');
 var fanChartTimeType=ref('month');

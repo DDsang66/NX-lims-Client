@@ -33,12 +33,8 @@
       </div>
       <div>
         <el-text>Group</el-text>
-        <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange">
-          <el-option value="All">All</el-option>
-          <el-option value="Physics">Physics</el-option>
-          <el-option value="Wet">Wet</el-option>
-          <el-option value="Fiber">Fiber</el-option>
-          <el-option value="Flam">Flam</el-option>
+        <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange" :disabled="groups.length===1">
+          <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
         </el-select>
       </div>
       <div>
@@ -428,6 +424,8 @@
 
   /* Data------------------------------------------------------------------------------------------- */
   const request = inject('request')
+  const roleStore = inject('roleStore')
+  const groups = roleStore.getGroups
   const authStore = inject('userAuthStore')
   //编辑
   var reportEdit = ref({
@@ -454,7 +452,7 @@
     reportNum: "",
     timeType: "month",
     timeRange: '',
-    group: "All",
+    group: groups[0],
     status: "All",
     timeOpt: "default",
     express: "All",

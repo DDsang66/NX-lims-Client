@@ -50,11 +50,6 @@
           router
           style="height: 100%"
         >
-          <!-- Home 菜单（带子菜单） -->
-          <el-sub-menu index="1">
-            <template #title>
-              <span>Home</span>
-            </template>
             <el-menu-item index="/main/Home">
               <span>Home</span>
             </el-menu-item>
@@ -64,7 +59,6 @@
             <el-menu-item index="/main/InstructionManual">
               <span>Instruction Manual</span>
             </el-menu-item>
-          </el-sub-menu>
 
           <!-- AI Helper -->
           <el-menu-item index="/main/ChatBox">
@@ -76,19 +70,19 @@
             <template #title>
               <span>Order</span>
             </template>
-            <el-menu-item index="/main/OrderReporting">
+            <el-menu-item index="/main/OrderReporting" v-if="hasPower('OrderReporting')">
               <span>Order Reporting</span>
             </el-menu-item>
-            <el-menu-item index="/main/OrderSummary">
+            <el-menu-item index="/main/OrderSummary" v-if="hasPower('OrderSummary')">
               <span>Order Summary</span>
             </el-menu-item>
-            <el-menu-item index="/main/OrderEntry">
+            <el-menu-item index="/main/OrderEntry" v-if="hasPower('OrderEntry')">
               <span>Order Entry</span>
             </el-menu-item>
           </el-sub-menu>
 
           <!-- Review 菜单 -->
-          <el-sub-menu index="3">
+          <el-sub-menu index="3" v-if="hasPower('Review')">
             <template #title>
               <span>Review</span>
             </template>
@@ -152,6 +146,8 @@ import '@/assets/css/responsive.css';
     },
     setup() {
       const { locale } = useI18n()
+      const roleStore = inject('roleStore')
+      const hasPower=roleStore.hasPower;
       const userAuth = inject('userAuthStore')
       const xiaJianTou = ref(true)
       const globalStore=inject('globalStore')
@@ -169,7 +165,9 @@ import '@/assets/css/responsive.css';
         xiaJianTou,
         logOut,
         changeLanguage,
-        globalStore
+        globalStore,
+        hasPower,
+        roleStore
       }
     }
   };
