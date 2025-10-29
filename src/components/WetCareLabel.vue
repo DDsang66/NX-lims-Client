@@ -50,9 +50,20 @@
       </div>
     </div>
     <div class="form-group col-xl-4">
-      <label>{{$t('iron')}}</label>
+      <label>{{$t('afterIron')}}</label>
       <div class="input-group">
         <select class="form-control" v-model="selectedIronProcedure">
+          <option value="">Do Not Iron</option>
+          <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group col-xl-4">
+      <label>{{$t('ironMethod')}}</label>
+      <div class="input-group">
+        <select class="form-control" v-model="ironMethod">
           <option value="">Do Not Iron</option>
           <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
             {{ option.label }}
@@ -76,7 +87,7 @@
         </Transition>
       </div>
     </div>
-    <div class="form-group col-xl-12">
+    <div class="form-group col-xl-8">
       <label>{{$t('detergent')}}</label>
       <select class="form-control" v-model="detergent">
         <option v-for="option in detergentOptions" :key="option.value" :value="option.value">
@@ -600,6 +611,7 @@
   const selectedDryProcedure = ref('');
   const selectedDCProcedure = ref('');
   const selectedIronProcedure = ref('');
+  const ironMethod=ref('');
   const selectedBleachProcedure = ref('');
   const selectedSCI = ref('');
   const showAppend = ref(false);
@@ -679,12 +691,13 @@
 
   watch(
     [
-      selectedWashingProcedure, selectedDryProcedure, selectedDCProcedure, selectedIronProcedure, selectedSCI, selectedBleachProcedure],() => {
+      selectedWashingProcedure, selectedDryProcedure, selectedDCProcedure, selectedIronProcedure,ironMethod, selectedSCI, selectedBleachProcedure],() => {
       emit('updateData', {
         washingProcedure: selectedWashingProcedure.value,
         dryProcedure: selectedDryProcedure.value,
         dcProcedure: selectedDCProcedure.value,
         ironProcedure: selectedIronProcedure.value,
+        ironMethod: ironMethod.value,
         sci: selectedSCI.value,
         bleachProcedure: selectedBleachProcedure.value
         ,detergent:detergent.value

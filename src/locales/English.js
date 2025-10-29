@@ -9,7 +9,7 @@ export default {
   dryProcedure:'Dry Procedure',
   DCProcedure:'DC Procedure',
   standard:'Standard',
-  iron:'Iron',
+  ironMethod:'Iron Method',
   bleaching:'Bleaching',
   detergent:'Detergent',
   specialCareInstruction:'Special Care Instruction',
@@ -23,4 +23,5 @@ export default {
   additionalRequire: 'Additional Require',
   afterWash: 'After Wash',
   testPoint: 'Sample',
+  afterIron: 'After Iron',
 }
