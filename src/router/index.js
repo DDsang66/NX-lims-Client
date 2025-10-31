@@ -15,6 +15,7 @@ import userAuthStore from "@/stores/auth.js";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
 import Tchibo from "@/Views/Tchibo.vue";
+import useRoleStore from '@/stores/role.js'
 
 const routes = [
   {
@@ -30,17 +31,17 @@ const routes = [
     name: 'MainLayout',
     component: MainLayout,
     children: [
-      { path: 'Mango', name: 'Mango', component: Mango },
-      { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
-      { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
-      { path: 'Jako', name: 'Jako', component: Jako },
+      // { path: 'Mango', name: 'Mango', component: Mango },
+      // { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
+      // { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
+      // { path: 'Jako', name: 'Jako', component: Jako },
       { path: 'ChatBox', name: 'ChatBox', component: ChatBox },
       {path:'Home',name:'Home',component:Home},
       {path:'Profile',name:'Profile',component:Profile},
       {path:'FAQ',name:'FAQ',component:FAQ},
-      {path:'OrderEntry',name:'OrderEntry',component:OrderEntry},
-      {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
-      { path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },
+      // {path:'OrderEntry',name:'OrderEntry',component:OrderEntry},
+      // {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
+      // {path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },
       {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
     ]
   },
@@ -63,5 +64,27 @@ router.beforeEach((to, from, next) => {
     next();
   }
 });
+
+//为main添加子路由的方法
+function addChildRoutes(routeArray,fatherRouteName) {
+  if(!fatherRouteName)
+    fatherRouteName = 'MainLayout';
+  routeArray.forEach((item)=>{
+    if(!router.hasRoute(item.name)){
+      router.addRoute(fatherRouteName,item);
+    }
+  })
+}
+
+
+//获取数组并添加
+export function addRoleRoute(){
+  const roleStore=useRoleStore()
+  const roleRoutes = roleStore.getRoutes
+  if(roleRoutes.length>0){
+    addChildRoutes(roleRoutes)
+  }
+  // console.log(router.getRoutes())
+}
 
 export default router;

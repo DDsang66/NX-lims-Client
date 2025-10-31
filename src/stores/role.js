@@ -1,8 +1,24 @@
 import { defineStore } from 'pinia';
+import Mango from "@/Views/Mango.vue";
+import Tchibo from "@/Views/Tchibo.vue";
+import CrazyLine from "@/Views/CrazyLine.vue";
+import Jako from "@/Views/Jako.vue";
+import OrderEntry from "@/Views/OrderEntry.vue";
+import OrderSummary from "@/Views/OrderSummary.vue";
+import OrderReporting from "@/Views/OrderReporting.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
     role: localStorage.getItem('role') || 'Visitor',
+    routeMap:new Map(Object.entries({
+      Review:[{ path: 'Mango', name: 'Mango', component: Mango },
+        { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
+        { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
+        { path: 'Jako', name: 'Jako', component: Jako },],
+      OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
+      OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
+      OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },]
+    }))
   }),
   getters: {
     getPower(){
@@ -45,6 +61,17 @@ const useRoleStore = defineStore('role', {
     },
     hasPower(){
       return (powerName)=>this.getPower.includes(powerName);
+    },
+    hasBigPower(){
+      return (powerName)=>this.getPower.some((item)=>item.startsWith(powerName));
+    },
+    getRoutes(state){
+      let routes = [];
+      this.getPower.forEach((item)=>{
+        if(state.routeMap.has(item))
+        routes= routes.concat(state.routeMap.get(item));
+      })
+      return routes;
     }
   },
   actions: {

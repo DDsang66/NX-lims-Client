@@ -17,13 +17,14 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router';
+import {addRoleRoute} from './router/index.js'
 import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
 import useRoleStore from '@/stores/role.js'
 import request from "@/utils/request.js";
 import globalFunctions from "@/utils/globalFunctions.js";
 import i18n from './i18n'
+import router from './router';
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -33,8 +34,9 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(router);
+
 app.use(pinia);
+app.use(router);
 app.use(ElementPlus)
 app.use(i18n)
 //使用provide全局提供
@@ -42,9 +44,13 @@ const auth = userAuthStore()
 app.provide('roleStore',useRoleStore())
 app.provide('userAuthStore',auth)
 app.provide('request',request)
-auth.init()
 app.provide('funcs',globalFunctions)
+
+auth.init()
+addRoleRoute()
 app.mount('#mycontent');
+
+
 
 
 

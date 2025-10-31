@@ -138,6 +138,7 @@
 <script setup>
   import { ref, reactive,inject } from 'vue'
   import { useRouter } from 'vue-router'
+  import {addRoleRoute} from '../router/index.js'
 
   const request = inject('request');
   const roleStore = inject('roleStore');
@@ -184,15 +185,17 @@
       const response = await request.post('/auth/login', form);
       // 在登录成功时
       const { tokens, user,id,role} = response.data;
-      console.log('Login Succeed:', user);
+      // console.log('Login Succeed:', user);
       const { accessToken, refreshToken } = tokens;
       localStorage.setItem('accessToken', accessToken);   // 用于请求
       localStorage.setItem('refreshToken', refreshToken); // 续用
       localStorage.setItem('user', user);
       localStorage.setItem('id', id)
       localStorage.setItem('role', role);
+      console.log('routes'+roleStore.getRoutes)
+      // localStorage.setItem('routes', JSON.stringify(roleStore.getRoutes))
       roleStore.setRole(role);
-
+      addRoleRoute()
       authStore.setTokens(accessToken, refreshToken, user,id);
       form.email = '';
       form.password = '';

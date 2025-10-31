@@ -66,7 +66,7 @@
           </el-menu-item>
 
           <!-- Order 菜单 -->
-          <el-sub-menu index="2">
+          <el-sub-menu index="2" v-if="hasBigPower('Order')">
             <template #title>
               <span>Order</span>
             </template>
@@ -148,6 +148,7 @@ import '@/assets/css/responsive.css';
       const { locale } = useI18n()
       const roleStore = inject('roleStore')
       const hasPower=roleStore.hasPower;
+      const hasBigPower=roleStore.hasBigPower;
       const userAuth = inject('userAuthStore')
       const xiaJianTou = ref(true)
       const globalStore=inject('globalStore')
@@ -167,7 +168,7 @@ import '@/assets/css/responsive.css';
         changeLanguage,
         globalStore,
         hasPower,
-        roleStore
+        hasBigPower
       }
     }
   };
