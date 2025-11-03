@@ -133,7 +133,7 @@ import {ref, reactive, inject, onMounted} from "vue";
 
 const funcs=inject('funcs')
 const request = inject('request')
-
+const authStore = inject('userAuthStore')
 
 const searchParams = reactive({
   recordId: "",
@@ -178,6 +178,7 @@ async function reviewFinish(row) {
   row.reportDueDate=row.dueDate
   row.orderInTime=row.labIn
   row.labOutTime=row.labOut
+  row.reviewerId=authStore.id
   let req = await request.post('/order/update', {rows:[row]})
   if (req.data.success) {
     search()
