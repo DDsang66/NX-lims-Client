@@ -79,6 +79,9 @@
             <el-menu-item index="/main/OrderEntry" v-if="hasPower('OrderEntry')">
               <span>Order Entry</span>
             </el-menu-item>
+            <el-menu-item index="/main/ReviewFinish" v-if="hasPower('Review')">
+              <span>Review Finish</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- Review 菜单 -->
@@ -99,7 +102,6 @@
               <span>Tchibo</span>
             </el-menu-item>
           </el-sub-menu>
-
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>
             <span>Manual Management</span>

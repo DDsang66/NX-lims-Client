@@ -6,6 +6,7 @@ import Jako from "@/Views/Jako.vue";
 import OrderEntry from "@/Views/OrderEntry.vue";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
+import ReviewFinish from "@/Views/ReviewFinish.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -14,7 +15,9 @@ const useRoleStore = defineStore('role', {
       Review:[{ path: 'Mango', name: 'Mango', component: Mango },
         { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
         { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
-        { path: 'Jako', name: 'Jako', component: Jako },],
+        { path: 'Jako', name: 'Jako', component: Jako },
+        {path: 'ReviewFinish',name:'ReviewFinish',component:ReviewFinish}
+      ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
       OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },]

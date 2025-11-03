@@ -34,6 +34,9 @@ var globalFunctions={
   },
   //表格空值处理和时间格式化
   strTimeColumnFormatter: (row, column, value) => {
+    if (!value) {
+      return '-'
+    }
     return globalFunctions.formatTime(new Date(value))
   }
 }
