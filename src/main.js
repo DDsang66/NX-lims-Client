@@ -36,6 +36,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 
 app.use(pinia);
+addRoleRoute()
 app.use(router);
 app.use(ElementPlus)
 app.use(i18n)
@@ -47,7 +48,6 @@ app.provide('request',request)
 app.provide('funcs',globalFunctions)
 
 auth.init()
-addRoleRoute()
 app.mount('#mycontent');
 
 
