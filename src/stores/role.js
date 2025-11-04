@@ -7,6 +7,7 @@ import OrderEntry from "@/Views/OrderEntry.vue";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
 import ReviewFinish from "@/Views/ReviewFinish.vue";
+import LabOut from "@/Views/LabOut.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -20,7 +21,8 @@ const useRoleStore = defineStore('role', {
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
-      OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },]
+      OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
+      LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}]
     }))
   }),
   getters: {
@@ -29,17 +31,17 @@ const useRoleStore = defineStore('role', {
         case 'Visitor':
           return ['FAQ','PersonalCenter'];
         case 'Leader':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Admin':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Phy-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Wet-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Fiber-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Flam-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Reviewer':
           return ['Review'];
         case 'OrderEntry':

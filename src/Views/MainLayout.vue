@@ -82,6 +82,9 @@
             <el-menu-item index="/main/ReviewFinish" v-if="hasPower('Review')">
               <span>Review Finish</span>
             </el-menu-item>
+            <el-menu-item index="/main/LabOut" v-if="hasPower('LabOut')">
+              <span>LabOut</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- Review 菜单 -->

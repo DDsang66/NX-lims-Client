@@ -49,17 +49,21 @@
               <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column width="100" label="Operation">
+              <el-table-column width="120" label="Operation">
                 <template #default="scope">
-                  <div class="line-flex-container">
+                  <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status!=='Test Done'">
                     <el-button type="primary"
-                               v-if="scope.row.status==='In Lab'"
-                               @click="reviewFinish(scope.row)">
-                      Finish
+                               link
+                               @click="labOut(scope.row)">
+                      LabOut
                     </el-button>
-                    <el-text type="danger" v-else>Finished</el-text>
+                    <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row,props.row)">
+                      Delay
+                    </el-button>
                   </div>
-
+                  <el-text type="success" v-else>
+                    Test Done
+                  </el-text>
                 </template>
               </el-table-column>
             </el-table>
@@ -101,16 +105,21 @@
       <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-      <el-table-column label="Operations" width="100" fixed="right">
+      <el-table-column label="Operations" width="120" fixed="right">
         <template #default="scope">
-          <div class="line-flex-container">
+          <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status!=='Test Done'">
             <el-button type="primary"
-                       v-if="scope.row.status==='In Lab'"
-                       @click="reviewFinish(scope.row)">
-              Finish
+                       link
+                       @click="labOut(scope.row)">
+              LabOut
             </el-button>
-            <el-text type="danger" v-else>Finished</el-text>
+            <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row)">
+              Delay
+            </el-button>
           </div>
+          <el-text type="success" v-else>
+            Test Done
+          </el-text>
         </template>
       </el-table-column>
     </el-table>
@@ -125,7 +134,27 @@
                    @current-change="handleCurrentChange"
                    pager-count="12" />
   </div>
-
+  <el-dialog v-model="delayDialogVisible"  width="50%">
+    <el-form inline label-width="auto" style="width: 100%;font-weight: 600">
+      <el-form-item label="ReportNo.:">{{delayForm.reportNum}}</el-form-item>
+      <el-form-item label="Group:">{{delayForm.group}}</el-form-item>
+    </el-form>
+    <el-form label-width="auto" style="width: 100%">
+      <el-form-item label="Delay Type">
+        <el-select v-model="delayForm.delayType" style="width: 100px" placeholder="">
+          <el-option label="Internal" value="Internal"></el-option>
+          <el-option label="External" value="External"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="Delay Reason">
+        <el-input type="textarea" v-model="delayForm.delayReason" placeholder="" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="delayDialogVisible = false">Cancel</el-button>
+      <el-button type="primary" @click="delayConfirm">Confirm</el-button>
+    </template>
+  </el-dialog>
 </template>
 <script setup>
 
@@ -133,7 +162,7 @@ import {ref, reactive, inject, onMounted} from "vue";
 
 const funcs=inject('funcs')
 const request = inject('request')
-const authStore = inject('userAuthStore')
+
 
 const searchParams = reactive({
   recordId: "",
@@ -141,7 +170,7 @@ const searchParams = reactive({
   timeType: "month",
   timeRange: '',
   group: 'All',
-  status: "In Lab",
+  status: "Review Finished",
   timeOpt: "default",
   express: "All",
   orderEntry: "",
@@ -158,6 +187,21 @@ const pageSize = ref(10)
 //总数
 const total = ref(100)
 
+const delayDialogVisible = ref(false)
+const delayForm = ref({
+  delayType: '',
+  delayReason: '',
+  reportNum: '',
+  group: '',
+})
+
+function openDelay(row,propsRow){
+  delayDialogVisible.value = true
+  delayForm.value=row
+  delayForm.value.reportNum = propsRow.reportNum || row.reportNum
+  delayForm.value.group = row.group
+}
+
 async function search() {
   if(searchParams.timeOpt!=='default'&&!searchParams.timeRange){
     return alert('Please select a time range.')
@@ -171,16 +215,29 @@ async function search() {
     total.value = req.data.data.totalCount
   }
 }
-async function reviewFinish(row) {
-  row.reviewFinishTime=new Date()
-  row.testEngineer=row.testEngineer || ''
+async function labOut(row) {
+  row.reviewFinishTime=row.reviewFinish
+  row.testEngineer=row.testEngineer ||''
   row.testGroup=row.group || searchParams.group
   row.reportDueDate=row.dueDate
   row.orderInTime=row.labIn
-  row.labOutTime=row.labOut
-  row.reviewerId=authStore.id
+  row.labOutTime=new Date()
   let req = await request.post('/order/update', {rows:[row]})
   if (req.data.success) {
+    search()
+  }
+}
+async function delayConfirm() {
+  delayForm.value.reviewFinishTime=delayForm.value.reviewFinish
+  delayForm.value.testEngineer=delayForm.value.testEngineer ||''
+  delayForm.value.testGroup=delayForm.value.group || searchParams.group
+  delayForm.value.reportDueDate=delayForm.value.dueDate
+  delayForm.value.orderInTime=delayForm.value.labIn
+  delayForm.value.labOutTime=new Date()
+  // console.log(delayForm)
+  let req = await request.post('/order/update', {rows:[delayForm.value]})
+  if (req.data.success) {
+    delayDialogVisible.value = false
     search()
   }
 }
