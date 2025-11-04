@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import Mango from '../views/Mango.vue';
-import CrazyLine from '../views/CrazyLine.vue';
+import Mango from '../Views/Review/Mango.vue';
+import CrazyLine from '../Views/Review/CrazyLine.vue';
 import ChatBox from '../components/AI Helper(Demo)/ChatBox.vue';
-import Jako from '../views/Jako.vue';
+import Jako from '../Views/Review/Jako.vue';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
 import Profile from '../views/Profile.vue';
@@ -14,7 +14,7 @@ import MainLayout from '../views/MainLayout.vue';
 import userAuthStore from "@/stores/auth.js";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
-import Tchibo from "@/Views/Tchibo.vue";
+import Tchibo from "@/Views/Review/Tchibo.vue";
 import useRoleStore from '@/stores/role.js'
 
 const routes = [

@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia';
-import Mango from "@/Views/Mango.vue";
-import Tchibo from "@/Views/Tchibo.vue";
-import CrazyLine from "@/Views/CrazyLine.vue";
-import Jako from "@/Views/Jako.vue";
+import Mango from "@/Views/Review/Mango.vue";
+import Tchibo from "@/Views/Review/Tchibo.vue";
+import CrazyLine from "@/Views/Review/CrazyLine.vue";
+import Jako from "@/Views/Review/Jako.vue";
 import OrderEntry from "@/Views/OrderEntry.vue";
 import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
 import ReviewFinish from "@/Views/ReviewFinish.vue";
 import LabOut from "@/Views/LabOut.vue";
+import Primark from "@/Views/Review/Primark.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -17,7 +18,8 @@ const useRoleStore = defineStore('role', {
         { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
         { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
         { path: 'Jako', name: 'Jako', component: Jako },
-        {path: 'ReviewFinish',name:'ReviewFinish',component:ReviewFinish}
+        {path: 'ReviewFinish',name:'ReviewFinish',component:ReviewFinish},
+        {path:'Primark',name: 'Primark', component: Primark}
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],

@@ -104,6 +104,9 @@
             <el-menu-item index="/main/Tchibo">
               <span>Tchibo</span>
             </el-menu-item>
+            <el-menu-item index="/main/Primark">
+              <span>Primark</span>
+            </el-menu-item>
           </el-sub-menu>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>
