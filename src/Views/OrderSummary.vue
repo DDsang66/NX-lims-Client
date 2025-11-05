@@ -70,22 +70,24 @@
         <template #default="props">
           <div style="margin-left: 50px;">
             <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" prop="group" :formatter="funcs.emptyDisplay" />
-              <el-table-column label="Lab-In">
+              <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+              <el-table-column label="Lab-In" width="100">
                 <template #default="scope">
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
                 </template>
               </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-              <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
-              <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
+              <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
+              <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column width="75" label="Delete">
+              <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
+              <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+              <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
+              <el-table-column width="75" fixed="right" label="Delete">
                 <template #default="scope">
                   <el-button type="danger"
                              text
@@ -138,6 +140,8 @@
       <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
       <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
+      <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+      <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
       <el-table-column label="Operations" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
@@ -284,8 +288,17 @@
                             value-format="YYYY-MM-DD HH:mm:ss"
                             placeholder=""/>
           </el-descriptions-item>
-          <el-descriptions-item label="Remark">
+          <el-descriptions-item label="Remark" span="2">
             <el-input v-model="group.remark" type="textarea" :rows="2" />
+          </el-descriptions-item>
+          <el-descriptions-item label="Delay Type" span="2">
+            <el-select v-model="group.delayType"  placeholder="" style="width: 40%">
+              <el-option label="Internal" value="Internal"></el-option>
+              <el-option label="External" value="External"></el-option>
+            </el-select>
+          </el-descriptions-item>
+          <el-descriptions-item label="Delay Reason" span="2">
+            <el-input type="textarea" v-model="group.delayReason" placeholder="" />
           </el-descriptions-item>
         </el-descriptions>
       </div>
@@ -402,6 +415,15 @@
         <el-descriptions-item label="Remark" :span="2">
           <el-input v-model="reportGroupEdit.remark" type="textarea" :rows="3" />
         </el-descriptions-item>
+        <el-descriptions-item label="Delay Type" span="2">
+          <el-select v-model="reportGroupEdit.delayType"  placeholder="" style="width: 40%">
+            <el-option label="Internal" value="Internal"></el-option>
+            <el-option label="External" value="External"></el-option>
+          </el-select>
+        </el-descriptions-item>
+        <el-descriptions-item label="Delay Reason" span="2">
+          <el-input type="textarea" v-model="reportGroupEdit.delayReason" placeholder="" />
+        </el-descriptions-item>
       </el-descriptions>
     </el-form>
     <template #footer>
@@ -437,7 +459,7 @@
     data5: '',
   })
   const CSList=ref( [])
-  var reportGroupEdit = ref({})
+
   var editDialogOpen = ref(false)
   //删除
   const reportGroupDelete = ref<{ recordId: string }>({ recordId: '' })  /* 当前行数据（来自 scope.row） */
@@ -457,6 +479,9 @@
     timeOpt: "default",
     express: "All",
     orderEntry: "",
+  })
+  var reportGroupEdit = ref({
+    group: searchParams.group,
   })
   //分页数据
   const currentPage = ref(1)
@@ -512,6 +537,7 @@
       reportGroupEdit.value.data3 = datas[2]+'.'
       reportGroupEdit.value.data4 = datas[3]
       reportGroupEdit.value.data5 = '.'+datas[4]
+      reportGroupEdit.value.group = searchParams.group
     }
     editDialogOpen.value = true
   }
@@ -543,11 +569,30 @@
     }
   }
   async function editDialogConfirm2(){
-    console.log(reportEdit.value)
+    let dto
+    // console.log(reportEdit.value)
     if(searchParams.group==='All'){
       reportEdit.value.reportNum=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
     }else{
       reportGroupEdit.value.reportNum=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
+    }
+    if (searchParams.group === 'All') {
+      // 嵌套场景：一个 Report 里可能有多条 group
+      const rows = (reportEdit.value.groups || []).map(groupToOrderUpdate)
+      dto = buildOrderUpdateDto(rows)
+    } else {
+      // 扁平场景：当前就是单条
+      dto = buildOrderUpdateDto([groupToOrderUpdate(reportGroupEdit.value)])
+    }
+    // console.log(dto)
+    try {
+      await request.post('/order/update', dto)
+      ElMessage.success('Update success')
+      editDialogOpen.value = false
+      // 刷新表格
+      await search()
+    } catch (e) {
+      ElMessage.error('Update failed')
     }
   }
   //转化数据
