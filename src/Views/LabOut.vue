@@ -237,7 +237,7 @@ async function search() {
   }
 }
 async function labOut(row) {
-  if(!(Number(row.testSampleNum)>0&&!Number.isInteger(Number(row.testSampleNum))))
+  if(!(Number(row.testSampleNum)>0&&Number.isInteger(Number(row.testSampleNum))))
     return alert('Please input a positive number of samples.')
   row.reviewFinishTime=row.reviewFinish
   row.testEngineer=row.testEngineer ||''
@@ -251,6 +251,9 @@ async function labOut(row) {
   }
 }
 async function delayConfirm() {
+  if(!delayForm.value.delayReason||!delayForm.value.delayType){
+    return alert('Please select a type and enter the reason.')
+  }
   delayForm.value.reviewFinishTime=delayForm.value.reviewFinish
   delayForm.value.testEngineer=delayForm.value.testEngineer ||''
   delayForm.value.testGroup=delayForm.value.group || searchParams.group
