@@ -29,7 +29,10 @@
               :data="reportList"
               border
               style="width:100%;" height="75%"
-              v-if="searchParams.group==='All'">
+              v-if="searchParams.group==='All'"
+              row-key="reportNum"
+              :expand-row-keys="expandRowKeys"
+              @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template #default="props">
           <div style="margin-left: 50px;">
@@ -42,7 +45,11 @@
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="testSampleNum" label="No. of Sample" >
+                <template #default="scope">
+                  <el-input v-model="scope.row.testSampleNum"></el-input>
+                </template>
+              </el-table-column>
               <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
@@ -98,7 +105,11 @@
       </el-table-column>
       <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" label="No. of Sample" >
+        <template #default="scope">
+          <el-input v-model="scope.row.testSampleNum"></el-input>
+        </template>
+      </el-table-column>
       <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
@@ -186,6 +197,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 //总数
 const total = ref(100)
+const expandRowKeys=ref([])
 
 const delayDialogVisible = ref(false)
 const delayForm = ref({
@@ -195,6 +207,15 @@ const delayForm = ref({
   group: '',
 })
 
+function handleCurrentChange() {
+  search()
+}
+function handleSizeChange() {
+  search()
+}
+function handleExpandChange(row, expandedRows){
+  expandRowKeys.value=expandedRows.map(item=>item.reportNum)
+}
 function openDelay(row,propsRow){
   delayDialogVisible.value = true
   delayForm.value=row
@@ -216,6 +237,8 @@ async function search() {
   }
 }
 async function labOut(row) {
+  if(!(Number(row.testSampleNum)>0&&!Number.isInteger(Number(row.testSampleNum))))
+    return alert('Please input a positive number of samples.')
   row.reviewFinishTime=row.reviewFinish
   row.testEngineer=row.testEngineer ||''
   row.testGroup=row.group || searchParams.group

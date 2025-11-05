@@ -29,7 +29,8 @@
               :data="reportList"
               border
               style="width:100%;" height="75%"
-              v-if="searchParams.group==='All'">
+              v-if="searchParams.group==='All'"
+              >
       <el-table-column type="expand">
         <template #default="props">
           <div style="margin-left: 50px;">
@@ -158,14 +159,22 @@ const pageSize = ref(10)
 //总数
 const total = ref(100)
 
+function handleCurrentChange() {
+  search()
+}
+function handleSizeChange() {
+  search()
+}
+
 async function search() {
   if(searchParams.timeOpt!=='default'&&!searchParams.timeRange){
     return alert('Please select a time range.')
   }
   let req = await request.post('/order/ordersummary', { QueryParam: searchParams, PageSize: pageSize.value, PageNum: currentPage.value })
   if (req.data.success) {
-    if (searchParams.group === 'All')
+    if (searchParams.group === 'All'){
       reportList.value = req.data.data.items
+    }
     else
       reportGroupList.value = req.data.data.items
     total.value = req.data.data.totalCount
