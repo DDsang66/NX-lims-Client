@@ -83,7 +83,7 @@
               <span>Review Finish</span>
             </el-menu-item>
             <el-menu-item index="/main/LabOut" v-if="hasPower('LabOut')">
-              <span>LabOut</span>
+              <span>Lab Out</span>
             </el-menu-item>
           </el-sub-menu>
 
