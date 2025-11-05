@@ -38,6 +38,13 @@
 
           </el-card>
           <el-card shadow="hover" class="column-flex-container">
+            <h6>Internal Reason Delay</h6>
+            <div>
+              <el-text type="primary" >{{cardData.internalReasonDelay}}</el-text>
+            </div>
+
+          </el-card>
+          <el-card shadow="hover" class="column-flex-container">
             <h6>In Advance</h6>
             <div>
               <el-text type="primary" >{{cardData.inAdvanceLabOut}}</el-text>
@@ -127,7 +134,8 @@ var cardData=ref({
   actuallyLabOut:0,
   delayLabOut:0,
   inAdvanceLabOut:0,
-  numOfSample:0
+  numOfSample:0,
+  internalReasonDelay:0
 });
 var cardTime=ref(new Date());
 var fanChartTime=ref(new Date());
