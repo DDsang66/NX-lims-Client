@@ -78,8 +78,13 @@
         </div>
         <v-chart
           :option="fanChartOp"
-          autoresize
+          style="height: 82%"
+          class="thisFanChart"
         />
+        <div class="line-left-flex-container" style="margin-left:10px;gap: 10px;font-size: 20px;">
+          <div>Normal: {{fanChartData.normal}}</div>
+          <div>InternalReasonDelay:{{fanChartData.internalReasonDelay}}</div>
+        </div>
       </div>
     </div>
     <div class="line-chart-wrapper this-piece">
@@ -147,9 +152,10 @@ var cardTimeType=ref('date');
 var lineChartTimeType=ref('month');
 var fanChartTimeType=ref('month');
 var lineChartType=ref('all');
+var fanChartData=ref({})
 const fanChartOp = reactive(
   {
-    color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)'],
+    color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)', 'rgb(2,236,166)'],
     title: {
       text: '出单情况',
       left: 'center'
@@ -158,8 +164,9 @@ const fanChartOp = reactive(
       dimensions: ['value', 'category'],
       source: [
         [0,'Delay'],
-        [0,'Normal'],
         [0,'InAdvance'],
+        [0,'InDueDate'],
+        [0,'UnKnown'],
       ]
     },
     series: [
@@ -221,7 +228,8 @@ async function fanChartDataReq(){
   });
   if (req.data.success){
     let data=req.data.data;
-    fanChartOp.dataset.source=[[data.delay,'Delay'],[data.normal,'Normal'],[data.inAdvance,'InAdvance']]
+    fanChartOp.dataset.source=[[data.delay,'Delay'],[data.inAdvance,'InAdvance'],[data.inDueDate,'InDueDate'],[data.unknown,'Unknown']]
+    fanChartData.value=data;
   }
 }
 async function lineChartDataReq(){
@@ -381,6 +389,9 @@ onMounted(()=>{
 .this-cards :deep(.el-card){
   width: 30%;
   height: 200px;
+}
+.thisFanChart :deep(div){
+  height: 100%;
 }
 :deep(.el-card__body){
   @include column-flex-container();
