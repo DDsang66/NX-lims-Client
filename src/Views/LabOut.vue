@@ -37,26 +37,28 @@
         <template #default="props">
           <div style="margin-left: 50px;">
             <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" prop="group" :formatter="funcs.emptyDisplay" />
-              <el-table-column label="Lab-In">
+              <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+              <el-table-column label="Lab-In" width="100">
                 <template #default="scope">
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
                 </template>
               </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" >
+              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="testSampleNum" label="No. of Sample" width="90" >
                 <template #default="scope">
                   <el-input v-model="scope.row.testSampleNum"></el-input>
                 </template>
               </el-table-column>
               <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-              <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
-              <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
+              <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
+              <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
               <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column width="120" label="Operation">
+              <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
+              <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+              <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
+              <el-table-column width="120" label="Operation" fixed="right">
                 <template #default="scope">
                   <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status!=='Test Done'">
                     <el-button type="primary"
@@ -237,6 +239,7 @@ async function search() {
   }
 }
 async function labOut(row) {
+  // console.log(row.testSampleNum)
   if(!(Number(row.testSampleNum)>0&&Number.isInteger(Number(row.testSampleNum))))
     return alert('Please input a positive number of samples.')
   row.reviewFinishTime=row.reviewFinish
@@ -259,7 +262,6 @@ async function delayConfirm() {
   delayForm.value.testGroup=delayForm.value.group || searchParams.group
   delayForm.value.reportDueDate=delayForm.value.dueDate
   delayForm.value.orderInTime=delayForm.value.labIn
-  delayForm.value.labOutTime=new Date()
   // console.log(delayForm)
   let req = await request.post('/order/update', {rows:[delayForm.value]})
   if (req.data.success) {
