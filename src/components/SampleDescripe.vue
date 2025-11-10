@@ -93,11 +93,15 @@
           </tr>
           <tr>
             <th>Crazy Line</th>
-            <td>AfterWash / Structure / State / Country</td>
+            <td>AfterWash / Structure / State / Area</td>
           </tr>
           <tr>
             <th>JAKO</th>
-            <td>AfterWash / Structure / State / Batch /Type</td>
+            <td>AfterWash / Structure / State / Batch / Type / Category</td>
+          </tr>
+          <tr>
+            <th>Tchibo</th>
+            <td>ProjectNo. / Color / Structure / State / Type</td>
           </tr>
         </tbody>
 
