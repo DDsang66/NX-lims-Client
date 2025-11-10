@@ -82,8 +82,8 @@
           class="thisFanChart"
         />
         <div class="line-left-flex-container" style="margin-left:10px;gap: 10px;font-size: 20px;">
-          <div>Normal: {{fanChartData.normal}}</div>
-          <div>InternalReasonDelay:{{fanChartData.internalReasonDelay}}</div>
+          <div>Normal: {{(fanChartData.normal/fanChartCount).toLocaleString('en',{style:'percent'})}}</div>
+          <div>InternalReasonDelay:{{(fanChartData.internalReasonDelay/fanChartCount).toLocaleString('en',{style:'percent'})}}</div>
         </div>
       </div>
     </div>
@@ -153,6 +153,7 @@ var lineChartTimeType=ref('month');
 var fanChartTimeType=ref('month');
 var lineChartType=ref('all');
 var fanChartData=ref({})
+var fanChartCount=ref(0);
 const fanChartOp = reactive(
   {
     color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)', 'rgb(2,236,166)'],
@@ -230,6 +231,7 @@ async function fanChartDataReq(){
     let data=req.data.data;
     fanChartOp.dataset.source=[[data.delay,'Delay'],[data.inAdvance,'InAdvance'],[data.inDueDate,'InDueDate'],[data.unknown,'Unknown']]
     fanChartData.value=data;
+    fanChartCount.value=data.delay+data.inAdvance+data.inDueDate+data.unknown;
   }
 }
 async function lineChartDataReq(){
