@@ -120,7 +120,7 @@
                 {{formatTime(new Date(scope.row.labIn))}}
               </template>
             </el-table-column>
-            <el-table-column prop="dueDate" label="Due-Date" width="100"/>
+            <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="globalFunctions.strDateColumnFormatter"/>
             <el-table-column prop="express" label="Express" width="90"/>
             <el-table-column prop="remark" label="Remark" />
             <el-table-column prop="status" label="Status" width="100"></el-table-column>
@@ -140,6 +140,7 @@
 import '@/assets/css/style.css';
 import { ref, reactive, watch, onMounted, onUnmounted,inject } from 'vue'
 import {Close} from "@element-plus/icons-vue";
+import globalFunctions from "@/utils/globalFunctions.js";
 
 const size='large'
 // const emit = defineEmits(['confirm']);

@@ -43,7 +43,7 @@
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
                 </template>
               </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
               <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="testSampleNum" label="No. of Sample" width="90" >
                 <template #default="scope">
@@ -105,7 +105,7 @@
           {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
         </template>
       </el-table-column>
-      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" label="No. of Sample" >
         <template #default="scope">

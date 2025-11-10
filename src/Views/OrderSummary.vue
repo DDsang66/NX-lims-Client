@@ -19,11 +19,6 @@
         <el-text size="large">TimeType</el-text>
         <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange" :disabled="searchParams.timeOpt==='default'">
           <el-option v-for="type in DatePickerType" :key="type" :value="type"></el-option>
-          <!--        <el-option label="year" value="year"></el-option>-->
-          <!--        <el-option label="month" value="month"></el-option>-->
-          <!--        <el-option label="day" value="day"></el-option>-->
-          <!--        <el-option label="week" value="week"></el-option>-->
-          <!--        <el-option label="dateTime" value="dateTime"></el-option>-->
         </el-select>
         <el-text size="large">Time Range</el-text>
         <el-date-picker v-model="searchParams.timeRange"
@@ -76,7 +71,7 @@
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
                 </template>
               </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
               <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
@@ -131,7 +126,7 @@
           {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
         </template>
       </el-table-column>
-      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
 <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
@@ -199,7 +194,7 @@
   <el-dialog top="5vh"
              v-model="editDialogOpen"
              title="Edit"
-             width="50%"
+             width="800px"
              :before-close="editBeforeClose">
     <el-form v-if="searchParams.group==='All'">
       <el-descriptions :column="2" border>
@@ -218,7 +213,12 @@
           <el-input v-model="reportEdit.data5" style="width: 60px;" :size="size"></el-input>
         </el-descriptions-item>
         <el-descriptions-item label="Order Entry">
-          {{reportEdit.orderEntry}}
+          <el-select v-model="reportEdit.orderEntry"
+                     filterable
+                     placeholder=""
+                     style="width: 150px;">
+            <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
+          </el-select>
         </el-descriptions-item>
         <el-descriptions-item label="CS">
           <el-select  v-model="reportEdit.cs" filterable placeholder="" :size="size" style="width: 150px">
@@ -250,13 +250,13 @@
           <el-descriptions-item label="Lab-In">
             <el-date-picker v-model="group.labIn"
                             type="datetime"
-                            value-format="YYYY-MM-DD HH:mm:ss"
+                            format="YYYY-MM-DD HH:mm:ss"
                             placeholder="选择时间" />
           </el-descriptions-item>
           <el-descriptions-item label="Due Date">
             <el-date-picker v-model="group.dueDate"
                             type="date"
-                            value-format="YYYY-MM-DD"
+                            format="YYYY-MM-DD"
                             placeholder="选择日期" />
           </el-descriptions-item>
           <el-descriptions-item label="Express">
@@ -274,18 +274,20 @@
 <!--            <el-input v-model="group.testItemNum" />-->
 <!--          </el-descriptions-item>-->
           <el-descriptions-item label="Reviewer">
-            <el-input v-model="group.reviewer" />
+            <el-select v-model="group.reviewerId" filterable placeholder="">
+              <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
+            </el-select>
           </el-descriptions-item>
           <el-descriptions-item label="Review Finish">
             <el-date-picker v-model="group.reviewFinish"
                             type="datetime"
-                            value-format="YYYY-MM-DD HH:mm:ss"
+                            format="YYYY-MM-DD HH:mm:ss"
                             placeholder="" />
           </el-descriptions-item>
           <el-descriptions-item label="Lab Out">
             <el-date-picker v-model="group.labOut"
                             type="datetime"
-                            value-format="YYYY-MM-DD HH:mm:ss"
+                            format="YYYY-MM-DD HH:mm:ss"
                             placeholder=""/>
           </el-descriptions-item>
           <el-descriptions-item label="Remark" span="2">
@@ -310,27 +312,31 @@
         <!-- ReportNo. -->
         <el-descriptions-item label="ReportNo.">
 <!--          <el-input v-model="reportGroupEdit.reportNum" />-->
-          <el-input v-model="reportGroupEdit.data1" style="width: 50px;" :size="size" disabled></el-input>
+          <el-input v-model="reportGroupEdit.data1" style="width: 40px;" :size="size" disabled></el-input>
           <el-select v-model="reportGroupEdit.data2"
                      filterable
-                     style="width: 80px;" >
+                     style="width: 75px;" >
             <el-option value="405.">405.</el-option>
             <el-option value="441.">441.</el-option>
           </el-select>
           <el-input v-model="reportGroupEdit.data3"
                     style="width: 45px;"></el-input>
-          <el-input v-model="reportGroupEdit.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
-          <el-input v-model="reportGroupEdit.data5" style="width: 60px;" :size="size"></el-input>
+          <el-input v-model="reportGroupEdit.data4" style="width: 60px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+          <el-input v-model="reportGroupEdit.data5" style="width: 40px;" :size="size"></el-input>
         </el-descriptions-item>
 
         <!-- OrderEntry -->
         <el-descriptions-item label="OrderEntry">
-          <el-input v-model="reportGroupEdit.orderEntry" />
+          <el-select v-model="reportGroupEdit.orderEntry" filterable placeholder="">
+            <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
+          </el-select>
         </el-descriptions-item>
 
         <!-- CS -->
         <el-descriptions-item label="CS">
-          <el-input v-model="reportGroupEdit.cs" />
+          <el-select  v-model="reportGroupEdit.cs" filterable placeholder="" :size="size" style="width: 150px">
+            <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
+          </el-select>
         </el-descriptions-item>
 
         <!-- Groups -->
@@ -387,7 +393,9 @@
 
         <!-- Reviewer -->
         <el-descriptions-item label="Reviewer">
-          <el-input v-model="reportGroupEdit.reviewer" />
+          <el-select v-model="reportGroupEdit.reviewerId" filterable placeholder="">
+            <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
+          </el-select>
         </el-descriptions-item>
 
         <!-- ReviewFinish -->
@@ -459,6 +467,13 @@
     data5: '',
   })
   const CSList=ref( [])
+  const userList = ref([])
+  // const labInPO={
+  //
+  // }
+  // function labInDisableDate(date) {
+  //   return date;
+  // }
 
   var editDialogOpen = ref(false)
   //删除
@@ -572,8 +587,53 @@
     let dto
     // console.log(reportEdit.value)
     if(searchParams.group==='All'){
+      for (const group of reportEdit.value.groups) {
+        // console.log(new Date(new Date(group.dueDate).getTime()+16*60*60*1000))
+
+        const groupName = group.group || 'current';
+        if (!group.dueDate) {
+          return alert(`Please set a due date for the ${groupName} group.`);
+        }
+        if (group.labIn && group.reviewFinish && new Date(group.labIn) >= new Date(group.reviewFinish)) {
+          return alert(`For the ${groupName} group, "Lab In" time must be earlier than "Review Finish" time.`);
+        }
+        if (group.reviewFinish && group.labOut && new Date(group.reviewFinish) >= new Date(group.labOut)) {
+          return alert(`For the ${groupName} group, "Review Finish" time must be earlier than "Lab Out" time.`);
+        }
+        if (group.labIn) {
+          const dueDatePlusOneDay = new Date(new Date(group.dueDate).getTime() + 24 * 60 * 60 * 1000);
+          // console.log(dueDatePlusOneDay)
+          if (new Date(group.labIn) >= dueDatePlusOneDay) {
+            return alert(`For the ${groupName} group, "Lab In" time must be on or before the due date (i.e., before ${dueDatePlusOneDay.toISOString().slice(0, 10)}).`);
+          }
+        }
+      }
       reportEdit.value.reportNum=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
     }else{
+      // console.log(reportGroupEdit.value.dueDate)
+      // console.log(typeof reportGroupEdit.value.dueDate)
+      // console.log(new Date((typeof reportGroupEdit.value.dueDate)==='string' ? new Date(new Date(reportGroupEdit.value.dueDate).getTime()+16*60*60*1000):new Date(reportGroupEdit.value.dueDate.getTime()+24*60*60*1000)))
+      // console.log(!reportGroupEdit.value.dueDate)
+      // if(!reportGroupEdit.value.dueDate||(!((!reportGroupEdit.value.labIn||!reportGroupEdit.value.reviewFinish||reportGroupEdit.value.labIn<reportGroupEdit.value.reviewFinish)&&
+      //   (!reportGroupEdit.value.reviewFinish||!reportGroupEdit.value.labOut||reportGroupEdit.value.reviewFinish<reportGroupEdit.value.labOut)&&
+      //   (!reportGroupEdit.value.labIn||reportGroupEdit.value.labIn<((typeof reportGroupEdit.value.dueDate)==='string' ? new Date(new Date(reportGroupEdit.value.dueDate).getTime()+16*60*60*1000):new Date(reportGroupEdit.value.dueDate.getTime()+24*60*60*1000))))))
+      //   return alert('Please choose the correct time. ')
+      const v = reportGroupEdit.value;
+      if (!v.dueDate) {
+        return alert('Please select a due date.');
+      }
+      const adjustedDueDate = new Date(new Date(v.dueDate).getTime() + 24 * 60 * 60 * 1000);
+      if (v.labIn && v.reviewFinish && !(new Date(v.labIn) < new Date(v.reviewFinish))) {
+        return alert('Lab-In must be earlier than Review-Finish.');
+      }
+      if (v.reviewFinish && v.labOut && !(new Date(v.reviewFinish) < new Date(v.labOut))) {
+        return alert('Review-Finish must be earlier than Lab-Out.');
+      }
+      if (v.labIn && !(new Date(v.labIn) <= adjustedDueDate)) {
+        // console.log('v.labIn:', v.labIn)
+        // console.log('adjustedDueDate:', adjustedDueDate)
+        return alert('Lab-In must be on or before the due date.');
+      }
       reportGroupEdit.value.reportNum=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
     }
     if (searchParams.group === 'All') {
@@ -600,7 +660,8 @@
   function groupToOrderUpdate(g: any): OrderUpdate {
     return {
       recordId: String(g.recordId ?? g.id),
-      reviewer: g.Reviewer || null,
+      reviewer: g.reviewer || null,
+      reviewerId: g.reviewerId || null,
       testEngineer: g.testEngineer || null,
       status: g.status ?? null,
       testGroup: g.group || g.testGroup || null,
@@ -674,6 +735,14 @@
       alert(res.data.message)
     }
   }
+  async function getUserList() {
+    let rep=await request.get('/search/getUser')
+    if(rep.data.success){
+      userList.value=rep.data.data
+    }else{
+      alert(rep.data.message)
+    }
+  }
   async function search() {
     if(searchParams.timeOpt!=='default'&&!searchParams.timeRange){
         return alert('Please select a time range.')
@@ -700,6 +769,7 @@
   onMounted(() => {
     search()
     getCSList()
+    getUserList()
   })
   /* watch------------------------------------------------------------------------------------------ */
 </script>
