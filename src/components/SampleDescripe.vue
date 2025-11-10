@@ -97,7 +97,7 @@
           </tr>
           <tr>
             <th>JAKO</th>
-            <td>AfterWash / Structure / State / Other(Dyed\Sublimation, 1st Bulk\Repeated Order)</td>
+            <td>AfterWash / Structure / State / Batch /Type</td>
           </tr>
         </tbody>
 
@@ -141,6 +141,7 @@
     { value: 'Category', label: 'Category' },
     { value: 'Area', label: 'Area' },
     { value: 'Other', label: 'Other' },
+    { value: 'Type', label: 'Type' },
   ]);
 
   const wordMap = {
@@ -153,7 +154,8 @@
     Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
     Area: ['CN', 'US', 'JP', 'EN'],
     Batch: ['1st Bulk','Repeat Order'],
-    Other: ['Fill the InputBox']
+    Other: ['Fill the InputBox'],
+    Type: ['Dyed','Sublimation']
   }
 
   //根据 Property 返回当前可选 Word 列表
