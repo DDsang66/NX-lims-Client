@@ -213,7 +213,7 @@
           <el-input v-model="reportEdit.data5" style="width: 60px;" :size="size"></el-input>
         </el-descriptions-item>
         <el-descriptions-item label="Order Entry">
-          <el-select v-model="reportEdit.orderEntry"
+          <el-select v-model="reportEdit.orderEntryId"
                      filterable
                      placeholder=""
                      style="width: 150px;">
@@ -221,7 +221,7 @@
           </el-select>
         </el-descriptions-item>
         <el-descriptions-item label="CS">
-          <el-select  v-model="reportEdit.cs" filterable placeholder="" :size="size" style="width: 150px">
+          <el-select  v-model="reportEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
             <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
           </el-select>
         </el-descriptions-item>
@@ -327,14 +327,14 @@
 
         <!-- OrderEntry -->
         <el-descriptions-item label="OrderEntry">
-          <el-select v-model="reportGroupEdit.orderEntry" filterable placeholder="">
+          <el-select v-model="reportGroupEdit.orderEntryId" filterable placeholder="">
             <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
           </el-select>
         </el-descriptions-item>
 
         <!-- CS -->
         <el-descriptions-item label="CS">
-          <el-select  v-model="reportGroupEdit.cs" filterable placeholder="" :size="size" style="width: 150px">
+          <el-select  v-model="reportGroupEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
             <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
           </el-select>
         </el-descriptions-item>
@@ -585,11 +585,8 @@
   }
   async function editDialogConfirm2(){
     let dto
-    // console.log(reportEdit.value)
     if(searchParams.group==='All'){
       for (const group of reportEdit.value.groups) {
-        // console.log(new Date(new Date(group.dueDate).getTime()+16*60*60*1000))
-
         const groupName = group.group || 'current';
         if (!group.dueDate) {
           return alert(`Please set a due date for the ${groupName} group.`);
@@ -610,14 +607,6 @@
       }
       reportEdit.value.reportNum=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
     }else{
-      // console.log(reportGroupEdit.value.dueDate)
-      // console.log(typeof reportGroupEdit.value.dueDate)
-      // console.log(new Date((typeof reportGroupEdit.value.dueDate)==='string' ? new Date(new Date(reportGroupEdit.value.dueDate).getTime()+16*60*60*1000):new Date(reportGroupEdit.value.dueDate.getTime()+24*60*60*1000)))
-      // console.log(!reportGroupEdit.value.dueDate)
-      // if(!reportGroupEdit.value.dueDate||(!((!reportGroupEdit.value.labIn||!reportGroupEdit.value.reviewFinish||reportGroupEdit.value.labIn<reportGroupEdit.value.reviewFinish)&&
-      //   (!reportGroupEdit.value.reviewFinish||!reportGroupEdit.value.labOut||reportGroupEdit.value.reviewFinish<reportGroupEdit.value.labOut)&&
-      //   (!reportGroupEdit.value.labIn||reportGroupEdit.value.labIn<((typeof reportGroupEdit.value.dueDate)==='string' ? new Date(new Date(reportGroupEdit.value.dueDate).getTime()+16*60*60*1000):new Date(reportGroupEdit.value.dueDate.getTime()+24*60*60*1000))))))
-      //   return alert('Please choose the correct time. ')
       const v = reportGroupEdit.value;
       if (!v.dueDate) {
         return alert('Please select a due date.');
@@ -630,23 +619,23 @@
         return alert('Review-Finish must be earlier than Lab-Out.');
       }
       if (v.labIn && !(new Date(v.labIn) <= adjustedDueDate)) {
-        // console.log('v.labIn:', v.labIn)
-        // console.log('adjustedDueDate:', adjustedDueDate)
         return alert('Lab-In must be on or before the due date.');
       }
       reportGroupEdit.value.reportNum=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
     }
     if (searchParams.group === 'All') {
-      // 嵌套场景：一个 Report 里可能有多条 group
-      const rows = (reportEdit.value.groups || []).map(groupToOrderUpdate)
-      dto = buildOrderUpdateDto(rows)
+      if(reportEdit.value.groups.length!==new Set(reportEdit.value.groups.map(g => g.group)).size){
+        return alert('The same group is not allowed here.')
+      }
+      dto=reportEdit.value.groups.map(item=>{
+        const {groups, ...noGroups}= reportEdit.value
+        let obj={...item,...noGroups}
+        return {...obj, "testEngineer": "",testGroup:obj.group,reportDueDate:obj.dueDate,orderInTime:obj.labIn,labOutTime:obj.labOut}})
     } else {
-      // 扁平场景：当前就是单条
-      dto = buildOrderUpdateDto([groupToOrderUpdate(reportGroupEdit.value)])
+      dto=[{...reportGroupEdit.value,"testEngineer": "",testGroup:reportGroupEdit.value.group,reportDueDate:reportGroupEdit.value.dueDate,orderInTime:reportGroupEdit.value.labIn,labOutTime:reportGroupEdit.value.labOut}]
     }
-    // console.log(dto)
     try {
-      await request.post('/order/update', dto)
+      await request.post('/order/update', {rows:dto})
       ElMessage.success('Update success')
       editDialogOpen.value = false
       // 刷新表格
@@ -655,31 +644,7 @@
       ElMessage.error('Update failed')
     }
   }
-  //转化数据
-  // 把单个 group 对象映射成 OrderUpdate
-  function groupToOrderUpdate(g: any): OrderUpdate {
-    return {
-      recordId: String(g.recordId ?? g.id),
-      reviewer: g.reviewer || null,
-      reviewerId: g.reviewerId || null,
-      testEngineer: g.testEngineer || null,
-      status: g.status ?? null,
-      testGroup: g.group || g.testGroup || null,
-      testSampleNum: g.testSampleNum ?? 0,
-      testItemNum: g.testItemNum ?? 0,
-      remark: g.remark || null,
-      express: g.express || null,
-      reportDueDate: g.dueDate ? new Date(g.dueDate).toISOString() : null,
-      orderInTime: g.labIn ? new Date(g.labIn).toISOString() : null,
-      reviewFinishTime: g.reviewFinish ? new Date(g.reviewFinish).toISOString() : null,
-      labOutTime: g.labOut ? new Date(g.labOut).toISOString() : null
-    }
-  }
 
-  // 构造最终 DTO
-  function buildOrderUpdateDto(list: OrderUpdate[]): OrderUpdateDto {
-    return { rows: list }
-  }
   /* edit--------------------------------------------------------------------------------------- */
 
   /* delete--------------------------------------------------------------------------------------- */
