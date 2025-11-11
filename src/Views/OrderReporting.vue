@@ -156,7 +156,7 @@ var fanChartData=ref({})
 var fanChartCount=ref(0);
 const fanChartOp = reactive(
   {
-    color: ['rgb(0,70,173)', 'rgb(11,37,59)', 'rgb(242,239,237)', 'rgb(2,236,166)'],
+    color: ['rgb(192,109,62)', 'rgb(255,223,25)', 'rgb(250,180,52)', 'rgb(0,177,113)','rgb(0,114,206)','rgb(146,193,233)'],
     title: {
       text: '出单情况',
       left: 'center'
