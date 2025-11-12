@@ -261,18 +261,15 @@
           </el-descriptions-item>
           <el-descriptions-item label="Express">
             <el-select v-model="group.express" filterable placeholder="">
-              <el-option value="Regular" :disabled="group.regularDisable">Regular</el-option>
-              <el-option value="Express" :disabled="group.expressDisable">Express</el-option>
-              <el-option value="Shuttle" :disabled="group.shuttleDisable">Shuttle</el-option>
-              <el-option value="Same Day" :disabled="group.sameDayDisable">Same Day</el-option>
+              <el-option value="Regular" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=4">Regular</el-option>
+              <el-option value="Express" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=3">Express</el-option>
+              <el-option value="Shuttle" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=2">Shuttle</el-option>
+              <el-option value="Same Day" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<1">Same Day</el-option>
             </el-select>
           </el-descriptions-item>
           <el-descriptions-item label="No. of Sample">
             <el-input v-model="group.testSampleNum" />
           </el-descriptions-item>
-<!--          <el-descriptions-item label="Test Item Num">-->
-<!--            <el-input v-model="group.testItemNum" />-->
-<!--          </el-descriptions-item>-->
           <el-descriptions-item label="Reviewer">
             <el-select v-model="group.reviewerId" filterable placeholder="">
               <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
