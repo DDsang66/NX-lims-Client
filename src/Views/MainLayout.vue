@@ -85,6 +85,9 @@
             <el-menu-item index="/main/LabOut" v-if="hasPower('LabOut')">
               <span>Lab Out</span>
             </el-menu-item>
+            <el-menu-item index="/main/OrderView">
+              <span>Order View</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- Review 菜单 -->

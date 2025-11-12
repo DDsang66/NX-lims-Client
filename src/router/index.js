@@ -16,6 +16,7 @@ import OrderSummary from "@/Views/OrderSummary.vue";
 import OrderReporting from "@/Views/OrderReporting.vue";
 import Tchibo from "@/Views/Review/Tchibo.vue";
 import useRoleStore from '@/stores/role.js'
+import OrderView from "@/Views/OrderView.vue";
 
 const routes = [
   {
@@ -43,6 +44,7 @@ const routes = [
       // {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
       // {path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },
       {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
+      {path:'OrderView',name:'OrderView',component:OrderView}
     ]
   },
 ];
