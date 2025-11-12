@@ -54,13 +54,17 @@
               <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
               <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
-              <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
+              <el-table-column label="Remark" min-width="300" :formatter="funcs.emptyDisplay" >
+                <template #default="scope">
+                  <el-input v-model="scope.row.remark" type="textarea"></el-input>
+                </template>
+              </el-table-column>
               <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
               <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
               <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
               <el-table-column width="120" label="Operation" fixed="right">
                 <template #default="scope">
-                  <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status!=='Test Done'">
+                  <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
                     <el-button type="primary"
                                link
                                @click="labOut(scope.row)">
@@ -70,6 +74,9 @@
                       Delay
                     </el-button>
                   </div>
+                  <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
+                    Unreviewed
+                  </el-text>
                   <el-text type="success" v-else>
                     Test Done
                   </el-text>
@@ -116,11 +123,15 @@
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
       <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="300" label="Remark" :formatter="funcs.emptyDisplay" >
+        <template #default="scope">
+          <el-input v-model="scope.row.remark" type="textarea"></el-input>
+        </template>
+      </el-table-column>
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
       <el-table-column label="Operations" width="120" fixed="right">
         <template #default="scope">
-          <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status!=='Test Done'">
+          <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
             <el-button type="primary"
                        link
                        @click="labOut(scope.row)">
@@ -130,6 +141,9 @@
               Delay
             </el-button>
           </div>
+          <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
+            Unreviewed
+          </el-text>
           <el-text type="success" v-else>
             Test Done
           </el-text>
@@ -240,7 +254,7 @@ async function search() {
 }
 async function labOut(row) {
   // console.log(row.testSampleNum)
-  if(!(Number(row.testSampleNum)>0&&Number.isInteger(Number(row.testSampleNum))))
+  if(!(Number(row.testSampleNum)>=0&&Number.isInteger(Number(row.testSampleNum))))
     return alert('Please input a positive number of samples.')
   row.reviewFinishTime=row.reviewFinish
   row.testEngineer=row.testEngineer ||''
