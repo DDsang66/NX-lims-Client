@@ -30,6 +30,9 @@
               border
               style="width:100%;" height="75%"
               v-if="searchParams.group==='All'"
+              @expand-change="expandChange"
+              :expand-row-keys="expandRowKeys"
+              row-key="reportNum"
               >
       <el-table-column type="expand">
         <template #default="props">
@@ -48,7 +51,11 @@
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
               <el-table-column prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
-              <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
+              <el-table-column label="Remark" min-width="200" :formatter="funcs.emptyDisplay" >
+                <template #default="scope">
+                  <el-input v-model="scope.row.remark" type="textarea"></el-input>
+                </template>
+              </el-table-column>
               <el-table-column prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
               <el-table-column width="100" label="Operation">
                 <template #default="scope">
@@ -100,7 +107,11 @@
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
       <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="300" label="Remark" :formatter="funcs.emptyDisplay" >
+        <template #default="scope">
+          <el-input v-model="scope.row.remark" type="textarea"></el-input>
+        </template>
+      </el-table-column>
       <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
       <el-table-column label="Operations" width="100" fixed="right">
         <template #default="scope">
@@ -158,6 +169,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 //总数
 const total = ref(100)
+const expandRowKeys=ref([])
 
 function handleCurrentChange() {
   search()
@@ -212,6 +224,9 @@ const formatTime = (date) => {
 }
 function searchGroupChange() {
   search()
+}
+function expandChange(row, expandedRows){
+  expandRowKeys.value=expandedRows.map(item=>item.reportNum)
 }
 
 onMounted(() => {
