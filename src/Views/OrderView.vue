@@ -156,7 +156,7 @@
   </div>
   <el-dialog top="5vh"
              v-model="editDialogOpen"
-             title="Edit"
+             title="Edit Application"
              width="800px"
              :before-close="editBeforeClose">
     <el-form v-if=allOpen>
@@ -210,6 +210,9 @@
           </el-descriptions-item>
           <el-descriptions-item label="status">
             {{group.status}}
+          </el-descriptions-item>
+          <el-descriptions-item label="remark" span="2">
+            <el-input v-model="group.remark" type="textarea" />
           </el-descriptions-item>
           <el-descriptions-item label="Application Reason">
             <el-input v-model="group.applicationReason" type="textarea" />
@@ -272,6 +275,9 @@
         <!-- Status -->
         <el-descriptions-item label="Status" span="2">
           {{reportGroupEdit.status}}
+        </el-descriptions-item>
+        <el-descriptions-item label="Remark" span="2">
+          <el-input v-model="reportGroupEdit.remark" type="textarea" />
         </el-descriptions-item>
         <el-descriptions-item label="ApplicationReason">
           <el-input v-model="reportGroupEdit.applicationReason" type="textarea" />
