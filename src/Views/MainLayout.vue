@@ -110,12 +110,17 @@
             <el-menu-item index="/main/Primark">
               <span>Primark</span>
             </el-menu-item>
+            <el-menu-item index="/main/Kik">
+              <span>Kik</span>
+            </el-menu-item>
+            <el-menu-item index="/main/Pep&co">
+              <span>Pepco</span>
+            </el-menu-item>
           </el-sub-menu>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>
             <span>Manual Management</span>
           </el-menu-item>
-
           <!-- Personal Center -->
           <el-menu-item index="/main/Profile">
             <span>Personal Center</span>
