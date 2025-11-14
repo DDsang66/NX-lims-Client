@@ -664,7 +664,7 @@
     { value: 'Wash in Laundry Bag', label: 'Wash in Laundry Bag' },
     { value: 'Close All Botton and Zipper before Washing', label: 'Close All Botton and Zipper before Washing' },
     { value: 'Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Net Bag,Close All Botton and Zipper before Washing' },
-    { value: 'Wash in Laundry Bag,Close All Botton and Zipper before Washing', label: 'Wash Inside Out,Close All Botton and Zipper before Washing' },
+    { value: 'Wash Inside Out,Close All Botton and Zipper before Washing', label: 'Wash Inside Out,Close All Botton and Zipper before Washing' },
     { value: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing' }
   ]);
   const detergentOptions=ref([
