@@ -141,7 +141,7 @@
     { value: 'State', label: 'State' },
     { value: 'Season', label: 'Season' },
     { value: 'Age', label: 'Age' },
-    { value: 'Style', label: 'Style' },
+    { value: 'EndUse', label: 'End-Use' },
     { value: 'Category', label: 'Category' },
     { value: 'Area', label: 'Area' },
     { value: 'Other', label: 'Other' },
@@ -149,12 +149,12 @@
   ]);
 
   const wordMap = {
-    Color: ['Neon','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
+    Color: ['Neon','Turquoise','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
     Structure: ['Strip','Loop','Woven', 'Knit', 'Non-Woven'],
     Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
     State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
     Age: ['Baby', 'Child', 'Adult'],
-    Style: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear'],
+    EndUse: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear','Ski Wear','Tights','General'],
     Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
     Area: ['CN', 'US', 'JP', 'EN'],
     Batch: ['1st Bulk','Repeat Order'],
