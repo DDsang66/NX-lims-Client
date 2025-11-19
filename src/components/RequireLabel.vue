@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-  import { ref, defineComponent,inject} from 'vue'
+import {ref, defineComponent, inject, computed} from 'vue'
   import WetCareLabel from '@/components/WetCareLabel.vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
@@ -62,10 +62,14 @@
 
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
   const confirmAction = async () => {
+  // console.log(selectedItems.value)
     const wetCareFields = Object.keys(wetCareData.value).reduce((acc, key) => {
       acc[key] = wetCareData.value[key];
       return acc;
     }, {});
+    if(afterWashs.value.some(item =>!item.testPoint)){
+      return alert('Please fill in the Sample')
+    }
     const payload = {
     ...wetCareFields,
     fiberComposition: fiberRows.value,
