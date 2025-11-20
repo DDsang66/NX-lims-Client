@@ -66,11 +66,13 @@
 </template>
 
 <script setup>
-  import { ref,inject} from 'vue'
-  import {ElMessage} from "element-plus";
+import {ref, inject, h} from 'vue'
+  import {ElMessage, ElNotification} from "element-plus";
+  import {Loading} from "@element-plus/icons-vue";
 
 const request = inject('request')
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
+  const notificationInstance = ref(null)
 // 响应式数据
 const masterName   = ref('')
 const finishingTime= ref('')
@@ -129,12 +131,14 @@ const cvv          = ref(null)
   if(canPrint){
     try {
       ElMessage.primary('Start downloading.')
+      showPersistentLoadingNotification()
       canPrint=false
       const response = await request.post('/receivedata/showExcel', form,
         {
           responseType: 'blob', //axios 返回二进制流
         });
       canPrint=true
+      closeNotification()
       if(response.status===200){
         ElMessage.success('Download successful!')
       }else {
@@ -159,6 +163,7 @@ const cvv          = ref(null)
     }
     catch (error) {
       ElMessage.error('Download failed!')
+      closeNotification()
       canPrint=true
       emit('api-error', {
         message: error.response?.data?.message || '请求失败',
@@ -168,7 +173,30 @@ const cvv          = ref(null)
     }
   }
 }
+  const showPersistentLoadingNotification = () => {
+    // 先关闭已存在的
+    if (notificationInstance.value) {
+      notificationInstance.value.close()
+    }
 
+    // 创建一个自定义图标的 Notification
+    notificationInstance.value = ElNotification({
+      title: 'Downloading',
+      message: 'The file is downloading.',
+      duration: 0,
+      showClose: false,
+      position: 'top-right',
+      // 关键：传入一个带旋转动画的图标组件
+      icon: () => h(Loading, { style: 'animation: rotate 1.5s linear infinite;' })
+    })
+  }
+
+  const closeNotification = () => {
+    if (notificationInstance.value) {
+      notificationInstance.value.close()
+      notificationInstance.value = null
+    }
+  }
 const pageReload = () => {
   location.reload()
 }
@@ -177,5 +205,9 @@ const pageReload = () => {
 <style scoped>
   .sigma_btn-custom::before {
     background-color: #18086a;
+  }
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 </style>
