@@ -67,6 +67,7 @@
 
 <script setup>
   import { ref,inject} from 'vue'
+  import {ElMessage} from "element-plus";
 
 const request = inject('request')
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
@@ -74,7 +75,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
 const masterName   = ref('')
 const finishingTime= ref('')
 const cvv          = ref(null)
-
+  var canPrint=true
   const props = defineProps({
     buyer: {
       type: String,
@@ -125,36 +126,46 @@ const cvv          = ref(null)
     SampleDescription: props.sampleDescription,
     SelectedRows: processedRows
   }
-
-  try {
-    const response = await request.post('/receivedata/showExcel', form,
-      {
-        responseType: 'blob', //axios 返回二进制流
-      });
-
-    const blob = new Blob([response.data], { type: 'application/zip' });
-    const contentDisposition = response.headers['content-disposition'];
-    const filename = contentDisposition
-      ?.split('filename=')[1]
-      ?.replace(/"/g, '') || 'report.zip';
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    emit('api-response', response.data)
-    emit('submit', response.data)
-  }
-  catch (error) {
-    emit('api-error', {
-      message: error.response?.data?.message || '请求失败',
-      status: error.response?.status,
-      error: error
-    })
+  if(canPrint){
+    try {
+      ElMessage.primary('Start downloading.')
+      canPrint=false
+      const response = await request.post('/receivedata/showExcel', form,
+        {
+          responseType: 'blob', //axios 返回二进制流
+        });
+      canPrint=true
+      if(response.status===200){
+        ElMessage.success('Download successful!')
+      }else {
+        ElMessage.error('Download failed!')
+      }
+      const blob = new Blob([response.data], { type: 'application/zip' });
+      const contentDisposition = response.headers['content-disposition'];
+      const filename = contentDisposition
+        ?.split('filename=')[1]
+        ?.replace(/"/g, '') || 'report.zip';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      emit('api-response', response.data)
+      emit('submit', response.data)
+    }
+    catch (error) {
+      ElMessage.error('Download failed!')
+      canPrint=true
+      emit('api-error', {
+        message: error.response?.data?.message || '请求失败',
+        status: error.response?.status,
+        error: error
+      })
+    }
   }
 }
 
