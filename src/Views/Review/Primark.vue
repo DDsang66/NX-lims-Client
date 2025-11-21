@@ -58,7 +58,7 @@ const sampleDescription = ref();
 const PhysicsList = ref([]);
 const WetList = ref([]);
 const FiberList = ref([]);
-const ItemName = ref([]);
+const items = ref([]);
 
 const onSubmitData = (data) =>
 {
@@ -78,7 +78,7 @@ const onBuyerData = (response) => {
       .join(', ') || ''
   }))
 
-  console.log('原始数据:', list)
+  // console.log('原始数据:', list)
 
   // 按 types 直接分类
   PhysicsList.value = list.filter(item => item.types.includes('Physics'))
@@ -90,7 +90,7 @@ const onBuyerData = (response) => {
   WetList.value.forEach(r => itemToTable.set(r.itemName, 'Wet'))
   FiberList.value.forEach(r => itemToTable.set(r.itemName, 'Fiber'))
 
-  ItemName.value = list.map(item => item.itemName)
+  items.value = list.map(item => ({itemName:item.itemName,standards:item.standards ? item.standards.join(', ') : ''}))
 }
 
 //对已有的CheckList进行渲染
@@ -174,7 +174,7 @@ const handleFieldChange = (fields) => {
               :orderNumber="orderNumber"
               :menuName="menuName"
               :reviewer ="currentReviewer"
-              :itemName="ItemName"
+              :items="items"
               @api-response="onBuyerParamData"
               @submit="onSubmitData"/>
           </div>

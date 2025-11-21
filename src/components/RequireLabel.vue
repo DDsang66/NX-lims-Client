@@ -87,7 +87,7 @@ import {ref, defineComponent, inject, computed} from 'vue'
     orderNumber: String,
     menuName: String,
     reviewer: String,
-    itemName: Array
+    items: Array
   });
 
   const testItems=[
@@ -165,12 +165,13 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       reportNumber: props.orderNumber,
       menuName: props.menuName,
       reviewer: props.reviewer,
-      itemName: props.itemName,
+      items: props.items,
       additionalRequire: additionalRequire.value,
       sampleDescription: sampleDescription.value,
       afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-'))
   };
   try{
+    console.log(payload)
     const response = await request.post('/buyer/parameter', payload, );
       emit('api-response', response.data)
       emit('submit', payload)
