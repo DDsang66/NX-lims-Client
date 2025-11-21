@@ -1,155 +1,163 @@
 <template>
-  <div class="row">
-    <div class="form-group col-xl-2">
-      <label>{{$t('details')}}</label>
-      <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="showAppend = !showAppend">
-        ≡
-      </button>
-    </div>
-    <div class="form-group col-xl-6">
-      <label>{{$t('washing Procedure')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="selectedWashingProcedure">
-          <option value="">No Wash</option>
-          <option v-for="option in washingProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-        <Transition>
-          <div v-show="showAppend" class="input-group-append" style="display:none">
-            <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleWashingLabel()">▮</button>
-          </div>
-        </Transition>
-      </div>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('dryProcedure')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="selectedDryProcedure">
-          <option value="">Do Not Dry</option>
-          <option v-for="option in dryProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-        <Transition name="fade">
-          <div v-show="showAppend" class="input-group-append" style="display:none">
-            <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleDryLabel()">▮</button>
-          </div>
-        </Transition>
-      </div>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('DCProcedure')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="selectedDCProcedure">
-          <option value="">Do not Dry Clean</option>
-          <option v-for="option in dcProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('afterIron')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="selectedIronProcedure">
-          <option value="">Do Not Iron</option>
-          <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('ironMethod')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="ironMethod">
-          <option value="">Do Not Iron</option>
-          <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('bleaching')}}</label>
-      <div class="input-group">
-        <select class="form-control" v-model="selectedBleachProcedure">
-          <option value="">Do Not Bleach</option>
-          <option v-for="option in bleachProcedures" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-        <Transition name="fade">
-          <div v-show="showAppend" class="input-group-append" style="display:none">
-            <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleDIBLabel()">▮</button>
-          </div>
-        </Transition>
-      </div>
-    </div>
-    <div class="form-group col-xl-8">
-      <label>{{$t('detergent')}}</label>
-      <select class="form-control" v-model="detergent">
-        <option v-for="option in detergentOptions" :key="option.value" :value="option.value">
-          {{ option.label }}
-        </option>
-      </select>
-    </div>
-    <div class="form-group col-xl-4">
-      <label>{{$t('testPoint')}}</label>
-      <input type="text" class="form-control" v-model="testPoint">
-    </div>
-    <div class="form-group col-xl-6">
-      <label>{{$t('afterWash')}}</label>
-      <el-select  v-model="selectedAfterWashs"
-                  class="thisMulSelect"
-                  placeholder=""
-                  multiple>
-        <el-option v-for="option in afterWashOptions" :key="option" :value="option">
-          {{ option }}
-        </el-option>
-      </el-select>
-    </div>
-    <div class="form-group col-xl-2" style="display: flex;align-items: center;margin: 0">
-        <el-button @click="addAfterWash">+</el-button>
-    </div>
-    <div class="form-group col-xl-12">
-      <el-table :data="props.afterWashs" border class="removeTableGaps">
-        <el-table-column label="Sample" width="100">
-          <template #default="scope">
-            <el-input v-model="scope.row.testPoint"></el-input>
-          </template>
-        </el-table-column>
-        <el-table-column label="afterWash">
-          <template #default="scope">
-            <el-select  v-model="scope.row.afterWash"
-                        placeholder=""
-                        class="thisMulSelect"
-                        multiple>
-              <el-option v-for="option in afterWashOptions" :key="option" :value="option">
-                {{ option }}
-              </el-option>
-            </el-select>
-          </template>
-        </el-table-column>
-        <el-table-column label="action" width="75">
-          <template #default="scope">
-            <el-button @click="removeAfterWash(scope.$index)" type="danger" link style="margin: auto;display: block">x</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-
-    <div class="form-group col-xl-12">
-      <label>{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
-      <select class="form-control" v-model="selectedSCI">
-        <option value="">N/A</option>
-        <option v-for="option in scis" :key="option.value" :value="option.value">
-          {{ option.label }}
-        </option>
-      </select>
-    </div>
+  <div style="margin-bottom: 5px">
+    <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
+      {{ $t('careLabel') }}
+    </a>
   </div>
+  <transition name="fade">
+    <div class="row" v-if="isNoticeOpen">
+      <div class="form-group col-xl-2">
+        <label>{{$t('details')}}</label>
+        <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="showAppend = !showAppend">
+          ≡
+        </button>
+      </div>
+      <div class="form-group col-xl-6">
+        <label>{{$t('washing Procedure')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="selectedWashingProcedure">
+            <option value="">No Wash</option>
+            <option v-for="option in washingProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <Transition>
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleWashingLabel()">▮</button>
+            </div>
+          </Transition>
+        </div>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('dryProcedure')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="selectedDryProcedure">
+            <option value="">Do Not Dry</option>
+            <option v-for="option in dryProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleDryLabel()">▮</button>
+            </div>
+          </Transition>
+        </div>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('DCProcedure')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="selectedDCProcedure">
+            <option value="">Do not Dry Clean</option>
+            <option v-for="option in dcProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('afterIron')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="selectedIronProcedure">
+            <option value="">Do Not Iron</option>
+            <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('ironMethod')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="ironMethod">
+            <option value="">Do Not Iron</option>
+            <option v-for="option in ironProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('bleaching')}}</label>
+        <div class="input-group">
+          <select class="form-control" v-model="selectedBleachProcedure">
+            <option value="">Do Not Bleach</option>
+            <option v-for="option in bleachProcedures" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="toggleDIBLabel()">▮</button>
+            </div>
+          </Transition>
+        </div>
+      </div>
+      <div class="form-group col-xl-8">
+        <label>{{$t('detergent')}}</label>
+        <select class="form-control" v-model="detergent">
+          <option v-for="option in detergentOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group col-xl-4">
+        <label>{{$t('testPoint')}}</label>
+        <input type="text" class="form-control" v-model="testPoint">
+      </div>
+      <div class="form-group col-xl-6">
+        <label>{{$t('afterWash')}}</label>
+        <el-select  v-model="selectedAfterWashs"
+                    class="thisMulSelect"
+                    placeholder=""
+                    multiple>
+          <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+            {{ option }}
+          </el-option>
+        </el-select>
+      </div>
+      <div class="form-group col-xl-2" style="display: flex;align-items: center;margin: 0">
+        <el-button @click="addAfterWash">+</el-button>
+      </div>
+      <div class="form-group col-xl-12">
+        <el-table :data="props.afterWashs" border class="removeTableGaps">
+          <el-table-column label="Sample" width="100">
+            <template #default="scope">
+              <el-input v-model="scope.row.testPoint"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="afterWash">
+            <template #default="scope">
+              <el-select  v-model="scope.row.afterWash"
+                          placeholder=""
+                          class="thisMulSelect"
+                          multiple>
+                <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+                  {{ option }}
+                </el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="action" width="75">
+            <template #default="scope">
+              <el-button @click="removeAfterWash(scope.$index)" type="danger" link style="margin: auto;display: block">x</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <div class="form-group col-xl-12">
+        <label>{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
+        <select class="form-control" v-model="selectedSCI">
+          <option value="">N/A</option>
+          <option v-for="option in scis" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </transition>
+
 
 
 
@@ -600,6 +608,7 @@
 <script setup>
   import { ref, watch } from 'vue';
 
+  const isNoticeOpen = ref(true)
   const testPoint=ref('')
   const detergent = ref('');
   // const afterWashs=ref([])
@@ -725,6 +734,9 @@
   const toggleDIBLabel = () => {
     isDIBLabelVisible.value = !isDIBLabelVisible.value;
   };
+  function toggleNotice() {
+    isNoticeOpen.value = !isNoticeOpen.value;
+  }
   </script>
 
 
@@ -760,4 +772,11 @@
   .fade-leave-to {
     opacity: 0;
   }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.6s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 </style>

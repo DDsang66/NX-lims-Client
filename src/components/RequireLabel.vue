@@ -1,6 +1,8 @@
 <template>
-  <div style="padding: 20px;padding-bottom: 0">
-    <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
+  <div class="thisPadding">
+    <div class="thisPiece">
+      <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
+    </div>
   </div>
   <div class="thisPadding">
     <div class="thisPiece">
@@ -15,8 +17,45 @@
 
   </div>
 
+  <div class="thisPadding">
+    <div class="thisPiece" >
+      <div style="margin-bottom: 5px">
+        <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
+          {{ $t('additionalRequire') }}
+        </a>
+      </div>
+      <transition name="fade" style="margin-bottom: 10px">
+        <div v-show="additionalReqIsOpen">
+          <div class="line-left-flex-container">
+            <el-text :size="size">TestItems</el-text>
+            <el-select :size="size" multiple style="width: 300px" v-model="selectedItemNames" class="thisMulSelect">
+              <el-option v-for="item in testItems" :key="item.name" :label="item.name" :value="item.name"></el-option>
+            </el-select>
+            <el-button :size="size" @click="OpenParams">Parameter Input</el-button>
+          </div>
+          <div v-if="itemParamsIsOpen">
+            <div class="ItemParams"  v-for="item in selectedItems" :key="item">
+              <el-text :size="size">{{item.name}}</el-text>
+              <div class="column-flex-container" style="align-items:flex-start ">
+                <div v-for="param in item.params" :key="param.name">
+                  <div class="line-left-flex-container">
+                    <el-text :size="size">{{param.name}}</el-text>
+                    <el-input style="width: 300px" :size="size" v-if="param.type==='input'" v-model="param.value"></el-input>
+                    <el-select v-else style="width: 300px;" :size="size" v-model="param.value">
+                      <el-option v-for="option in param.options" :key="option" :label="option" :value="option"></el-option>
+                    </el-select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
 
-  <div class="row">
+    </div>
+
+  </div>
+  <div class="row" style="padding:0 20px 0 20px" >
     <div class="form-group col-xl-9 mb-0">
       <label>{{ $t('additionalRequire') }}</label>
       <input class="form-control"
@@ -40,6 +79,7 @@ import {ref, defineComponent, inject, computed} from 'vue'
   import WetCareLabel from '@/components/WetCareLabel.vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
+  import {useI18n} from "vue-i18n";
 
   const request = inject('request');
   const props = defineProps({
@@ -50,14 +90,55 @@ import {ref, defineComponent, inject, computed} from 'vue'
     itemName: Array
   });
 
+  const testItems=[
+    {
+      name:'item1',
+      params:[
+        {name:'param1',type:'select',options:['p1','p2','p3']},
+        {name:'param2',type:'input',options:null}
+      ]
+    },
+    {
+      name:'item2',
+      params: [
+        {name:'param1',type: 'select',options: ['p3','p4']},
+        {name:'param2',type: 'input',options: null}
+      ]
+    },
+    {
+      name:'item3',
+      params: [
+        {name:'param2',type: 'input',options: null},
+        {name:'param1',type: 'select',options: ['p3','p4']}
+      ]
+    }
+  ]
+  const selectedItemNames=ref([])
+  const selectedItems=ref([])
+  const additionalReqIsOpen=ref(true)
+  const size='large'
+  const itemParamsIsOpen=ref(false)
+
   const afterWashs = ref([]);
   const wetCareData = ref({});   // 保存 WetCareLabel 数据
   const fiberRows   = ref([]);   // 保存 FiberContent 数据
   const additionalRequire = ref('');
   const sampleDescription = ref('');
+
+  const {t}=useI18n()
+  // const additionalRequireLabel=t('additionalRequire')
   const handleWetCarelabelUpdate = (data) => {
   wetCareData.value = data;
 };
+  function OpenParams(){
+    itemParamsIsOpen.value=true
+    const map = new Map(testItems.map(item => [item.name, item]))
+    selectedItems.value=selectedItemNames.value.map(name => map.get(name)).filter(Boolean)
+    // console.log(selectedItems.value)
+  }
+  function toggleNotice() {
+    additionalReqIsOpen.value = !additionalReqIsOpen.value;
+  }
   const handleRows = (rows)=> {
    fiberRows.value = rows;
   };

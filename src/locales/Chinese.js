@@ -23,5 +23,6 @@ export default {
   description: '整体描述',
   additionalRequire: '额外项目',
   afterWash:'洗后',
-  testPoint:'测点'
+  testPoint:'测点',
+  careLabel: '洗护标签',
 }

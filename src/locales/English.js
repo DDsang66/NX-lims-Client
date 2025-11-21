@@ -13,10 +13,10 @@ export default {
   bleaching:'Bleaching',
   detergent:'Detergent',
   specialCareInstruction:'Special Care Instruction',
-  fiberContent:'Fiber Content.',
+  fiberContent:'Fiber Content',
   composition:'Compositon',
   rate:'Rate',
-  sampleDescription:'Sample Description.',
+  sampleDescription:'Sample Description',
   property:'Property',
   'word Entry': 'Word Entry',
   description: 'Description',
@@ -24,4 +24,5 @@ export default {
   afterWash: 'After Wash',
   testPoint: 'Sample',
   afterIron: 'After Iron',
+  careLabel: 'Care Label',
 }
