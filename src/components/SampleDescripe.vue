@@ -1,20 +1,18 @@
 <template>
   <div class="row">
-    <div class="col-xl-12 form-group">
+    <div class="col-xl-12 ">
       <!-- 标题 + 折叠开关 -->
-      <div class="sigma_notice">
-        <p>
-          <a style="text-align:center;color:#ffd800" href="#" @click.prevent="toggleNotice()">
+      <div style="margin-bottom: 5px">
+          <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
             {{ $t('sampleDescription') }}
           </a>
-        </p>
       </div>
       <transition name="fade">
         <!-- 折叠面板 -->
         <div v-show="isNoticeOpen" :class="['sigma_notice-content', { block: isNoticeOpen.value }]">
           <!-- 输入 -->
-          <div class="row">
-            <div class="form-group col-xl-4">
+          <div class="row" style="margin-bottom: 20px">
+            <div class=" col-xl-4">
               <label>{{ $t('property') }}<span class="text-danger">*</span></label>
               <div class="input-group">
                 <select class="form-control" v-model="Property">
@@ -28,7 +26,7 @@
                 </div>
               </div>
             </div>
-            <div class="form-group col-xl-8">
+            <div class=" col-xl-8">
               <label>{{ $t('word Entry') }}<span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="text" class="form-control" v-model="inputVal" />
@@ -47,23 +45,15 @@
 
           <!-- 表格 -->
           <div class="row">
-            <div class="form-group col-xl-12">
-              <table class="sigma_responsive-table">
-              </table>
-            </div>
             <!-- 结果 & 提交 -->
-            <div class="form-group col-xl-9">
+            <div class=" col-xl-9">
               <label>{{ $t('description') }}</label>
               <input type="text" class="form-control" v-model="description" readonly />
             </div>
-            <div class="form-group col-xl-3">
+            <div class=" col-xl-3">
               <label>action </label>
               <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="clear">Clear</button>
             </div>
-<!--            <div class="form-group col-xl-3">-->
-<!--              <label>action </label>-->
-<!--              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="confirm">Confirm</button>-->
-<!--            </div>-->
           </div>
         </div>
       </transition>

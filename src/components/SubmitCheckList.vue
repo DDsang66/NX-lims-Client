@@ -1,37 +1,6 @@
 <template>
   <!-- Order Details -->
   <div class="order-details">
-    <div class="form-group">
-      <label>Card Number</label>
-      <input type="text"
-             class="form-control"
-             name="master-number"
-             placeholder="Card Number"
-             readonly />
-    </div>
-
-    <div class="row">
-      <div class="col-xl-6 form-group">
-        <label>Finishing Time</label>
-        <input type="datetime-local"
-               class="form-control"
-               name="master-expiry"
-               id="FinishingTime"
-               v-model="finishingTime" />
-      </div>
-
-      <div class="col-xl-6 form-group">
-        <label>Barcode*</label>
-        <input type="number"
-               class="form-control"
-               name="master-cvv"
-               placeholder="Barcode"
-               min="0"
-               v-model.number="cvv"
-               readonly/>
-      </div>
-    </div>
-
     <p class="small">
       The order information you reviewed will be saved to the database, please
       confirm that all the information is correct before submitting. Thank you

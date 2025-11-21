@@ -168,7 +168,7 @@ const handleFieldChange = (fields) => {
             @api-error="handleError"
             @field-change="handleFieldChange"/>
           <h4>Required Info</h4>
-          <div style="border: 1px solid #cae2e8; padding: 20px;">
+          <div style="border: 1px solid #cae2e8;">
             <RequireLabel
               :buyer="currentBuyer"
               :orderNumber="orderNumber"

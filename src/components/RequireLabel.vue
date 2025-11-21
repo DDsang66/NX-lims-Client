@@ -1,11 +1,18 @@
 <template>
-  <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
-  <div style="margin-top:15px">
-    <FiberContent @confirm="handleRows" />
+  <div style="padding: 20px;padding-bottom: 0">
+    <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
+  </div>
+  <div class="thisPadding">
+    <div class="thisPiece">
+      <FiberContent @confirm="handleRows" />
+    </div>
   </div>
 
-  <div>
-    <SampleDescripe @confirm="handleDescription" />
+  <div class="thisPadding">
+    <div class="thisPiece">
+      <SampleDescripe @confirm="handleDescription" />
+    </div>
+
   </div>
 
 
@@ -101,5 +108,33 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
 <style scoped>
   .sigma_btn-custom::before {
     background-color: #18086a;
+  }
+  .ItemParams{
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+  }
+  .thisMulSelect :deep(.el-tag__close) {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    transform: none !important;
+  }
+  .thisPiece{
+    padding: 10px 15px 0 15px;
+    margin-bottom: 5px;
+    border: 1px solid #c8c2c2;
+    border-radius: 5px;
+  }
+  .thisPadding{
+    padding: 10px 10px 0 10px;
+  }
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity 0.6s;
+  }
+
+  .fade-enter-from, .fade-leave-to {
+    opacity: 0;
   }
 </style>

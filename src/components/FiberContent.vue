@@ -1,13 +1,11 @@
 <template>
   <div class="row">
-    <div class="col-xl-12 form-group">
+    <div class="col-xl-12">
       <!-- 标题 + 折叠开关 -->
-      <div class="sigma_notice">
-        <p>
-          <a style="text-align:center;color:#3364d5" href="#" @click.prevent="toggleNotice()">
+      <div style="margin-bottom: 5px">
+          <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
             {{ $t('fiberContent') }}
           </a>
-        </p>
       </div>
       <transition name="fade">
         <!-- 折叠面板 -->
@@ -40,7 +38,7 @@
 
           <!-- 表格 -->
           <div class="row">
-            <div class="form-group col-xl-12">
+            <div class=" col-xl-12">
               <table class="sigma_responsive-table">
                 <thead>
                   <tr><th>{{ $t('composition') }}</th><th>{{ $t('rate') }}(%)</th><th style="width:40px;">Delete</th></tr>
@@ -68,7 +66,7 @@
               </table>
             </div>
             <!-- 结果 & 提交 -->
-            <div class="form-group col-xl-12">
+            <div class="col-xl-12">
               <label>Composition > 50%</label>
               <input type="text" class="form-control" :value="maxComposition" readonly />
             </div>

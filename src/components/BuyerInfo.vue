@@ -33,42 +33,12 @@
       </div>
 
       <!-- 菜单选择 -->
-      <div class="form-group col-xl-12">
+      <div class="form-group col-xl-9">
         <label>{{ $t('set Menu') }}<span class="text-danger">*</span></label>
         <select v-model="form.menuName" class="form-control">
           <option value="">Select a Menu</option>
           <option v-for="m in menuName" :key="m.value" :value="m.value">
             {{ m.label }}
-          </option>
-        </select>
-      </div>
-      <!-- 备注 -->
-      <div class="form-group col-xl-12 mb-0">
-        <label>{{ $t('remark') }}</label>
-        <textarea v-model="form.remark"
-                  rows="5"
-                  class="form-control"
-                  placeholder="Order Notes (Optional)"></textarea>
-      </div>
-
-      <!-- 额外项目 -->
-      <div class="form-group col-xl-3">
-        <label>{{$t('extraItem')}}</label>
-        <select v-model="form.extraItem" class="form-control">
-          <option value="">Select</option>
-          <option v-for="e in extraItems" :key="e.value" :value="e.value">
-            {{ e.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- 标准 -->
-      <div class="form-group col-xl-6">
-        <label>{{$t('standard')}}</label>
-        <select v-model="form.standard" class="form-control">
-          <option value="">Select a Standard</option>
-          <option v-for="s in standards" :key="s.value" :value="s.value">
-            {{ s.label }}
           </option>
         </select>
       </div>
