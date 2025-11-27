@@ -14,8 +14,8 @@
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([
-    { value: 'Woven(Next)', label: 'Woven' },
-    { value: 'Knit(Next)', label: 'Knit' }
+    { value: 'Regular(Next)', label: 'Woven' },
+    { value: 'Seldom(Next)', label: 'Knit' }
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();
