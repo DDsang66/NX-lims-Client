@@ -53,6 +53,11 @@
               {{ option.label }}
             </option>
           </select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="DCProLabelOpen=!DCProLabelOpen">▮</button>
+            </div>
+          </Transition>
         </div>
       </div>
       <div class="form-group col-xl-4">
@@ -64,6 +69,11 @@
               {{ option.label }}
             </option>
           </select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="ironMethodLabelOpen=true">▮</button>
+            </div>
+          </Transition>
         </div>
       </div>
       <div class="form-group col-xl-4">
@@ -75,6 +85,11 @@
               {{ option.label }}
             </option>
           </select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="ironMethodLabelOpen=true">▮</button>
+            </div>
+          </Transition>
         </div>
       </div>
       <div class="form-group col-xl-4">
@@ -500,25 +515,11 @@
       <table class="sigma_responsive-table">
         <thead>
           <tr>
-            <th style="text-align:center" colspan="2">DC Procedure Label</th>
-            <th style="text-align:center" colspan="2">Iron Label</th>
             <th style="text-align:center" colspan="2">Bleach Label</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Do not dry-clean.jpg">
-            </td>
-            <td style="text-align:center">
-              Do Not Dry Clean
-            </td>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Do not iron.jpg">
-            </td>
-            <td style="text-align:center">
-              Do Not Iron
-            </td>
             <td>
               <img src="../assets/img/Europe Wet Care Label/Do not bleach.jpg">
             </td>
@@ -529,18 +530,6 @@
 
           <tr>
             <td>
-              <img src="../assets/img/Europe Wet Care Label/DC Normal.jpg">
-            </td>
-            <td style="text-align:center">
-              DC Normal
-            </td>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Cool iron.jpg">
-            </td>
-            <td style="text-align:center">
-              Cool Iron
-            </td>
-            <td>
               <img src="../assets/img/Europe Wet Care Label/Any Bleaching.jpg">
             </td>
             <td style="text-align:center">
@@ -550,57 +539,130 @@
 
           <tr>
             <td>
-              <img src="../assets/img/Europe Wet Care Label/DC Sensitive.jpg">
-            </td>
-            <td style="text-align:center">
-              DC Sensitive
-            </td>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Warm iron.jpg">
-            </td>
-            <td style="text-align:center">
-              Warm Iron
-            </td>
-            <td>
               <img src="../assets/img/Europe Wet Care Label/Non-chlorine bleaching.jpg">
             </td>
             <td style="text-align:center">
               Non-chlorine bleaching
             </td>
           </tr>
-
-          <tr>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Petroleum DC Normal.jpg">
-            </td>
-            <td style="text-align:center">
-              Petroleum DC Normal
-            </td>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Hot iron.jpg">
-            </td>
-            <td style="text-align:center">
-              Hot Iron
-            </td>
-            <td colspan="2" rowspan="2">
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              <img src="../assets/img/Europe Wet Care Label/Petroleum DC Sensitive.jpg">
-            </td>
-            <td style="text-align:center">
-              Petroleum DC Sensitive
-            </td>
-            <td colspan="4"></td>
-          </tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <div :class="['search-form-wrapper', { open: DCProLabelOpen }]">
+    <div class="search-trigger sigma_close" @click="DCProLabelOpen=false">
+      <span></span>
+      <span></span>
+    </div>
+    <div style="max-height: 70%; width: 70%;">
+      <table class="sigma_responsive-table">
+        <thead>
+        <tr>
+          <th style="text-align:center" colspan="2">DC Procedure Label</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Do not dry-clean.jpg">
+          </td>
+          <td style="text-align:center">
+            Do Not Dry Clean
+          </td>
+        </tr>
 
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/DC Normal.jpg">
+          </td>
+          <td style="text-align:center">
+            DC Normal
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/DC Sensitive.jpg">
+          </td>
+          <td style="text-align:center">
+            DC Sensitive
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Petroleum DC Normal.jpg">
+          </td>
+          <td style="text-align:center">
+            Petroleum DC Normal
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Petroleum DC Sensitive.jpg">
+          </td>
+          <td style="text-align:center">
+            Petroleum DC Sensitive
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div :class="['search-form-wrapper', { open: ironMethodLabelOpen }]">
+    <div class="search-trigger sigma_close" @click="ironMethodLabelOpen=false">
+      <span></span>
+      <span></span>
+    </div>
+    <div style="max-height: 70%; width: 70%;">
+      <table class="sigma_responsive-table">
+        <thead>
+        <tr>
+          <th style="text-align:center" colspan="2">Iron Label</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Do not iron.jpg">
+          </td>
+          <td style="text-align:center">
+            Do Not Iron
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Cool iron.jpg">
+          </td>
+          <td style="text-align:center">
+            Cool Iron
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Warm iron.jpg">
+          </td>
+          <td style="text-align:center">
+            Warm Iron
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <img src="../assets/img/Europe Wet Care Label/Hot iron.jpg">
+          </td>
+          <td style="text-align:center">
+            Hot Iron
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 
 </template>
@@ -609,6 +671,9 @@
   import { ref, watch } from 'vue';
 
   const isNoticeOpen = ref(true)
+  const DCProLabelOpen=ref(false)
+  const afterIronLabelOpen=ref(false)
+  const ironMethodLabelOpen=ref(false)
   const testPoint=ref('')
   const detergent = ref('');
   // const afterWashs=ref([])
