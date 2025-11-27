@@ -14,8 +14,8 @@
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([
-    { value: 'Regular(Next)', label: 'Regular' },
-    { value: 'Seldom(Next)', label: 'Seldom' }
+    { value: 'Regular', label: 'Regular' },
+    { value: 'Seldom', label: 'Seldom' }
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();
