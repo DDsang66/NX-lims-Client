@@ -41,7 +41,10 @@
                   <div class="line-left-flex-container">
                     <el-text :size="size">{{param.name}}</el-text>
                     <el-input style="width: 300px" :size="size" v-if="param.type==='input'" v-model="param.value"></el-input>
-                    <el-select v-else style="width: 300px;" :size="size" v-model="param.value">
+                    <el-select v-else-if="param.type==='select'" style="width: 300px;" :size="size" v-model="param.value">
+                      <el-option v-for="option in param.options" :key="option" :label="option" :value="option"></el-option>
+                    </el-select>
+                    <el-select v-else style="width: 300px" :size="size" v-model="param.value" multiple>
                       <el-option v-for="option in param.options" :key="option" :label="option" :value="option"></el-option>
                     </el-select>
                   </div>
@@ -75,7 +78,7 @@
 </template>
 
 <script setup>
-import {ref, defineComponent, inject, computed} from 'vue'
+import {ref, defineComponent, inject, computed, onMounted} from 'vue'
   import WetCareLabel from '@/components/WetCareLabel.vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
@@ -90,29 +93,7 @@ import {ref, defineComponent, inject, computed} from 'vue'
     items: Array
   });
 
-  const testItems=[
-    {
-      name:'item1',
-      params:[
-        {name:'param1',type:'select',options:['p1','p2','p3']},
-        {name:'param2',type:'input',options:null}
-      ]
-    },
-    {
-      name:'item2',
-      params: [
-        {name:'param1',type: 'select',options: ['p3','p4']},
-        {name:'param2',type: 'input',options: null}
-      ]
-    },
-    {
-      name:'item3',
-      params: [
-        {name:'param2',type: 'input',options: null},
-        {name:'param1',type: 'select',options: ['p3','p4']}
-      ]
-    }
-  ]
+  const testItems=ref()
   const selectedItemNames=ref([])
   const selectedItems=ref([])
   const additionalReqIsOpen=ref(true)
@@ -132,7 +113,7 @@ import {ref, defineComponent, inject, computed} from 'vue'
 };
   function OpenParams(){
     itemParamsIsOpen.value=true
-    const map = new Map(testItems.map(item => [item.name, item]))
+    const map = new Map(testItems.value.map(item => [item.name, item]))
     selectedItems.value=selectedItemNames.value.map(name => map.get(name)).filter(Boolean)
     // console.log(selectedItems.value)
   }
@@ -168,10 +149,11 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       items: props.items,
       additionalRequire: additionalRequire.value,
       sampleDescription: sampleDescription.value,
-      afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-'))
+      afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-')),
+      additionalItems: selectedItems.value
   };
   try{
-    console.log(payload)
+    // console.log(payload)
     const response = await request.post('/buyer/parameter', payload, );
       emit('api-response', response.data)
       emit('submit', payload)
@@ -184,6 +166,21 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       })
   }
 };
+async function  getBuyerItemsParams(){
+  const rep = await request.get('/buyerItemParams', {
+    params: {
+      name: props.buyer,
+    }
+  });
+  if(rep.data.success){
+    testItems.value=rep.data.data.buyerItems
+  }else{
+    alert(rep.data.message)
+  }
+}
+onMounted(()=>{
+  getBuyerItemsParams()
+})
 
 </script>
 
