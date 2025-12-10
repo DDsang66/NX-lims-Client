@@ -96,13 +96,13 @@
               <span>Review</span>
             </template>
             <el-menu-item index="/main/Mango">
-              <span>Mango</span>
+              <span>MANGO</span>
             </el-menu-item>
             <el-menu-item index="/main/CrazyLine">
               <span>Crazy Line</span>
             </el-menu-item>
             <el-menu-item index="/main/Jako">
-              <span>Jako</span>
+              <span>JAKO</span>
             </el-menu-item>
             <el-menu-item index="/main/Tchibo">
               <span>Tchibo</span>
@@ -111,13 +111,13 @@
               <span>Primark</span>
             </el-menu-item>
             <el-menu-item index="/main/Kik">
-              <span>Kik</span>
+              <span>KiK</span>
             </el-menu-item>
             <el-menu-item index="/main/Pep&co">
               <span>Pepco</span>
             </el-menu-item>
             <el-menu-item index="/main/Next">
-              <span>Next</span>
+              <span>NEXT</span>
             </el-menu-item>
           </el-sub-menu>
           <!-- Manual Management（无跳转） -->

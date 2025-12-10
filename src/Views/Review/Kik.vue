@@ -8,7 +8,7 @@ import SubmitCheckList from '@/components/SubmitCheckList.vue'
 
 
 const itemToTable = new Map();
-const currentBuyer = ref("Kik");
+const currentBuyer = ref("KiK");
 const authStore = inject('userAuthStore')
 const currentReviewer = computed(() => authStore.user || '')
 const menuName = ref();

@@ -9,7 +9,7 @@
   const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const itemToTable = new Map();
-  const currentBuyer = ref("CrazyLine");
+  const currentBuyer = ref("Crazy Line");
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([

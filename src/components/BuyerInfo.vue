@@ -59,6 +59,7 @@
 
 <script setup>
   import { ref, watch,inject} from 'vue'
+  import globalFunctions from "@/utils/globalFunctions.js";
 
   const request= inject('request')
   // 定义接收的props
@@ -128,8 +129,8 @@
   const submitForm = async () => {
     try {
       //直接调用API - 修正了变量名 formData → form
-      const response = await request.post('/buyer/confirm', form.value)
-      console.log('API Response:', response.data);
+      const response = await request.post('/buyer/confirm', {...form.value,buyer:globalFunctions.cleanAndLowercase(form.value.buyer)})
+      // console.log('API Response:', response.data);
       // 将完整API响应发送给父组件
       emit('api-response', response.data)
       emit('submit', response.data)

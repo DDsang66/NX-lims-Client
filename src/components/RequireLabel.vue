@@ -83,6 +83,7 @@ import {ref, defineComponent, inject, computed, onMounted} from 'vue'
   import FiberContent from '@/components/FiberContent.vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
   import {useI18n} from "vue-i18n";
+import globalFunctions from "@/utils/globalFunctions.js";
 
   const request = inject('request');
   const props = defineProps({
@@ -142,7 +143,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
     const payload = {
     ...wetCareFields,
     fiberComposition: fiberRows.value,
-      buyer: props.buyer,
+      buyer: globalFunctions.cleanAndLowercase(props.buyer),
       reportNumber: props.orderNumber,
       menuName: props.menuName,
       reviewer: props.reviewer,

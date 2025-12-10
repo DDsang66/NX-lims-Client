@@ -38,6 +38,7 @@
 import {ref, inject, h} from 'vue'
   import {ElMessage, ElNotification} from "element-plus";
   import {Loading} from "@element-plus/icons-vue";
+import globalFunctions from "@/utils/globalFunctions.js";
 
 const request = inject('request')
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
@@ -92,7 +93,7 @@ const cvv          = ref(null)
     ReportNumber: props.orderNumber,
     MenuName: props.menuName,
     Reviewer: props.reviewer,
-    Buyer: props.buyer,
+    Buyer: globalFunctions.cleanAndLowercase(props.buyer),
     AdditionalRequire: props.additionalRequire,
     SampleDescription: props.sampleDescription,
     SelectedRows: processedRows
