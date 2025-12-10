@@ -32,17 +32,10 @@ const routes = [
     name: 'MainLayout',
     component: MainLayout,
     children: [
-      // { path: 'Mango', name: 'Mango', component: Mango },
-      // { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
-      // { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
-      // { path: 'Jako', name: 'Jako', component: Jako },
       { path: 'ChatBox', name: 'ChatBox', component: ChatBox },
       {path:'Home',name:'Home',component:Home},
       {path:'Profile',name:'Profile',component:Profile},
       {path:'FAQ',name:'FAQ',component:FAQ},
-      // {path:'OrderEntry',name:'OrderEntry',component:OrderEntry},
-      // {path:'OrderSummary',name:'OrderSummary',component:OrderSummary},
-      // {path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },
       {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
       {path:'OrderView',name:'OrderView',component:OrderView}
     ]

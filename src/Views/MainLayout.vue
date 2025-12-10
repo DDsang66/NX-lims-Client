@@ -119,6 +119,9 @@
             <el-menu-item index="/main/Next">
               <span>NEXT</span>
             </el-menu-item>
+            <el-menu-item index="/main/OVS">
+              <span>OVS</span>
+            </el-menu-item>
           </el-sub-menu>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>

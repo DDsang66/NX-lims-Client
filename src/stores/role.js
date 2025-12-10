@@ -12,6 +12,7 @@ import Primark from "@/Views/Review/Primark.vue";
 import Kik from "@/Views/Review/Kik.vue";
 import Pepco from "@/Views/Review/Pepco.vue";
 import Next from "@/Views/Review/Next.vue";
+import OVS from "@/Views/Review/OVS.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -26,6 +27,8 @@ const useRoleStore = defineStore('role', {
         {path:'Kik',name:'Kik',component:Kik},
         {path:'Pep&co',name:'Pep&co',component:Pepco},
         {path:'Next',name:'Next',component: Next}
+        {path:'Next',name:'Next',component: Next},
+        {path: 'OVS',name:'OVS',component:OVS},
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
