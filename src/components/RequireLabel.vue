@@ -134,6 +134,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
 
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
   const confirmAction = async () => {
+    if(props.orderNumber.replace(' ','').includes('..')){
+      alert('Please enter the order number.')
+    }
   // console.log(selectedItems.value)
     const wetCareFields = Object.keys(wetCareData.value).reduce((acc, key) => {
       acc[key] = wetCareData.value[key];
