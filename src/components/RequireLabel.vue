@@ -12,7 +12,7 @@
 
   <div class="thisPadding">
     <div class="thisPiece">
-      <SampleDescripe @confirm="handleDescription" />
+      <SampleDescripe ref="sampleDescrip" :propertys="propertys" />
     </div>
 
   </div>
@@ -93,7 +93,7 @@ import globalFunctions from "@/utils/globalFunctions.js";
     reviewer: String,
     items: Array
   });
-
+  const sampleDescrip=ref(null)
   const testItems=ref()
   const selectedItemNames=ref([])
   const selectedItems=ref([])
@@ -105,7 +105,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
   const wetCareData = ref({});   // 保存 WetCareLabel 数据
   const fiberRows   = ref([]);   // 保存 FiberContent 数据
   const additionalRequire = ref('');
-  const sampleDescription = ref('');
+  // const sampleDescription = ref('');
+  const propertys=ref([])
+
 
   const {t}=useI18n()
   // const additionalRequireLabel=t('additionalRequire')
@@ -125,9 +127,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
    fiberRows.value = rows;
   };
 
-  const handleDescription = (data) => {
-    sampleDescription.value = data;
-  };
+  // const handleDescription = (data) => {
+  //   sampleDescription.value = data;
+  // };
 
 
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
@@ -149,7 +151,19 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       reviewer: props.reviewer,
       items: props.items,
       additionalRequire: additionalRequire.value,
-      sampleDescription: sampleDescription.value,
+      sampleDescription: (()=>{
+        let mountDescription = '';
+        // console.log(sampleDescrip.value.propertyTable)
+        for(let property of sampleDescrip.value.propertyTable){
+          //拼接
+          if (property.type==='Input'||property.type==='Single'){
+            mountDescription+='-'+property.value
+          }else{
+            mountDescription+='-'+property.value.join('-')
+          }
+        }
+        return mountDescription.substring(1)
+      })(),
       afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-')),
       additionalItems: selectedItems.value
   };
@@ -167,20 +181,36 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       })
   }
 };
-async function  getBuyerItemsParams(){
-  const rep = await request.get('/buyerItemParams', {
+// async function  getBuyerItemsParams(){
+//   const rep = await request.get('/buyerItemParams', {
+//     params: {
+//       name: props.buyer,
+//     }
+//   });
+//   if(rep.data.success){
+//     testItems.value=rep.data.data.buyerItems
+//   }else{
+//     alert(rep.data.message)
+//   }
+// }
+async function getSampleDescription(){
+
+}
+async function getPropertys(){
+  const rep = await request.get('/render/sampledesc', {
     params: {
-      name: props.buyer,
+      buyername: globalFunctions.cleanAndLowercase(props.buyer),
     }
   });
   if(rep.data.success){
-    testItems.value=rep.data.data.buyerItems
+    propertys.value=rep.data.data
   }else{
     alert(rep.data.message)
   }
 }
 onMounted(()=>{
-  getBuyerItemsParams()
+  // getBuyerItemsParams()
+  getPropertys()
 })
 
 </script>

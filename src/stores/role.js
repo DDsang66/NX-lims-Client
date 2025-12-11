@@ -26,7 +26,6 @@ const useRoleStore = defineStore('role', {
         {path:'Primark',name: 'Primark', component: Primark},
         {path:'Kik',name:'Kik',component:Kik},
         {path:'Pep&co',name:'Pep&co',component:Pepco},
-        {path:'Next',name:'Next',component: Next}
         {path:'Next',name:'Next',component: Next},
         {path: 'OVS',name:'OVS',component:OVS},
       ],

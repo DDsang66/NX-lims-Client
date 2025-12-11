@@ -10,52 +10,104 @@
       <transition name="fade">
         <!-- 折叠面板 -->
         <div v-show="isNoticeOpen" :class="['sigma_notice-content', { block: isNoticeOpen.value }]">
-          <!-- 输入 -->
-          <div class="row" style="margin-bottom: 20px">
-            <div class=" col-xl-4">
-              <label>{{ $t('property') }}<span class="text-danger">*</span></label>
-              <div class="input-group">
-                <select class="form-control" v-model="Property">
-                  <option value="">N/A</option>
-                  <option v-for="option in property" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
-                <div class="input-group-append">
-                  <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="toggleDetial()">▮</button>
-                </div>
-              </div>
-            </div>
-            <div class=" col-xl-8">
-              <label>{{ $t('word Entry') }}<span class="text-danger">*</span></label>
-              <div class="input-group">
-                <input type="text" class="form-control" v-model="inputVal" />
-                <select class="form-control" v-model="Word">
-                  <option value="">N/A</option>
-                  <option v-for="option in wordOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
-                <div class="input-group-append">
-                  <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="addWord">+</button>
-                </div>
-              </div>
-            </div>
-          </div>
+<!--          &lt;!&ndash; 输入 &ndash;&gt;-->
+<!--          <div class="row" style="margin-bottom: 20px">-->
+<!--            <div class=" col-xl-4">-->
+<!--              <label>{{ $t('property') }}<span class="text-danger">*</span></label>-->
+<!--              <div class="input-group">-->
+<!--                <select class="form-control" v-model="Property">-->
+<!--                  <option value="">N/A</option>-->
+<!--                  <option v-for="option in property" :key="option.value" :value="option.value">-->
+<!--                    {{ option.label }}-->
+<!--                  </option>-->
+<!--                </select>-->
+<!--                <div class="input-group-append">-->
+<!--                  <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="toggleDetial()">▮</button>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--            <div class=" col-xl-8">-->
+<!--              <label>{{ $t('word Entry') }}<span class="text-danger">*</span></label>-->
+<!--              <div class="input-group">-->
+<!--                <input type="text" class="form-control" v-model="inputVal" />-->
+<!--                <select class="form-control" v-model="Word">-->
+<!--                  <option value="">N/A</option>-->
+<!--                  <option v-for="option in wordOptions" :key="option.value" :value="option.value">-->
+<!--                    {{ option.label }}-->
+<!--                  </option>-->
+<!--                </select>-->
+<!--                <div class="input-group-append">-->
+<!--                  <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5" @click="addWord">+</button>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
 
-          <!-- 表格 -->
-          <div class="row">
-            <!-- 结果 & 提交 -->
-            <div class=" col-xl-9">
-              <label>{{ $t('description') }}</label>
-              <input type="text" class="form-control" v-model="description" readonly />
-            </div>
-            <div class=" col-xl-3">
-              <label>action </label>
-              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="clear">Clear</button>
-            </div>
+<!--          &lt;!&ndash; 表格 &ndash;&gt;-->
+<!--          <div class="row">-->
+<!--            &lt;!&ndash; 结果 & 提交 &ndash;&gt;-->
+<!--            <div class=" col-xl-9">-->
+<!--              <label>{{ $t('description') }}</label>-->
+<!--              <input type="text" class="form-control" v-model="description" readonly />-->
+<!--            </div>-->
+<!--            <div class=" col-xl-3">-->
+<!--              <label>action </label>-->
+<!--              <button class="sigma_btn-custom primary btn-block" style="background-color:#3364d5" @click="clear">Clear</button>-->
+<!--            </div>-->
+<!--          </div>-->
+          <div>
+            <el-form label-position="top" inline>
+              <el-form-item label="Property">
+                <el-select v-model="thisProperty" style="width: 200px" value-key="propertyName">
+                  <el-option v-for="option in propertys" :key="option.propertyName" :value="option" :label="option.propertyName">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Value" style="flex: 1">
+                <div class="line-left-flex-container" style="width: 100%">
+                  <el-select v-if="thisProperty.type==='Single'" v-model="thisProperty.value" style="flex: 1">
+                    <el-option v-for="option in thisProperty.propertyValue" :key="option" :value="option">
+                    </el-option>
+                  </el-select>
+                  <el-input v-if="thisProperty.type==='Input'" v-model="thisProperty.value" style="flex: 1" />
+                  <el-select multiple v-if="thisProperty.type==='Multiple'" v-model="thisProperty.value" style="flex: 1" >
+                    <el-option v-for="option in thisProperty.propertyValue" :key="option" :value="option">
+                    </el-option>
+                  </el-select>
+                  <el-button style="margin-left: 10px" type="primary" @click="addToTable">+</el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+            <el-table :data="propertyTable" class="removeTableGaps" border>
+              <el-table-column label="Property" prop="propertyName" width="150px">
+              </el-table-column>
+              <el-table-column label="Value">
+                <template #default="scope">
+                  <el-select v-if="scope.row.type==='Single'" v-model="scope.row.value" >
+                    <el-option v-for="option in scope.row.propertyValue" :key="option" :value="option">
+                    </el-option>
+                  </el-select>
+                  <div class="line-left-flex-container" v-if="scope.row.type==='Input'">
+                    <el-input v-model="scope.row.value" />
+                  </div>
+                  <el-select multiple v-if="scope.row.type==='Multiple'" v-model="scope.row.value" >
+                    <el-option v-for="option in scope.row.propertyValue" :key="option" :value="option">
+                    </el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column width="70">
+                <template #header>
+                  <el-button type="danger" @click="removeAllProperty">x</el-button>
+                </template>
+                <template #default="scope">
+                  <el-button v-if="!scope.row.defaultValue" type="danger" @click="removeProperty(scope.$index)">x</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </div>
+
       </transition>
     </div>
   </div>
@@ -104,90 +156,143 @@
 <script setup>
   import '@/assets/css/style.css';
   import { ref, reactive, computed, watch } from 'vue'
-  const emit = defineEmits(['confirm']);
-
+  // const emit = defineEmits(['confirm']);
+  const props=defineProps({
+    propertys: Array,
+  })
 
   /* 折叠开关 */
   const isNoticeOpen = ref(true)
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
-    console.log("Toggle Notice:", isNoticeOpen.value);
+    // console.log("Toggle Notice:", isNoticeOpen.value);
   }
   const isDetial = ref(false)
   function toggleDetial() {
     isDetial.value = !isDetial.value;
-    console.log("Toggle Notice:", isNoticeOpen.value);
+    // console.log("Toggle Notice:", isNoticeOpen.value);
   }
+  // const Property = ref('');
+  // const Word = ref('');
+  // const inputVal = ref('');
 
-  const Property = ref('');
-  const Word = ref('');
-  const inputVal = ref('');
-  const description = ref('');
-  const property = ref([
-    { value: 'Color', label: 'Color' },
-    { value: 'ProjectNum', label: 'Project No.' },
-    { value: 'Structure', label: 'Structure' },
-    { value: 'Batch', label: 'Batch' },
-    { value: 'State', label: 'State' },
-    { value: 'Season', label: 'Season' },
-    { value: 'Age', label: 'Age' },
-    { value: 'EndUse', label: 'End-Use' },
-    { value: 'Category', label: 'Category' },
-    { value: 'Area', label: 'Area' },
-    { value: 'Other', label: 'Other' },
-    { value: 'Type', label: 'Type' },
-  ]);
+  // const description = ref('');
 
-  const wordMap = {
-    Color: ['Neon','Turquoise','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
-    Structure: ['Strip','Loop','Woven', 'Knit', 'Non-Woven'],
-    Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
-    State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
-    Age: ['Baby', 'Child', 'Adult'],
-    EndUse: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear','Ski Wear','Tights','General'],
-    Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
-    Area: ['CN', 'US', 'JP', 'EN'],
-    Batch: ['1st Bulk','Repeat Order'],
-    Other: ['Fill the InputBox'],
-    Type: ['Dyed','Sublimation']
-  }
+  // const property = ref([
+  //   { value: 'Color', label: 'Color' },
+  //   { value: 'ProjectNum', label: 'Project No.' },
+  //   { value: 'Structure', label: 'Structure' },
+  //   { value: 'Batch', label: 'Batch' },
+  //   { value: 'State', label: 'State' },
+  //   { value: 'Season', label: 'Season' },
+  //   { value: 'Age', label: 'Age' },
+  //   { value: 'EndUse', label: 'End-Use' },
+  //   { value: 'Category', label: 'Category' },
+  //   { value: 'Area', label: 'Area' },
+  //   { value: 'Other', label: 'Other' },
+  //   { value: 'Type', label: 'Type' },
+  // ]);
+  const thisProperty = ref({name:'',value:'',type:'',options:null,defaultValue:null});
 
-  //根据 Property 返回当前可选 Word 列表
-  const wordOptions = computed(() => {
-    return (wordMap[Property.value] || []).map(v => ({ value: v, label: v }))
+  //表格展示的property，获取必选项作为默认值
+  const propertyTable=ref(props.propertys.filter(property => {
+    return !!property.defaultValue;
+  }).map(
+    property => {
+      let newProperty= JSON.parse(JSON.stringify(property))
+      newProperty.value=newProperty.defaultValue;
+      return newProperty;
+    }
+  ))
+  defineExpose({
+    propertyTable,
   })
+  // const wordMap = {
+  //   Color: ['Neon','Turquoise','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
+  //   Structure: ['Strip','Loop','Woven', 'Knit', 'Non-Woven'],
+  //   Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
+  //   State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
+  //   Age: ['Baby', 'Child', 'Adult'],
+  //   EndUse: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear','Ski Wear','Tights','General'],
+  //   Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
+  //   Area: ['CN', 'US', 'JP', 'EN'],
+  //   Batch: ['1st Bulk','Repeat Order'],
+  //   Other: ['Fill the InputBox'],
+  //   Type: ['Dyed','Sublimation']
+  // }
 
-  //监听 Property 变化，清空 Word
-  watch(Property, () => {
-    Word.value = ''
-  })
+  // //根据 Property 返回当前可选 Word 列表
+  // const wordOptions = computed(() => {
+  //   return (wordMap[Property.value] || []).map(v => ({ value: v, label: v }))
+  // })
 
+  // //监听 Property 变化，清空 Word
+  // watch(Property, () => {
+  //   Word.value = ''
+  // })
 
-  /* 新增方法 */
-  function addWord() {
-    const text = inputVal.value.trim()
-    const sel = Word.value.trim()
-
-    const parts = []
-    if (text) parts.push(text)
-    if (sel) parts.push(sel)
-
-    if (parts.length === 0) return   // 两个都空就不处理
-
-    // 第一次直接写，之后用 “-” 连接
-    description.value = description.value
-      ? `${description.value}-${parts.join('-')}`
-      : parts.join('-')
-
-    // 清空输入框和 select
-    inputVal.value = ''
-    Word.value = ''
+  function addToTable(){
+    //添加到表格
+    //如果已有该行
+    if(propertyTable.value.some(item => item.propertyName === thisProperty.value.propertyName)){
+      propertyTable.value.map(item => {
+        if (item.propertyName === thisProperty.value.propertyName) {
+          //如果已有该项不处理
+          if(item.value.includes(thisProperty.value.value))
+            return;
+          //如果是输入框
+          if(thisProperty.value.type==='Input')
+            item.value += '-'+thisProperty.value.value;
+          //多选
+          else if(thisProperty.value.type==='Multiple')
+            item.value =thisProperty.value.value;
+          //单选
+          else
+            item.value = thisProperty.value.value;
+        }
+      })
+    }else{
+      propertyTable.value.push(JSON.parse(JSON.stringify(thisProperty.value)))
+    }
+    //添加到description
+    // description.value=description.value ? thisProperty.value : description.value+'-'+thisProperty.value
   }
-
-  function clear()
-  {
-    description.value = "";
+  //去除所有非必选property
+  function removeAllProperty(){
+    for (let i=propertyTable.value.length-1;i>0;i--){
+      if(!propertyTable.value[i].defaultValue)
+        propertyTable.value.splice(i,1)
+    }
   }
+  //去除单个property
+  function removeProperty(index){
+    propertyTable.value.splice(index,1)
+  }
+  // /* 新增方法 */
+  // function addWord() {
+  //   const text = inputVal.value.trim()
+  //   const sel = Word.value.trim()
+  //
+  //   const parts = []
+  //   if (text) parts.push(text)
+  //   if (sel) parts.push(sel)
+  //
+  //   if (parts.length === 0) return   // 两个都空就不处理
+  //
+  //   // 第一次直接写，之后用 “-” 连接
+  //   description.value = description.value
+  //     ? `${description.value}-${parts.join('-')}`
+  //     : parts.join('-')
+  //
+  //   // 清空输入框和 select
+  //   inputVal.value = ''
+  //   Word.value = ''
+  // }
+
+  // function clear()
+  // {
+  //   description.value = "";
+  // }
 
   // function confirm() {
   //   try {
@@ -197,8 +302,19 @@
   //     console.error(e);
   //   }
   // }
-  watch(description, () => {
-    emit('confirm', description.value);
+  // watch(description, () => {
+  //   emit('confirm', description.value);
+  // })
+  watch(()=>props.propertys,()=>{
+    propertyTable.value=props.propertys.filter(property => {
+      return !!property.defaultValue;
+    }).map(
+      property => {
+        let newProperty= JSON.parse(JSON.stringify(property))
+        newProperty.value=newProperty.defaultValue;
+        return newProperty;
+      }
+    )
   })
 </script>
 
@@ -213,5 +329,9 @@
 
   .fade-enter-from, .fade-leave-to {
     opacity: 0;
+  }
+  /*去除表格标题和内容之间的空隙*/
+  .removeTableGaps :deep(table){
+    margin-bottom: 0 !important;
   }
 </style>
