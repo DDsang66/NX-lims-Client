@@ -200,7 +200,10 @@
   }).map(
     property => {
       let newProperty= JSON.parse(JSON.stringify(property))
-      newProperty.value=newProperty.defaultValue;
+      if(newProperty.type==='Multiple')
+        newProperty.value=[newProperty.defaultValue];
+      else
+        newProperty.value=newProperty.defaultValue;
       return newProperty;
     }
   ))
