@@ -13,9 +13,50 @@
   const currentReviewer = computed(() => authStore.user || '')
   const menuName = ref();
   const orderNumber = ref();
+
   const menuOptions = ref([
-    { value: 'Woven(OVS)', label: 'Woven' },
-    { value: 'Knit(OVS)', label: 'Knit' }
+    { value: 'A-Act', label: 'A-Act' },
+    { value: 'G-Act', label: 'G-Act' },
+    { value: 'L-Act', label: 'L-Act' },
+    { value: 'J-Act', label: 'J-Act' },
+    { value: 'A', label: 'A' },
+    { value: 'A-1', label: 'A-1' },
+    { value: 'B', label: 'B' },
+    { value: 'C', label: 'C' },
+    { value: 'D', label: 'D' },
+    { value: 'E', label: 'E' },
+    { value: 'F', label: 'F' },
+    { value: 'G', label: 'G' },
+    { value: 'H', label: 'H' },
+    { value: 'I', label: 'I' },
+    { value: 'L', label: 'L' },
+    { value: 'M', label: 'M' },
+    { value: 'J', label: 'J' },
+    { value: 'KL', label: 'KL' },
+    { value: 'KP', label: 'KP' },
+    { value: 'KT', label: 'KT' },
+    { value: 'N', label: 'N' },
+    { value: 'O', label: 'O' },
+    { value: 'P', label: 'P' },
+    { value: 'T', label: 'T' },
+    { value: 'U', label: 'U' },
+    { value: 'V', label: 'V' },
+    { value: 'Z', label: 'Z' },
+    { value: 'A-SKI wear', label: 'A-SKI wear' },
+    { value: 'G-SKI wear', label: 'G-SKI wear' },
+    { value: 'L-SKI wear', label: 'L-SKI wear' },
+    { value: 'J-SKI wear', label: 'J-SKI wear' },
+    { value: 'I-SKI wear', label: 'I-SKI wear' },
+    { value: 'PP-Period Panties', label: 'PP-Period Panties' },
+    { value: 'HTL-N-Bed Sheet', label: 'HTL-N-Bed Sheet' },
+    { value: 'HTL-T-Bathrobe&Towel', label: 'HTL-T-Bathrobe&Towel' },
+    { value: 'HTL-P-TableClothes', label: 'HTL-P-TableClothes' },
+    { value: 'HTL-S-SPA&Sea Towel', label: 'HTL-S-SPA&Sea Towel' },
+    { value: 'HTL-Y-Slipper', label: 'HTL-Y-Slipper' },
+    { value: 'UM-Umbrellas', label: 'UM-Umbrellas' },
+    { value: 'UPH-T', label: 'UPH-T' },
+    { value: 'LG', label: 'LG' },
+    { value: 'PPE', label: 'PPE' }
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();
