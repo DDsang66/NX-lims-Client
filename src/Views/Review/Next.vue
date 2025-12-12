@@ -131,10 +131,7 @@
              @api-response="onBuyerData"
              @api-error="handleError"
              @field-change="handleFieldChange"/>
-          <div style="border: 1px solid #cae2e8;border-bottom: none;padding: 0 10px">
-            <label style="font-size: 30px;font-weight: bold">Required Info</label>
-          </div>
-          <div style="border: 1px solid #cae2e8;border-top: none">
+          <div style="border: 1px solid #cae2e8;">
             <RequireLabel
              :buyer="currentBuyer"
              :orderNumber="orderNumber"
