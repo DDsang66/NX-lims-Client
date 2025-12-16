@@ -95,22 +95,37 @@ const onBuyerData = (response) => {
 
 //对已有的CheckList进行渲染
 const onBuyerParamData = ({ data = [] }) => {
-  const rowMap = new Map()
-  PhysicsList.value.forEach(r => rowMap.set(r.itemName, r))
-  WetList.value.forEach(r => rowMap.set(r.itemName, r))
-  FiberList.value.forEach(r => rowMap.set(r.itemName, r))
+  // const rowMap = new Map()
+  // PhysicsList.value.forEach(r => rowMap.set(r.itemName, r))
+  // WetList.value.forEach(r => rowMap.set(r.itemName, r))
+  // FiberList.value.forEach(r => rowMap.set(r.itemName, r))
+
+  //汇总List
+  const countList=[...PhysicsList.value,...WetList.value]
+  console.log('countList',countList)
+
+  //先将已有checkList放入其中
 
   data.forEach(patch => {
-    const row = rowMap.get(patch.itemName)
+    // const row = rowMap.get(patch.itemName)  //获取对应旧值
+    const row=countList.filter(item=>{
+      if(item.itemName==='Pilling Resistance'&&patch.itemName==='Pilling Resistance'){
+        console.log(item)
+        console.log(patch)
+        console.log(item.itemName===patch.itemName&&item.standard===patch.standard)
+      }
+
+      return item.itemName===patch.itemName&&item.standards[0]===patch.standard
+    })[0]
     if (!row) return
 
-    // 1. 过滤 + 拼接成字符串
+    // 1. 通过新值获取parameters
     const str = Object.entries(patch)
-      .filter(([k, v]) => k !== 'itemName' && k !== 'orderNumber' && v != null && v !== '')
+      .filter(([k, v]) => k !== 'itemName' && k !== 'orderNumber'&&k!=='standard' && v != null && v !== '')
       .map(([k, v]) => k === 'param' ? v : `${k}: ${v}`)
       .join(', ');
 
-    // 2. 直接覆盖 parameters
+    // 2. 仅覆盖 parameters
     row.parameters = str
   })
 }
