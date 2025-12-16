@@ -101,7 +101,7 @@
                   <el-button type="danger" @click="removeAllProperty">x</el-button>
                 </template>
                 <template #default="scope">
-                  <el-button v-if="!scope.row.defaultValue" type="danger" @click="removeProperty(scope.$index)">x</el-button>
+                  <el-button v-if="scope.row.isNecessary.includes('N')" type="danger" @click="removeProperty(scope.$index)">x</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -195,9 +195,7 @@
   const thisProperty = ref({name:'',value:'',type:'',options:null,defaultValue:null});
 
   //表格展示的property，获取必选项作为默认值
-  const propertyTable=ref(props.propertys.filter(property => {
-    return !!property.defaultValue;
-  }).map(
+  const propertyTable=ref(props.propertys.filter(property => property.isNecessary.includes('Y')).map(
     property => {
       let newProperty= JSON.parse(JSON.stringify(property))
       if(newProperty.type==='Multiple')
@@ -309,9 +307,7 @@
   //   emit('confirm', description.value);
   // })
   watch(()=>props.propertys,()=>{
-    propertyTable.value=props.propertys.filter(property => {
-      return !!property.defaultValue;
-    }).map(
+    propertyTable.value=props.propertys.filter(property => property.isNecessary.includes('Y')).map(
       property => {
         let newProperty= JSON.parse(JSON.stringify(property))
         newProperty.value=newProperty.defaultValue;
