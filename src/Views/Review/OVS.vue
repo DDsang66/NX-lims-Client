@@ -201,7 +201,7 @@
         <div class="col-xl-5">
           <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle"/>
           <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle" />
-          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>
+<!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
           <SubmitCheckList
            :buyer="currentBuyer"
            :orderNumber="orderNumber"
