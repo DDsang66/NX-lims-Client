@@ -766,7 +766,7 @@
 
   watch(
     [
-      selectedWashingProcedure, selectedDryProcedure, selectedDCProcedure, selectedIronProcedure,ironMethod, selectedSCI, selectedBleachProcedure],() => {
+      detergent,selectedWashingProcedure, selectedDryProcedure, selectedDCProcedure, selectedIronProcedure,ironMethod, selectedSCI, selectedBleachProcedure],() => {
       emit('updateData', {
         washingProcedure: selectedWashingProcedure.value,
         dryProcedure: selectedDryProcedure.value,
