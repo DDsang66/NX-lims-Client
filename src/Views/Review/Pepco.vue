@@ -133,44 +133,40 @@ const handleFieldChange = (fields) => {
 </script>
 
 <template>
-  <div class="section 1">
-    <div class="container">
-      <div class="row">
-        <div class="col-xl-7">
-          <!--          <Feedback />-->
-          <BuyerInfo
-            :buyer="currentBuyer"
-            :reviewer="currentReviewer"
-            :menuName="menuOptions"
-            @api-response="onBuyerData"
-            @api-error="handleError"
-            @field-change="handleFieldChange"/>
-          <div style="border: 1px solid #cae2e8;">
-            <RequireLabel
-              :buyer="currentBuyer"
-              :orderNumber="orderNumber"
-              :menuName="menuName"
-              :reviewer ="currentReviewer"
-              :items="items"
-              @api-response="onBuyerParamData"
-              @submit="onSubmitData"/>
-          </div>
-        </div>
-        <div class="col-xl-5">
-          <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle"/>
-          <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle" />
-<!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
-          <SubmitCheckList
-            :buyer="currentBuyer"
-            :orderNumber="orderNumber"
-            :menuName="menuName"
-            :reviewer ="currentReviewer"
-            :selectedRows="selectedRows"
-            :additionalRequire="additionalRequire"
-            :sampleDescription ="sampleDescription"
-          />
-        </div>
+  <div class="row">
+    <div class="col-xl-7">
+      <!--          <Feedback />-->
+      <BuyerInfo
+        :buyer="currentBuyer"
+        :reviewer="currentReviewer"
+        :menuName="menuOptions"
+        @api-response="onBuyerData"
+        @api-error="handleError"
+        @field-change="handleFieldChange"/>
+      <div style="border: 1px solid #cae2e8;">
+        <RequireLabel
+          :buyer="currentBuyer"
+          :orderNumber="orderNumber"
+          :menuName="menuName"
+          :reviewer="currentReviewer"
+          :items="items"
+          @api-response="onBuyerParamData"
+          @submit="onSubmitData"/>
       </div>
+    </div>
+    <div class="col-xl-5">
+      <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle"/>
+      <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle"/>
+      <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
+      <SubmitCheckList
+        :buyer="currentBuyer"
+        :orderNumber="orderNumber"
+        :menuName="menuName"
+        :reviewer="currentReviewer"
+        :selectedRows="selectedRows"
+        :additionalRequire="additionalRequire"
+        :sampleDescription="sampleDescription"
+      />
     </div>
   </div>
 </template>
