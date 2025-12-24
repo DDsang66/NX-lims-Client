@@ -7,7 +7,7 @@
   <transition name="fade">
     <div class="row" v-if="isNoticeOpen">
       <div class="form-group col-xl-4">
-        <label>{{$t('washLabelRegion')}}</label>
+        <label>{{$t('careLabelRegion')}}</label>
         <el-select v-model="washLabelRegion" @change="washLabelRegionChange">
           <el-option v-for="option in washLabelRegionOptions" :key="option" :value="option"></el-option>
         </el-select>

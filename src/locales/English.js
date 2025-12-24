@@ -25,4 +25,5 @@ export default {
   testPoint: 'Sample',
   afterIron: 'After Iron',
   careLabel: 'Care Label',
+  careLabelRegion: 'Care Label Region',
 }
