@@ -326,25 +326,6 @@ onMounted(()=>{
   align-items: center;
   gap: 5px;
 }
-@mixin column-flex-container(){
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-}
-@mixin line-flex-container(){
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-}
-@mixin line-left-flex-container(){
-  display: flex;
-  justify-content: left;
-  align-items: center;
-  gap: 5px;
-}
 
 .line-chart-wrapper {
   width: 100%;
