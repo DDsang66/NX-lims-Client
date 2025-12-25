@@ -1,6 +1,5 @@
 <script setup>
   import { ref, computed,inject} from 'vue'
-  import Feedback from '@/components/Login&Feedback.vue'
   import BuyerInfo from '@/components/BuyerInfo.vue'
   import CheckList from '@/components/CheckList.vue'
   import RequireLabel from '@/components/RequireLabel.vue'

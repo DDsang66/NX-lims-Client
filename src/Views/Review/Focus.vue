@@ -7,14 +7,14 @@
 
 
   const itemToTable = new Map();
-  const currentBuyer = ref("NEXT");
+  const currentBuyer = ref("Focus");
   const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([
-    { value: 'Regular', label: 'Regular' },
-    { value: 'Seldom', label: 'Seldom' }
+    { value: 'Woven(Mango)', label: 'Woven' },
+    { value: 'Knit(Mango)', label: 'Knit' }
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();

@@ -13,6 +13,10 @@ import Kik from "@/Views/Review/Kik.vue";
 import Pepco from "@/Views/Review/Pepco.vue";
 import Next from "@/Views/Review/Next.vue";
 import OVS from "@/Views/Review/OVS.vue";
+import LPP from "@/Views/Review/LPP.vue";
+import LTAG from "@/Views/Review/LTAG.vue";
+import Focus from "@/Views/Review/Focus.vue";
+import Woolworehs from "@/Views/Review/Woolworehs.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -28,6 +32,10 @@ const useRoleStore = defineStore('role', {
         {path:'Pep&co',name:'Pep&co',component:Pepco},
         {path:'Next',name:'Next',component: Next},
         {path: 'OVS',name:'OVS',component:OVS},
+        {path:'LPP',name:'LPP',component:LPP},
+        {path:'LTAG',name:'LTAG',component:LTAG},
+        {path:'Focus',name:'Focus',component:Focus},
+        {path: 'Woolworehs',name:'Woolworehs',component:Woolworehs},
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
