@@ -13,8 +13,7 @@
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([
-    { value: 'Woven(LPP)', label: 'Woven' },
-    { value: 'Knit(LPP)', label: 'Knit' }
+    { value: 'Regular(LPP)', label: 'Regular' },
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();
