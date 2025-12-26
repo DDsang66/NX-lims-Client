@@ -293,7 +293,7 @@
       </div>
       <div class="form-group col-xl-8">
         <label>{{$t('detergent')}}</label>
-        <el-select :class="{valueNoClass:detergent===''}" v-model="detergent">
+        <el-select :class="{valueNoClass:detergent===''}" v-model="detergent" clearable>
           <el-option v-for="option in detergentOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </el-option>
