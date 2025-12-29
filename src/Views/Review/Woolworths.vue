@@ -7,7 +7,7 @@
 
 
   const itemToTable = new Map();
-  const currentBuyer = ref("Woolworehs");
+  const currentBuyer = ref("Woolworths");
   const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const menuName = ref();
