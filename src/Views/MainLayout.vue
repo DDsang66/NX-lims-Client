@@ -122,8 +122,8 @@
             <el-menu-item index="/main/OVS" disabled>
               <span>OVS</span>
             </el-menu-item>
-            <el-menu-item index="/main/Woolworehs">
-              <span>Woolworehs</span>
+            <el-menu-item index="/main/Woolworths">
+              <span>Woolworths</span>
             </el-menu-item>
             <el-menu-item index="/main/LTAG">
               <span>LTAG</span>
