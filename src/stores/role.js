@@ -36,7 +36,6 @@ const useRoleStore = defineStore('role', {
         {path:'LTAG',name:'LTAG',component:LTAG},
         {path:'Focus',name:'Focus',component:Focus},
         {path: 'Woolworth',name:'Woolworth',component:Woolworth},
-        {path:'Review',name: 'Review',component: Review}
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
