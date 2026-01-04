@@ -16,7 +16,7 @@ import OVS from "@/Views/Review/OVS.vue";
 import LPP from "@/Views/Review/LPP.vue";
 import LTAG from "@/Views/Review/LTAG.vue";
 import Focus from "@/Views/Review/Focus.vue";
-import Woolworths from "@/Views/Review/Woolworths.vue";
+import Woolworth from "@/Views/Review/Woolworth.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -35,7 +35,8 @@ const useRoleStore = defineStore('role', {
         {path:'LPP',name:'LPP',component:LPP},
         {path:'LTAG',name:'LTAG',component:LTAG},
         {path:'Focus',name:'Focus',component:Focus},
-        {path: 'Woolworths',name:'Woolworths',component:Woolworths},
+        {path: 'Woolworth',name:'Woolworth',component:Woolworth},
+        {path:'Review',name: 'Review',component: Review}
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],

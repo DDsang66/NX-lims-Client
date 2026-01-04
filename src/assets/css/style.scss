@@ -23,3 +23,9 @@
   align-items: center;
   gap: 5px;
 }
+@mixin line-right-flex-container(){
+  display: flex;
+  justify-content: right;
+  align-items: center;
+  gap: 5px;
+}
