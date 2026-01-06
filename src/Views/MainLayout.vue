@@ -135,6 +135,9 @@
               <span>Focus</span>
             </el-menu-item>
           </el-sub-menu>
+          <el-menu-item index="/main/Review">
+            <span>Review</span>
+          </el-menu-item>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>
             <span>Manual Management</span>

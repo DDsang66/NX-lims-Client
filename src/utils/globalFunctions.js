@@ -59,6 +59,30 @@ var globalFunctions={
     throw new Error('输入必须是字符串');
   }
   return str.replace(/\s+/g, '').toLowerCase();
+  },
+  // 二分排序插入(默认字典升序排序)修改原数组
+  sortInsertArray:(array, item, compareFn)=>{
+  // 如果没有提供比较函数，默认按本地语言环境字符串排序
+  const comparator = compareFn || ((a, b) => String(a).localeCompare(String(b)));
+  // 处理空数组情况
+  if (array.length === 0) {
+    array.push(item);
+    return;
+  }
+  // 二分查找：找到第一个 >= item 的位置（即插入点）
+  let left = 0;
+  let right = array.length;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    // 如果 array[mid] < item，则插入点在右半部分
+    if (comparator(array[mid], item) < 0) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+  // 在 left 位置插入 item
+  array.splice(left, 0, item);
 }
 }
 export default globalFunctions;
