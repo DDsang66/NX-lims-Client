@@ -14,7 +14,6 @@
     <div class="thisPiece">
       <SampleDescripe ref="sampleDescrip" :propertys="propertys" />
     </div>
-
   </div>
 
   <div class="thisPadding">
