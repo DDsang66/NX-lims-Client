@@ -12,6 +12,7 @@ import Primark from "@/Views/Review/Primark.vue";
 import Kik from "@/Views/Review/Kik.vue";
 import Pepco from "@/Views/Review/Pepco.vue";
 import Next from "@/Views/Review/Next.vue";
+import Review from "@/Views/Review.vue";
 import OVS from "@/Views/Review/OVS.vue";
 import LPP from "@/Views/Review/LPP.vue";
 import LTAG from "@/Views/Review/LTAG.vue";
@@ -36,6 +37,7 @@ const useRoleStore = defineStore('role', {
         {path:'LTAG',name:'LTAG',component:LTAG},
         {path:'Focus',name:'Focus',component:Focus},
         {path: 'Woolworth',name:'Woolworth',component:Woolworth},
+        {path:'Review',name: 'Review',component: Review}
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
