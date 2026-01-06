@@ -13,8 +13,7 @@
   const menuName = ref();
   const orderNumber = ref();
   const menuOptions = ref([
-    { value: 'Woven(Mango)', label: 'Woven' },
-    { value: 'Knit(Mango)', label: 'Knit' }
+    { value: 'General Package', label: 'General Package' },
   ])
   const additionalRequire = ref();
   const sampleDescription = ref();
