@@ -156,7 +156,7 @@
 <script setup>
   import '@/assets/css/style.css';
   import { ref, reactive, computed, watch } from 'vue'
-  // const emit = defineEmits(['confirm']);
+
   const props=defineProps({
     propertys: Array,
   })
@@ -165,33 +165,12 @@
   const isNoticeOpen = ref(true)
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
-    // console.log("Toggle Notice:", isNoticeOpen.value);
   }
   const isDetial = ref(false)
   function toggleDetial() {
     isDetial.value = !isDetial.value;
-    // console.log("Toggle Notice:", isNoticeOpen.value);
   }
-  // const Property = ref('');
-  // const Word = ref('');
-  // const inputVal = ref('');
 
-  // const description = ref('');
-
-  // const property = ref([
-  //   { value: 'Color', label: 'Color' },
-  //   { value: 'ProjectNum', label: 'Project No.' },
-  //   { value: 'Structure', label: 'Structure' },
-  //   { value: 'Batch', label: 'Batch' },
-  //   { value: 'State', label: 'State' },
-  //   { value: 'Season', label: 'Season' },
-  //   { value: 'Age', label: 'Age' },
-  //   { value: 'EndUse', label: 'End-Use' },
-  //   { value: 'Category', label: 'Category' },
-  //   { value: 'Area', label: 'Area' },
-  //   { value: 'Other', label: 'Other' },
-  //   { value: 'Type', label: 'Type' },
-  // ]);
   const thisProperty = ref({name:'',value:'',type:'',options:null,defaultValue:null});
 
   //表格展示的property，获取必选项作为默认值
@@ -208,29 +187,6 @@
   defineExpose({
     propertyTable,
   })
-  // const wordMap = {
-  //   Color: ['Neon','Turquoise','Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Gray', 'Brown', 'Orange', 'Purple', 'Gold'],
-  //   Structure: ['Strip','Loop','Woven', 'Knit', 'Non-Woven'],
-  //   Season: ['SS_25', 'SS_26', 'AW_25', 'AW_26'],
-  //   State: ['Fabric', 'Garment', 'Component','Development','Cap','Socks','Gloves'],
-  //   Age: ['Baby', 'Child', 'Adult'],
-  //   EndUse: ['Casual', 'Fashion', 'Hybrid', 'Performance', 'Teamwear/Teamsport', 'Swimwear','Ski Wear','Tights','General'],
-  //   Category: ['Top', 'Bottom', 'Shoes','Rain','Padding','Down Jackets'],
-  //   Area: ['CN', 'US', 'JP', 'EN'],
-  //   Batch: ['1st Bulk','Repeat Order'],
-  //   Other: ['Fill the InputBox'],
-  //   Type: ['Dyed','Sublimation']
-  // }
-
-  // //根据 Property 返回当前可选 Word 列表
-  // const wordOptions = computed(() => {
-  //   return (wordMap[Property.value] || []).map(v => ({ value: v, label: v }))
-  // })
-
-  // //监听 Property 变化，清空 Word
-  // watch(Property, () => {
-  //   Word.value = ''
-  // })
 
   function addToTable(){
     //添加到表格
@@ -255,13 +211,11 @@
     }else{
       propertyTable.value.push(JSON.parse(JSON.stringify(thisProperty.value)))
     }
-    //添加到description
-    // description.value=description.value ? thisProperty.value : description.value+'-'+thisProperty.value
   }
   //去除所有非必选property
   function removeAllProperty(){
     for (let i=propertyTable.value.length-1;i>0;i--){
-      if(!propertyTable.value[i].defaultValue)
+      if(!propertyTable.value[i].isNecessary.includes('Y'))
         propertyTable.value.splice(i,1)
     }
   }
@@ -269,43 +223,6 @@
   function removeProperty(index){
     propertyTable.value.splice(index,1)
   }
-  // /* 新增方法 */
-  // function addWord() {
-  //   const text = inputVal.value.trim()
-  //   const sel = Word.value.trim()
-  //
-  //   const parts = []
-  //   if (text) parts.push(text)
-  //   if (sel) parts.push(sel)
-  //
-  //   if (parts.length === 0) return   // 两个都空就不处理
-  //
-  //   // 第一次直接写，之后用 “-” 连接
-  //   description.value = description.value
-  //     ? `${description.value}-${parts.join('-')}`
-  //     : parts.join('-')
-  //
-  //   // 清空输入框和 select
-  //   inputVal.value = ''
-  //   Word.value = ''
-  // }
-
-  // function clear()
-  // {
-  //   description.value = "";
-  // }
-
-  // function confirm() {
-  //   try {
-  //     emit('confirm', description.value);
-  //     alert('提交成功！');
-  //   } catch (e) {
-  //     console.error(e);
-  //   }
-  // }
-  // watch(description, () => {
-  //   emit('confirm', description.value);
-  // })
   watch(()=>props.propertys,()=>{
     propertyTable.value=props.propertys.filter(property => property.isNecessary.includes('Y')).map(
       property => {
