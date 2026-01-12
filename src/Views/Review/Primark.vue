@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed,inject} from 'vue'
+import {ref, computed, inject, onMounted, onBeforeMount, onBeforeUnmount} from 'vue'
 import BuyerInfo from '@/components/BuyerInfo.vue'
 import CheckList from '@/components/CheckList.vue'
 import RequireLabel from '@/components/RequireLabel.vue'
@@ -101,19 +101,12 @@ const onBuyerParamData = ({ data = [] }) => {
 
   //汇总List
   const countList=[...PhysicsList.value,...WetList.value]
-  console.log('countList',countList)
 
   //先将已有checkList放入其中
 
   data.forEach(patch => {
     // const row = rowMap.get(patch.itemName)  //获取对应旧值
     const row=countList.filter(item=>{
-      if(item.itemName==='Pilling Resistance'&&patch.itemName==='Pilling Resistance'){
-        console.log(item)
-        console.log(patch)
-        console.log(item.itemName===patch.itemName&&item.standard===patch.standard)
-      }
-
       return item.itemName===patch.itemName&&item.standards[0]===patch.standard
     })[0]
     if (!row) return
@@ -147,6 +140,18 @@ const selectedRows = computed(() =>
     .filter(r => r.selected)
 )
 
+//获取样品汇总
+const sampleSummary = computed(() =>{
+  let summary = new Set()
+  selectedRows.value.forEach(item=>{
+    let samplesArray=item.samples.split(',')
+    for (const string of samplesArray) {
+      summary.add(string)
+    }
+  })
+  return [...summary].sort()
+})
+
 function onRowToggle(row) {
   // 找到原数组对应项，更新 selected
   const arr = row.type === 'Physics'
@@ -160,7 +165,6 @@ function onRowToggle(row) {
 
 
 const handleFieldChange = (fields) => {
-  console.log('Field changes:', fields)
   // fields contains: { reportNumber, reviewer, buyer, menuName }
   menuName.value = fields.menuName;
   orderNumber.value = fields.reportNumber;
@@ -186,13 +190,15 @@ const handleFieldChange = (fields) => {
           :menuName="menuName"
           :reviewer="currentReviewer"
           :items="items"
+          :sampleSummary="sampleSummary"
+          :selectedRows="selectedRows"
           @api-response="onBuyerParamData"
           @submit="onSubmitData"/>
       </div>
     </div>
     <div class="col-xl-5">
-      <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle"/>
-      <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle"/>
+      <CheckList title="Physics" :list="PhysicsList" style="width: 100%" @update:checked="onRowToggle"/>
+      <CheckList title="Wet" :list="WetList" style="width: 100%" @update:checked="onRowToggle"/>
       <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
       <SubmitCheckList
         :buyer="currentBuyer"
