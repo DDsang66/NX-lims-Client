@@ -107,7 +107,7 @@
             <el-menu-item index="/main/Tchibo">
               <span>Tchibo</span>
             </el-menu-item>
-            <el-menu-item index="/main/Primark" disabled>
+            <el-menu-item index="/main/Primark">
               <span>Primark</span>
             </el-menu-item>
             <el-menu-item index="/main/Kik">
@@ -119,7 +119,7 @@
             <el-menu-item index="/main/Next">
               <span>NEXT</span>
             </el-menu-item>
-            <el-menu-item index="/main/OVS" disabled>
+            <el-menu-item index="/main/OVS">
               <span>OVS</span>
             </el-menu-item>
             <el-menu-item index="/main/Woolworth">

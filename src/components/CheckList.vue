@@ -1,12 +1,15 @@
 <template>
-  <h5>{{ title }}</h5>
-  <div style="width:100%">
-    <table class="sigma_responsive-table"
-           @mousedown="onMouseDown"
-           @mousemove="onMouseMove"
-           @mouseup="onMouseUp"
-           @input="onInput">
-      <thead>
+  <div style="width: 100%">
+    <h5>{{ title }}</h5>
+    <div style="width:100%">
+      <table class="sigma_responsive-table"
+             style="width: 100%"
+             ref="myTable"
+             @mousedown="onMouseDown"
+             @mousemove="onMouseMove"
+             @mouseup="onMouseUp"
+             @input="onInput">
+        <thead>
         <tr>
           <th>Test Item</th>
           <th>Standard</th>
@@ -14,9 +17,9 @@
           <th>Sample</th>
           <th>Select</th>
         </tr>
-      </thead>
+        </thead>
 
-      <tbody>
+        <tbody>
         <template v-for="(row, idx) in list" :key="row.itemName">
           <tr>
             <!--v-for="row in list" :key="row.itemName"-->
@@ -49,23 +52,112 @@
             </td>
           </tr>
         </template>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
+
 </template>
 <script setup>
-  import { ref, watch } from 'vue'
+import {nextTick, ref, watch} from 'vue'
   import ExtraForm from '@/components/Item Additional Required/ExtraForm.vue'
   defineEmits(['update:checked'])
   const props = defineProps({ title: String, list: { type: Array, default: () => [] } })
 
-  watch(
-    () => props.list,
-    () => props.list.forEach(r => {
+
+  // 声明 ref
+  const myTable = ref(null)
+
+  // 👇 新增：安全的单元格合并函数（兼容额外行）
+function mergeSameCells(table, colIndex = 0) {
+  if (!table?.tBodies?.[0]) return;
+
+  const tbody = table.tBodies[0];
+  const allRows = Array.from(tbody.rows);
+
+  // Step 1: 标记每一行的类型和是否后接额外行
+  const rowInfos = [];
+  for (let i = 0; i < allRows.length; i++) {
+    const tr = allRows[i];
+    const isExtra = tr.cells.length === 1 && tr.cells[0].colSpan >= 5;
+
+    if (isExtra) {
+      rowInfos.push({ type: 'extra', tr });
+    } else {
+      // 👇 关键修复：必须声明 cell
+      const cell = tr.cells[colIndex];
+      const text = cell ? cell.textContent.trim() : '';
+      const hasNextExtra =
+        i + 1 < allRows.length &&
+        allRows[i + 1].cells.length === 1 &&
+        allRows[i + 1].cells[0].colSpan >= 5;
+
+      rowInfos.push({
+        type: 'main',
+        tr,
+        text,
+        hasNextExtra
+      });
+    }
+  }
+
+  // Step 2: 合并连续且未被打断的相同项
+  let i = 0;
+  while (i < rowInfos.length) {
+    if (rowInfos[i].type !== 'main') {
+      i++;
+      continue;
+    }
+
+    const current = rowInfos[i];
+    let rowspan = 1;
+    let j = i + 1;
+
+    // 只有当前行未被打断，才尝试合并
+    if (!current.hasNextExtra) {
+      while (j < rowInfos.length) {
+        const next = rowInfos[j];
+        if (next.type !== 'main') {
+          j++;
+          continue;
+        }
+        if (next.text !== current.text) break;
+        rowspan++;
+        j++;
+      }
+    }
+
+    // 执行合并
+    if (rowspan > 1) {
+      current.tr.cells[colIndex].rowSpan = rowspan;
+      let deleted = 0;
+      let k = i + 1;
+      while (deleted < rowspan - 1 && k < rowInfos.length) {
+        const info = rowInfos[k];
+        if (info.type === 'main' && info.tr.cells[colIndex]) {
+          info.tr.deleteCell(colIndex);
+          deleted++;
+        }
+        k++;
+      }
+    }
+
+    i = j; // 跳到下一个未处理的行
+  }
+}
+watch(
+  () => props.list,
+  async () => {
+    // 原有逻辑：初始化 extra
+    props.list.forEach(r => {
       if (!('extra' in r)) r.extra = {}
-    }),
-    { immediate: true, deep: true }
-  )
+    })
+    // ⭐ 等待 Vue 完成 DOM 更新后再合并
+    await nextTick()
+    mergeSameCells(myTable.value, 0)
+  },
+  { immediate: true, deep: true }
+)
 
 
   /* ---------- 批量填写修正 ---------- */

@@ -6,7 +6,11 @@
   </div>
   <div class="thisPadding">
     <div class="thisPiece">
-      <FiberContent @confirm="handleRows" />
+      <FiberContentBoundSingle v-if="['Primark','OVS'].includes(buyer)"
+         @confirm="handleRows"
+         :sampleSummary="sampleSummary"
+      />
+      <FiberContent v-else @confirm="handleRows" />
     </div>
   </div>
 
@@ -83,6 +87,7 @@ import {ref, defineComponent, inject, computed, onMounted} from 'vue'
   import SampleDescripe from '@/components/SampleDescripe.vue'
   import {useI18n} from "vue-i18n";
 import globalFunctions from "@/utils/globalFunctions.js";
+import FiberContentBoundSingle from "@/components/FiberContentBoundSingle.vue";
 
   const request = inject('request');
   const props = defineProps({
@@ -90,7 +95,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
     orderNumber: String,
     menuName: String,
     reviewer: String,
-    items: Array
+    items: Array,
+    sampleSummary: Array,
+    selectedRows: Array,
   });
   const sampleDescrip=ref(null)
   const testItems=ref()
@@ -102,7 +109,7 @@ import globalFunctions from "@/utils/globalFunctions.js";
 
   const afterWashs = ref([]);
   const wetCareData = ref({});   // 保存 WetCareLabel 数据
-  const fiberRows   = ref([]);   // 保存 FiberContent 数据
+  const fiberComposition   = ref([]);   // 保存 FiberContent 数据
   const additionalRequire = ref('');
   // const sampleDescription = ref('');
   const propertys=ref([])
@@ -122,8 +129,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
   function toggleNotice() {
     additionalReqIsOpen.value = !additionalReqIsOpen.value;
   }
-  const handleRows = (rows)=> {
-   fiberRows.value = rows;
+  const handleRows = (fiberCom)=> {
+    // console.log('fiber',fiberCom)
+    fiberComposition.value = fiberCom;
   };
 
   // const handleDescription = (data) => {
@@ -146,7 +154,8 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
     }
     const payload = {
     ...wetCareFields,
-    fiberComposition: fiberRows.value,
+    fiberComposition: fiberComposition.value,
+      selectedRows: props.selectedRows,
       buyer: globalFunctions.cleanAndLowercase(props.buyer),
       reportNumber: props.orderNumber,
       menuName: props.menuName,
@@ -155,7 +164,6 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       additionalRequire: additionalRequire.value,
       sampleDescription: (()=>{
         let mountDescription = '';
-        // console.log(sampleDescrip.value.propertyTable)
         for(let property of sampleDescrip.value.propertyTable){
           //拼接
           if (property.type==='Input'||property.type==='Single'){
@@ -170,7 +178,6 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       additionalItems: selectedItems.value
   };
   try{
-    // console.log(payload)
     const response = await request.post('/buyer/parameter', payload, );
       emit('api-response', response.data)
       emit('submit', payload)
