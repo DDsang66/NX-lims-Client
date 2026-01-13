@@ -44,16 +44,10 @@
                 </el-form-item>
               </el-form>
             </div>
-            <div class="oneSampleDescrip" v-for="(group,index) in descripGroups" :key="group.samples">
-              <div class="line-left-flex-container">
-                <el-select v-model="group.samples" placeholder="" multiple style="flex: 1"
-                           @change="oneGroupSamplesChange">
-                  <el-option v-for="sample in sampleSummary" :key="sample" :value="sample"></el-option>
-                </el-select>
-                <el-button type="danger" @click="deleteGroup(index)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
+            <div class="oneSampleDescrip" v-for="group in descripGroups" :key="group.samples">
+              <el-select v-model="group.samples" placeholder="" multiple @change="oneGroupSamplesChange">
+                <el-option v-for="sample in sampleSummary" :key="sample" :value="sample"></el-option>
+              </el-select>
               <el-form label-position="left" inline style="display: flex">
                 <el-form-item>
                   <template #label>
@@ -128,7 +122,7 @@
 <script setup>
 import '@/assets/css/style.css';
 import { ref, reactive, computed, watch } from 'vue'
-import {Check, Delete} from "@element-plus/icons-vue";
+import {Check} from "@element-plus/icons-vue";
 
 const props=defineProps({
   propertys: Array,
@@ -171,10 +165,6 @@ defineExpose({
 })
 
 //function------------------------------------------------------------------------------------------
-//删除某分组
-function deleteGroup(index){
-  descripGroups.value.splice(index,1)
-}
 //统一设置属性，切换属性时
 function uniformPropertyChange(){
   if(uniformProperty.value.type==='Multiple')

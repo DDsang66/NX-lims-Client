@@ -27,6 +27,4 @@ export default {
   careLabel: 'Care Label',
   careLabelRegion: 'Care Label Region',
   applyToAll: 'Apply To All',
-  itemRequire: 'Item Require',
-  seamParameter: 'Seam Parameter',
 }

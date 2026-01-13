@@ -26,7 +26,5 @@ export default {
   testPoint:'测点',
   careLabel: '洗护标签',
   careLabelRegion:'洗标地区',
-  applyToAll:'统一设置',
-  itemRequire: '项目必需参数',
-  seamParameter: '缝口参数',
+  applyToAll:'统一设置'
 }
