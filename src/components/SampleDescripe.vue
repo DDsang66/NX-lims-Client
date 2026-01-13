@@ -177,8 +177,12 @@
   const propertyTable=ref(props.propertys.filter(property => property.isNecessary.includes('Y')).map(
     property => {
       let newProperty= JSON.parse(JSON.stringify(property))
-      if(newProperty.type==='Multiple')
+      if(newProperty.type==='Multiple'){
+        if(!newProperty.defaultValue)
+          newProperty.value=[]
+        else
         newProperty.value=[newProperty.defaultValue];
+      }
       else
         newProperty.value=newProperty.defaultValue;
       return newProperty;
