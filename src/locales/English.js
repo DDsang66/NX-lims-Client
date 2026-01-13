@@ -26,4 +26,5 @@ export default {
   afterIron: 'After Iron',
   careLabel: 'Care Label',
   careLabelRegion: 'Care Label Region',
+  applyToAll: 'Apply To All',
 }

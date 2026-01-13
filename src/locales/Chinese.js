@@ -25,5 +25,6 @@ export default {
   afterWash:'洗后',
   testPoint:'测点',
   careLabel: '洗护标签',
-  careLabelRegion:'洗标地区'
+  careLabelRegion:'洗标地区',
+  applyToAll:'统一设置'
 }
