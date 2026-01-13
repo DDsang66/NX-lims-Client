@@ -16,7 +16,12 @@
 
   <div class="thisPadding">
     <div class="thisPiece">
-      <SampleDescripe ref="sampleDescrip" :propertys="propertys" />
+      <SampleDescripeBoundSingle v-if="['Primark','OVS'].includes(buyer)"
+         :sampleSummary="sampleSummary"
+         :propertys="propertys"
+         ref="sampleDescripBoundSingle"
+      />
+      <SampleDescripe v-else ref="sampleDescrip" :propertys="propertys" />
     </div>
   </div>
 
@@ -88,6 +93,7 @@ import {ref, defineComponent, inject, computed, onMounted} from 'vue'
   import {useI18n} from "vue-i18n";
 import globalFunctions from "@/utils/globalFunctions.js";
 import FiberContentBoundSingle from "@/components/FiberContentBoundSingle.vue";
+import SampleDescripeBoundSingle from "@/components/SampleDescripeBoundSingle.vue";
 
   const request = inject('request');
   const props = defineProps({
@@ -100,6 +106,7 @@ import FiberContentBoundSingle from "@/components/FiberContentBoundSingle.vue";
     selectedRows: Array,
   });
   const sampleDescrip=ref(null)
+  const sampleDescripBoundSingle=ref(null)
   const testItems=ref()
   const selectedItemNames=ref([])
   const selectedItems=ref([])
@@ -163,6 +170,8 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
       items: props.items,
       additionalRequire: additionalRequire.value,
       sampleDescription: (()=>{
+        if(['Primark','OVS'].includes(props.buyer))
+          return ''
         let mountDescription = '';
         for(let property of sampleDescrip.value.propertyTable){
           //拼接
@@ -173,6 +182,17 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
           }
         }
         return mountDescription.substring(1)
+      })(),
+      sampleDescripBoundSingle: (()=>{
+        if(!['Primark','OVS'].includes(props.buyer))
+          return null
+        return sampleDescripBoundSingle.value.descripGroups.flatMap(group=>{
+          let descrips=[]
+          group.samples.forEach( sample=> {
+            descrips.push({sample:sample,description:group.propertyTable})
+          })
+          return descrips
+        })
       })(),
       afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-')),
       additionalItems: selectedItems.value
@@ -202,9 +222,6 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
 //     alert(rep.data.message)
 //   }
 // }
-async function getSampleDescription(){
-
-}
 async function getPropertys(){
   const rep = await request.get('/render/sampledesc', {
     params: {
