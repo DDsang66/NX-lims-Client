@@ -7,7 +7,7 @@
   <div class="thisPadding">
     <div class="thisPiece">
       <FiberContentBoundSingle v-if="['Primark','OVS'].includes(buyer)"
-         @confirm="handleRows"
+         @confirm="handleRowsSingle"
          :sampleSummary="sampleSummary"
       />
       <FiberContent v-else @confirm="handleRows" />
@@ -119,6 +119,7 @@ import SampleDescripeBoundSingle from "@/components/SampleDescripeBoundSingle.vu
   const afterWashs = ref([]);
   const wetCareData = ref({});   // 保存 WetCareLabel 数据
   const fiberComposition   = ref([]);   // 保存 FiberContent 数据
+  const fiberCompositionSingle = ref([]);
   const additionalRequire = ref('');
   // const sampleDescription = ref('');
   const propertys=ref([])
@@ -142,7 +143,10 @@ import SampleDescripeBoundSingle from "@/components/SampleDescripeBoundSingle.vu
     // console.log('fiber',fiberCom)
     fiberComposition.value = fiberCom;
   };
-
+  const handleRowsSingle = (fiberCom)=> {
+    // console.log('fiber',fiberCom)
+    fiberCompositionSingle.value = fiberCom;
+  };
   // const handleDescription = (data) => {
   //   sampleDescription.value = data;
   // };
@@ -164,6 +168,7 @@ const emit = defineEmits(['submit', 'api-response', 'api-error'])
     const payload = {
     ...wetCareFields,
     fiberComposition: fiberComposition.value,
+      fiberCompositionSingle: fiberCompositionSingle.value,
       selectedRows: props.selectedRows,
       buyer: globalFunctions.cleanAndLowercase(props.buyer),
       reportNumber: props.orderNumber,
