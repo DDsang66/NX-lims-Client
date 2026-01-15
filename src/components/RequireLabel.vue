@@ -70,6 +70,7 @@
     <div class="form-group col-xl-9 mb-0">
       <label>{{ $t('additionalRequire') }}</label>
       <input class="form-control"
+             readonly
              placeholder="Order Notes (Optional)"
              v-model="additionalRequire">
     </div>
