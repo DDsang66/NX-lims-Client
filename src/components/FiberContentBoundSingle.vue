@@ -84,7 +84,7 @@
 
 <script setup>
 import '@/assets/css/style.css';
-import {ref, reactive, computed, watch, onMounted, onBeforeUnmount} from 'vue'
+import {ref, reactive, computed, watch, onMounted, onBeforeUnmount, inject} from 'vue'
 import {Check} from "@element-plus/icons-vue";
 const emit = defineEmits(['confirm']);
 
@@ -94,6 +94,7 @@ const props=defineProps({
     default: () => []
   }
 })
+const request = inject('request');
 //样品分组
 /*
 * {samples:[
@@ -123,9 +124,13 @@ const naturalList = ['Cotton', 'Wool', 'Silk', 'Ramie', 'Mohair', 'Tussah', 'Lin
 const isSynth = str => synthList.includes(str)
 const isNatural = str => naturalList.includes(str)
 
-const allCompositions = ref([...synthList, ...naturalList]);
+const allCompositions = ref();
 
 //function------------------------------------------------------------------------------------------
+//获取成分选项列表
+async function getCompositions() {
+  allCompositions.value=(await request.get('/render/compositionsearch')).data.data
+}
 //修改单组样品
 function oneGroupSamplesChange() {
   let countSamples=new Set()
@@ -199,6 +204,9 @@ function updateRateOnBlur(group, rate) {
   if(getCountRate(group.rows)>100)
     return alert('The proportion cannot exceed 100')
 }
+onMounted(()=>{
+  getCompositions()
+})
 </script>
 
 <style scoped lang="scss">
