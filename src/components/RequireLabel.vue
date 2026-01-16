@@ -1,7 +1,7 @@
 <template>
   <div class="thisPadding">
     <div class="thisPiece">
-      <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
+      <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs" :washLabelRegionDefault="washLabelRegionDefault"/>
     </div>
   </div>
   <div class="thisPadding">
@@ -98,6 +98,7 @@ import FiberContentBoundSingle from "@/components/FiberContentBoundSingle.vue";
     items: Array,
     sampleSummary: Array,
     selectedRows: Array,
+    washLabelRegionDefault: String,
   });
   const sampleDescrip=ref(null)
   const testItems=ref()

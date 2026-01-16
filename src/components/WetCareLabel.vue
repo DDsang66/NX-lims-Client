@@ -414,8 +414,13 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
   const testPoint=ref('')
   const detergent = ref('');
   // const afterWashs=ref([])
-  const props = defineProps([
-    "afterWashs"]);
+  const props = defineProps({
+    afterWashs: Array,
+    washLabelRegionDefault: {
+      type: String,
+      default: 'Europe'
+    },
+  });
   const selectedAfterWashs=ref([])
   const afterWashOptions=['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash','25 Wash','32 Wash','45 Wash'];
 
@@ -649,7 +654,7 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
   const emit = defineEmits(['updateData']);
 
 //洗标地区
-const washLabelRegion=ref('Europe')
+const washLabelRegion=ref(props.washLabelRegionDefault)
 const washLabelRegionOptions=['Europe', 'USA'];
 
 //洗标标准
