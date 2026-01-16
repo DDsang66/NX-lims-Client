@@ -28,8 +28,6 @@
     sampleDescription.value = data.sampleDescription;
   }
 
-  const requireLabelDoM=ref(null)
-
   //-------------------------------------------------------------------//CheckList
   /* 接收 BuyerInfo 回传数据 */
   const onBuyerData = (response) => {
@@ -68,9 +66,9 @@
 
     data.forEach(patch => {
       // const row = rowMap.get(patch.itemName)  //获取对应旧值
-      const row=countList.find(item=>{
+      const row=countList.filter(item=>{
         return item.itemName===patch.itemName&&item.standards[0]===patch.standard
-      })
+      })[0]
       if (!row) return
 
       // 1. 通过新值获取parameters
@@ -135,13 +133,11 @@
          @field-change="handleFieldChange"/>
       <div style="border: 1px solid #cae2e8;">
         <RequireLabel
-          ref="requireLabelDoM"
          :buyer="currentBuyer"
          :orderNumber="orderNumber"
          :menuName="menuName"
          :reviewer ="currentReviewer"
          :items="items"
-         :selectedRows="selectedRows"
          @api-response="onBuyerParamData"
          washLabelRegionDefault="USA"
          @submit="onSubmitData"/>
@@ -152,7 +148,6 @@
       <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle" />
 <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
       <SubmitCheckList
-        :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
        :buyer="currentBuyer"
        :orderNumber="orderNumber"
        :menuName="menuName"

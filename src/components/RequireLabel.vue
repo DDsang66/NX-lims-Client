@@ -1,7 +1,7 @@
 <template>
   <div class="thisPadding">
     <div class="thisPiece">
-      <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs"/>
+      <WetCareLabel @updateData="handleWetCarelabelUpdate" :afterWashs="afterWashs" :washLabelRegionDefault="washLabelRegionDefault"/>
     </div>
   </div>
   <div class="thisPadding">
@@ -104,6 +104,7 @@ import SampleDescripeBoundSingle from "@/components/SampleDescripeBoundSingle.vu
     items: Array,
     sampleSummary: Array,
     selectedRows: Array,
+    washLabelRegionDefault: String,
   });
   const sampleDescrip=ref(null)
   const sampleDescripBoundSingle=ref(null)
