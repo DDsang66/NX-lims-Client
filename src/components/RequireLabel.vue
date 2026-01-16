@@ -164,61 +164,64 @@ const confirmAction = async () => {
   if (afterWashs.value.some(item => !item.testPoint)) {
     return alert('Please fill in the Sample')
   }
-  //sampleDescripBoundSingleDto
-  let sampleDescripBoundSingleDto = (() => {
-    if (!['Primark', 'OVS'].includes(props.buyer))
-      return null
-    return sampleDescripBoundSingle.value.descripGroups.flatMap(group => {
-      let descrips = []
-      group.samples.forEach(sample => {
-        descrips.push({sample: sample, description:  JSON.parse(JSON.stringify(group.propertyTable))})
+  let sampleDescripBoundSingleDto
+  if(['Primark', 'OVS'].includes(props.buyer)){
+    //sampleDescripBoundSingleDto
+    sampleDescripBoundSingleDto = (() => {
+      if (!['Primark', 'OVS'].includes(props.buyer))
+        return null
+      return sampleDescripBoundSingle.value.descripGroups.flatMap(group => {
+        let descrips = []
+        group.samples.forEach(sample => {
+          descrips.push({sample: sample, description:  JSON.parse(JSON.stringify(group.propertyTable))})
+        })
+        return descrips
       })
-      return descrips
+    })()
+    //获取样品set
+    let sampleSet = new Set()
+    let hasDuplicated = false
+    sampleDescripBoundSingleDto.forEach(descrip => {
+      if (!sampleSet.has(descrip.sample))
+        sampleSet.add(descrip.sample)
+      else
+        hasDuplicated = true
     })
-  })()
-  //获取样品set
-  let sampleSet = new Set()
-  let hasDuplicated = false
-  sampleDescripBoundSingleDto.forEach(descrip => {
-    if (!sampleSet.has(descrip.sample))
-      sampleSet.add(descrip.sample)
-    else
-      hasDuplicated = true
-  })
-  if (hasDuplicated)
-    return alert('Some samples in Sample Description are duplicated')
-  //判断是否包含所有样品
-  let containAllSample = true
-  props.sampleSummary.forEach(sample => {
-    if (!sampleSet.has(sample))
-      containAllSample = false
-  })
-  if (!containAllSample)
-    return alert('Some samples in Sample Description are missing')
-  //样描格式转换
-  console.log(sampleDescripBoundSingleDto)
-  sampleDescripBoundSingleDto = sampleDescripBoundSingleDto.map(descrip => {
-    descrip.description.forEach(item => {
-      if (item.type === 'Multiple'&&Array.isArray(item.value)){
-        item.value = item.value.join('-')
+    if (hasDuplicated)
+      return alert('Some samples in Sample Description are duplicated')
+    //判断是否包含所有样品
+    let containAllSample = true
+    props.sampleSummary.forEach(sample => {
+      if (!sampleSet.has(sample))
+        containAllSample = false
+    })
+    if (!containAllSample)
+      return alert('Some samples in Sample Description are missing')
+    //样描格式转换
+    sampleDescripBoundSingleDto = sampleDescripBoundSingleDto.map(descrip => {
+      descrip.description.forEach(item => {
+        if (item.type === 'Multiple'&&Array.isArray(item.value)){
+          item.value = item.value.join('-')
+        }
+      })
+      return {
+        sample: descrip.sample,
+        description: descrip.description
       }
     })
-    return {
-      sample: descrip.sample,
-      description: descrip.description
-    }
-  })
-  //fiberCompositionSingle判断重复
-  let hasDuplicatedFiberSample = false
-  let fiberSampleSet = new Set()
-  fiberCompositionSingle.value.forEach(fiber => {
-    if (!fiberSampleSet.has(fiber.sample))
-      fiberSampleSet.add(fiber.sample)
-    else
-      hasDuplicatedFiberSample = true
-  })
-  if (hasDuplicatedFiberSample)
-    return alert('Some samples in Fiber Content are duplicated')
+    //fiberCompositionSingle判断重复
+    let hasDuplicatedFiberSample = false
+    let fiberSampleSet = new Set()
+    fiberCompositionSingle.value.forEach(fiber => {
+      if (!fiberSampleSet.has(fiber.sample))
+        fiberSampleSet.add(fiber.sample)
+      else
+        hasDuplicatedFiberSample = true
+    })
+    if (hasDuplicatedFiberSample)
+      return alert('Some samples in Fiber Content are duplicated')
+  }
+
   const payload = {
     ...wetCareFields,
     fiberComposition: fiberComposition.value,
