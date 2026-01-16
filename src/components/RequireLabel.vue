@@ -152,68 +152,112 @@ import SampleDescripeBoundSingle from "@/components/SampleDescripeBoundSingle.vu
 
 
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
-  const confirmAction = async () => {
-    if(props.orderNumber.replace(' ','').includes('..')){
-      alert('Please enter the order number.')
-    }
+const confirmAction = async () => {
+  if (props.orderNumber.replace(' ', '').includes('..')) {
+    alert('Please enter the order number.')
+  }
   // console.log(selectedItems.value)
-    const wetCareFields = Object.keys(wetCareData.value).reduce((acc, key) => {
-      acc[key] = wetCareData.value[key];
-      return acc;
-    }, {});
-    if(afterWashs.value.some(item =>!item.testPoint)){
-      return alert('Please fill in the Sample')
+  const wetCareFields = Object.keys(wetCareData.value).reduce((acc, key) => {
+    acc[key] = wetCareData.value[key];
+    return acc;
+  }, {});
+  if (afterWashs.value.some(item => !item.testPoint)) {
+    return alert('Please fill in the Sample')
+  }
+  //sampleDescripBoundSingleDto
+  let sampleDescripBoundSingleDto = (() => {
+    if (!['Primark', 'OVS'].includes(props.buyer))
+      return null
+    return sampleDescripBoundSingle.value.descripGroups.flatMap(group => {
+      let descrips = []
+      group.samples.forEach(sample => {
+        descrips.push({sample: sample, description:  JSON.parse(JSON.stringify(group.propertyTable))})
+      })
+      return descrips
+    })
+  })()
+  //获取样品set
+  let sampleSet = new Set()
+  let hasDuplicated = false
+  sampleDescripBoundSingleDto.forEach(descrip => {
+    if (!sampleSet.has(descrip.sample))
+      sampleSet.add(descrip.sample)
+    else
+      hasDuplicated = true
+  })
+  if (hasDuplicated)
+    return alert('Some samples in Sample Description are duplicated')
+  //判断是否包含所有样品
+  let containAllSample = true
+  props.sampleSummary.forEach(sample => {
+    if (!sampleSet.has(sample))
+      containAllSample = false
+  })
+  if (!containAllSample)
+    return alert('Some samples in Sample Description are missing')
+  //样描格式转换
+  console.log(sampleDescripBoundSingleDto)
+  sampleDescripBoundSingleDto = sampleDescripBoundSingleDto.map(descrip => {
+    descrip.description.forEach(item => {
+      if (item.type === 'Multiple'&&Array.isArray(item.value)){
+        item.value = item.value.join('-')
+      }
+    })
+    return {
+      sample: descrip.sample,
+      description: descrip.description
     }
-    const payload = {
+  })
+  //fiberCompositionSingle判断重复
+  let hasDuplicatedFiberSample = false
+  let fiberSampleSet = new Set()
+  fiberCompositionSingle.value.forEach(fiber => {
+    if (!fiberSampleSet.has(fiber.sample))
+      fiberSampleSet.add(fiber.sample)
+    else
+      hasDuplicatedFiberSample = true
+  })
+  if (hasDuplicatedFiberSample)
+    return alert('Some samples in Fiber Content are duplicated')
+  const payload = {
     ...wetCareFields,
     fiberComposition: fiberComposition.value,
-      fiberCompositionSingle: fiberCompositionSingle.value,
-      selectedRows: props.selectedRows,
-      buyer: globalFunctions.cleanAndLowercase(props.buyer),
-      reportNumber: props.orderNumber,
-      menuName: props.menuName,
-      reviewer: props.reviewer,
-      items: props.items,
-      additionalRequire: additionalRequire.value,
-      sampleDescription: (()=>{
-        if(['Primark','OVS'].includes(props.buyer))
-          return ''
-        let mountDescription = '';
-        for(let property of sampleDescrip.value.propertyTable){
-          //拼接
-          if (property.type==='Input'||property.type==='Single'){
-            mountDescription+='-'+property.value
-          }else{
-            mountDescription+='-'+property.value.join('-')
-          }
+    fiberCompositionSingle: fiberCompositionSingle.value,
+    selectedRows: props.selectedRows,
+    buyer: globalFunctions.cleanAndLowercase(props.buyer),
+    reportNumber: props.orderNumber,
+    menuName: props.menuName,
+    reviewer: props.reviewer,
+    items: props.items,
+    additionalRequire: additionalRequire.value,
+    sampleDescription: (() => {
+      if (['Primark', 'OVS'].includes(props.buyer))
+        return ''
+      let mountDescription = '';
+      for (let property of sampleDescrip.value.propertyTable) {
+        //拼接
+        if (property.type === 'Input' || property.type === 'Single') {
+          mountDescription += '-' + property.value
+        } else {
+          mountDescription += '-' + property.value.join('-')
         }
-        return mountDescription.substring(1)
-      })(),
-      sampleDescripBoundSingle: (()=>{
-        if(!['Primark','OVS'].includes(props.buyer))
-          return null
-        return sampleDescripBoundSingle.value.descripGroups.flatMap(group=>{
-          let descrips=[]
-          group.samples.forEach( sample=> {
-            descrips.push({sample:sample,description:group.propertyTable})
-          })
-          return descrips
-        })
-      })(),
-      afterWash:afterWashs.value.map(item => item.testPoint+'-'+item.afterWash.join('-')),
-      additionalItems: selectedItems.value
+      }
+      return mountDescription.substring(1)
+    })(),
+    sampleDescripBoundSingle: sampleDescripBoundSingleDto,
+    afterWash: afterWashs.value.map(item => item.testPoint + '-' + item.afterWash.join('-')),
+    additionalItems: selectedItems.value
   };
-  try{
-    const response = await request.post('/buyer/parameter', payload, );
-      emit('api-response', response.data)
-      emit('submit', payload)
-  }
-  catch(error){
-      emit('api-error', {
+  try {
+    const response = await request.post('/buyer/parameter', payload,);
+    emit('api-response', response.data)
+    emit('submit', payload)
+  } catch (error) {
+    emit('api-error', {
       message: error.response?.data?.message || '请求失败',
       status: error.response?.status,
       error: error
-      })
+    })
   }
 };
 // async function  getBuyerItemsParams(){
