@@ -812,10 +812,16 @@ function washLabelRegionChange(){
 //     dom.focus();
 //   }
   function addAfterWash(){
-    if(props.afterWashs.some(item=>item.testPoint===testPoint.value)){
-      return alert("The test point already exists.")
+    //逗号分隔转数组
+    let testPointArray=testPoint.value.split(",")
+    for (const sample of testPointArray) {
+      if(props.afterWashs.some(item=>item.testPoint===sample)){
+        return alert("Some test point already exist.")
+      }
     }
-    props.afterWashs.push({testPoint:testPoint.value,afterWash:selectedAfterWashs.value});
+    testPointArray.forEach(sample=>{
+      props.afterWashs.push({testPoint:sample,afterWash:selectedAfterWashs.value});
+    })
   }
   function removeAfterWash(index){
     props.afterWashs.splice(index,1);
