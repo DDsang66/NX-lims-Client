@@ -280,8 +280,8 @@
         <div>
           <el-select :class="{valueNoClass:selectedIronProcedure===''}" v-model="selectedIronProcedure">
             <el-option value="">Do Not Iron</el-option>
-            <el-option v-for="option in ironProcedures" :key="option.value" :value="option.value">
-              {{ option.label }}
+            <el-option v-for="option in afterIrons" :key="option" :value="option">
+              {{ option }}
             </el-option>
           </el-select>
           <Transition name="fade">
@@ -423,7 +423,7 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
   });
   const selectedAfterWashs=ref([])
   const afterWashOptions=['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash','25 Wash','32 Wash','45 Wash'];
-
+  const afterIrons=['After Iron','Before and After Iron']
   // 洗标默认值
   const selectedWashingProcedure = ref({
     value:'',
