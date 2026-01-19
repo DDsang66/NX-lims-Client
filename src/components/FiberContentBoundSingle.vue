@@ -12,10 +12,17 @@
         <div v-show="isNoticeOpen" :class="['sigma_notice-content', { block: isNoticeOpen.value }]">
           <div class="mainContainer">
             <!--          样品-->
-            <div class="oneSampleComposition" v-for="group in sampleGroups" :key="group.samples">
-              <el-select v-model="group.samples" placeholder="" multiple @change="oneGroupSamplesChange">
-                <el-option v-for="sample in sampleSummary" :key="sample" :value="sample"></el-option>
-              </el-select>
+            <div class="oneSampleComposition" v-for="(group,index) in sampleGroups" :key="group.samples">
+              <div class="line-flex-container">
+                <el-select v-model="group.samples" placeholder="" multiple
+                           style="flex:1;"
+                           @change="oneGroupSamplesChange">
+                  <el-option v-for="sample in sampleSummary" :key="sample" :value="sample"></el-option>
+                </el-select>
+                <el-button type="danger" @click="deleteGroup(index)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
               <!-- 输入 -->
               <div class="line-flex-container">
                 <div style="width: 50%" class="line-left-flex-container">
@@ -85,7 +92,7 @@
 <script setup>
 import '@/assets/css/style.css';
 import {ref, reactive, computed, watch, onMounted, onBeforeUnmount, inject} from 'vue'
-import {Check} from "@element-plus/icons-vue";
+import {Check, Delete} from "@element-plus/icons-vue";
 const emit = defineEmits(['confirm']);
 
 const props=defineProps({
@@ -127,6 +134,10 @@ const isNatural = str => naturalList.includes(str)
 const allCompositions = ref();
 
 //function------------------------------------------------------------------------------------------
+//删除某一组
+function deleteGroup(index){
+  sampleGroups.value.splice(index,1)
+}
 //获取成分选项列表
 async function getCompositions() {
   allCompositions.value=(await request.get('/render/compositionsearch')).data.data
