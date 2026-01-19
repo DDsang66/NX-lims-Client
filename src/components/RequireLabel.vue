@@ -227,12 +227,34 @@ const confirmAction = async () => {
     ...wetCareFields,
     fiberComposition: fiberComposition.value,
     fiberCompositionSingle: fiberCompositionSingle.value,
-    selectedRows: props.selectedRows,
     buyer: globalFunctions.cleanAndLowercase(props.buyer),
     reportNumber: props.orderNumber,
     menuName: props.menuName,
     reviewer: props.reviewer,
-    items: props.items,
+    items: (()=> {
+      let items=props.items
+      let selectedRows=props.selectedRows
+      // 将 items 转为可快速查找的 Map，key 为 `${itemName}|${standards}`
+      const itemMap = new Map();
+      const updatedItems = [];
+
+      // 初始化 Map 并保留原始顺序（如果需要）
+      items.forEach((item) => {
+        const key = `${item.itemName}|${item.standards}`;
+        itemMap.set(key, { ...item, samples: '' }); // 初始化 samples 为空字符串
+        updatedItems.push(itemMap.get(key));
+      });
+
+      // 遍历 selectedRows，找到匹配项并设置 samples
+      selectedRows.forEach(row => {
+        const key = `${row.itemName}|${Array.isArray(row.standards) ? row.standards[0] : row.standards}`;
+        if (itemMap.has(key)) {
+          itemMap.get(key).samples = row.samples;
+        }
+      });
+
+      return updatedItems;
+    })(),
     additionalRequire: additionalRequire.value,
     sampleDescription: (() => {
       if (['Primark', 'OVS'].includes(props.buyer))
