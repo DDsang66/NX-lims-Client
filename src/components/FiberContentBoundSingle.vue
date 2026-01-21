@@ -61,7 +61,7 @@
                   </el-table-column>
                   <el-table-column label="Delete" width="75">
                     <template v-slot="scope">
-                      <el-button @click="removeRow(group.rows,scope.$index)">
+                      <el-button type="danger" @click="removeRow(group.rows,scope.$index)">
                         ×
                       </el-button>
                     </template>
