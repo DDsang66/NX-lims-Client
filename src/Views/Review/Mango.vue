@@ -41,8 +41,6 @@
         .join(', ') || ''
     }))
 
-    // console.log('原始数据:', list)
-
     // 按 types 直接分类
     PhysicsList.value = list.filter(item => item.types.includes('Physics'))
     WetList.value = list.filter(item => item.types.includes('Wet'))
@@ -65,19 +63,12 @@
 
     //汇总List
     const countList=[...PhysicsList.value,...WetList.value]
-    console.log('countList',countList)
 
     //先将已有checkList放入其中
 
     data.forEach(patch => {
       // const row = rowMap.get(patch.itemName)  //获取对应旧值
       const row=countList.filter(item=>{
-        if(item.itemName==='Pilling Resistance'&&patch.itemName==='Pilling Resistance'){
-          console.log(item)
-          console.log(patch)
-          console.log(item.itemName===patch.itemName&&item.standard===patch.standard)
-        }
-
         return item.itemName===patch.itemName&&item.standards[0]===patch.standard
       })[0]
       if (!row) return
@@ -124,7 +115,6 @@
 
 
   const handleFieldChange = (fields) => {
-    console.log('Field changes:', fields)
     // fields contains: { reportNumber, reviewer, buyer, menuName }
     menuName.value = fields.menuName;
     orderNumber.value = fields.reportNumber;
