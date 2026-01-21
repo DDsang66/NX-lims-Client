@@ -138,6 +138,7 @@
          :menuName="menuName"
          :reviewer ="currentReviewer"
          :items="items"
+         :selectedRows="selectedRows"
          @api-response="onBuyerParamData"
          washLabelRegionDefault="USA"
          @submit="onSubmitData"/>

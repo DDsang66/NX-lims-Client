@@ -149,6 +149,7 @@ const handleFieldChange = (fields) => {
           :menuName="menuName"
           :reviewer="currentReviewer"
           :items="items"
+          :selectedRows="selectedRows"
           @api-response="onBuyerParamData"
           @submit="onSubmitData"/>
       </div>
