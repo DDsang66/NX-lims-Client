@@ -79,7 +79,6 @@
       // 过滤 null / undefined / '' 后，若结果为空数组 → 直接设成 []
       parameters: (item.parameters || [])
         .filter(p => p != null && p !== '')
-        .join(', ') || ''
     }))
 
     // console.log('原始数据:', list)
@@ -110,20 +109,18 @@
     //先将已有checkList放入其中
 
     data.forEach(patch => {
-      // const row = rowMap.get(patch.itemName)  //获取对应旧值
-      const row=countList.filter(item=>{
+      //根据回传找对应旧值
+      const row=countList.find(item=>{
         return item.itemName===patch.itemName&&item.standards[0]===patch.standard
-      })[0]
+      })
       if (!row) return
 
-      // 1. 通过新值获取parameters
-      const str = Object.entries(patch)
-        .filter(([k, v]) => k !== 'itemName' && k !== 'orderNumber'&&k!=='standard' && v != null && v !== '')
-        .map(([k, v]) => k === 'param' ? v : `${k}: ${v}`)
-        .join(', ');
-
+      // // 1. 通过新值获取parameters
+      // const str = Object.entries(patch)//返回`[index, value]` 迭代器
+      //   .filter(([k, v]) => k !== 'itemName' && k !== 'orderNumber'&&k!=='standard' && v != null && v !== '')//去除属性，和空值属性
+      //   .map(([k, v]) => k === 'param' ? v : `${k}: ${v}`)
       // 2. 仅覆盖 parameters
-      row.parameters = str
+      row.parameters = patch.param
     })
   }
 
