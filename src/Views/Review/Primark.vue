@@ -65,7 +65,7 @@ const onSubmitData = (data) =>
   sampleDescription.value = data.sampleDescription;
 }
 
-
+const requireLabelDoM=ref(null)
 
 /* 套餐切换的回传数据 */
 const onBuyerData = (response) => {
@@ -182,6 +182,7 @@ const handleFieldChange = (fields) => {
         @field-change="handleFieldChange"/>
       <div style="border: 1px solid #cae2e8;">
         <RequireLabel
+          ref="requireLabelDoM"
           :buyer="currentBuyer"
           :orderNumber="orderNumber"
           :menuName="menuName"
@@ -205,6 +206,8 @@ const handleFieldChange = (fields) => {
         :selectedRows="selectedRows"
         :additionalRequire="additionalRequire"
         :sampleDescription="sampleDescription"
+        :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
+        :sampleDescripBoundSingleDto="requireLabelDoM ? requireLabelDoM.sampleDescripBoundSingleDto :null"
       />
     </div>
   </div>

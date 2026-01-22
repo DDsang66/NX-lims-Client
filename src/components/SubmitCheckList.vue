@@ -77,6 +77,12 @@ const cvv          = ref(null)
       type: Array,
       required: true,
       default: () => []
+    },
+    seamParameter:{
+      default: undefined
+    },
+    sampleDescripBoundSingleDto:{
+      default: undefined
     }
   })
 
@@ -88,16 +94,25 @@ const cvv          = ref(null)
       types: row.types ? row.types.join(', ') : '',
       extra: row.extra || null
     }));
-  const form =
-  {
-    ReportNumber: props.orderNumber,
-    MenuName: props.menuName,
-    Reviewer: props.reviewer,
-    Buyer: globalFunctions.cleanAndLowercase(props.buyer),
-    AdditionalRequire: props.additionalRequire,
-    SampleDescription: props.sampleDescription,
-    SelectedRows: processedRows
-  }
+  let form = {}
+    form= {
+      ReportNumber: props.orderNumber,
+      MenuName: props.menuName,
+      Reviewer: props.reviewer,
+      Buyer: globalFunctions.cleanAndLowercase(props.buyer),
+      AdditionalRequire: props.additionalRequire,
+      SampleDescription: props.sampleDescription,
+      SelectedRows: processedRows,
+      seamParameter:props.seamParameter
+    }
+    if(['OVS', 'Primark'].includes(props.buyer)){
+      form.SelectedRows=undefined
+      form.SampleDescription=undefined
+      form.newSelectedRows=processedRows
+      form.sampleDescripBoundSingleDto=props.sampleDescripBoundSingleDto
+    }
+
+
   if(canPrint){
     try {
       ElMessage.primary('Start downloading.')
