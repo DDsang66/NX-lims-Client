@@ -25,7 +25,7 @@
             <!--v-for="row in list" :key="row.itemName"-->
             <td>{{ row.itemName }}</td>
             <td>{{ (row.standards || []).filter(p => p != null && p !== '').join(', ') }}</td>
-            <td><pre style="max-width: 150px">{{ formatData(row.parameters)}}</pre></td>
+            <td><pre class="formatted-output" style="max-width: 150px" v-html="formatDataAsHtml(row.parameters)"></pre></td>
             <td contenteditable="true"
                 :ref="(el) => setRef(el, idx)"
                 @blur="syncSample($event, row)"
@@ -67,39 +67,46 @@ import {nextTick, ref, watch} from 'vue'
 
   // 声明 ref
   const myTable = ref(null)
-//param格式化
-function formatData(maybeRefArr) {
-  if (!Array.isArray(maybeRefArr)||!maybeRefArr) return maybeRefArr;
-  // 兼容 ref / reactive / 普通数组
-  const arr = Array.isArray(maybeRefArr)
-    ? maybeRefArr
-    : (maybeRefArr?.value || []);
+//param格式化为html
+function formatDataAsHtml(arr) {
+  if(!arr) return '';
+  if (!Array.isArray(arr)) return arr;
+
+  // 安全转义函数（防止 XSS）
+  const escape = (str) => {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      . replace(/>/g, '&gt;');
+  };
 
   return arr
     .map(item => {
-      // item 也可能是响应式对象，但 Object.entries 能正常遍历
-      const lines = [`${item.sample}:`];
+      const lines = [`<strong>${escape(item.sample)}:</strong>`];
 
       for (const [key, value] of Object.entries(item)) {
         if (key === 'sample') continue;
 
         if (value !== null && typeof value === 'object') {
-          // 展开对象的一层
           for (const [innerKey, innerValue] of Object.entries(value)) {
             if (innerValue === '' || innerValue == null) continue;
-            // 注意：末尾加逗号！
-            lines.push(`\t${innerKey}: ${innerValue},`);
+            // ✅ 整行：Key: <span>Value</span>,
+            lines.push(
+              `&nbsp;&nbsp;${escape(innerKey)}: <span class="param-value">${escape(innerValue)}</span>,`
+            );
           }
         } else {
-          // 非对象：直接输出
           if (value === '' || value == null) continue;
-          lines.push(`\t${key}: ${value},`);
+          lines.push(
+            `&nbsp;&nbsp;${escape(key)}: <span class="param-value">${escape(value)}</span>,`
+          );
         }
       }
 
-      return lines.join('\n');
+      return lines.join('<br>');
     })
-    .join('\n');
+    .join('<br>');
 }
   // 👇 新增：安全的单元格合并函数（兼容额外行）
 function mergeSameCells(table, colIndex = 0) {
@@ -261,5 +268,12 @@ watch(
 <style scoped>
   .selected {
     background-color: #d0e7ff;
+  }
+  /*parameters格式化样式*/
+  .formatted-output {
+  }
+  /*高亮*/
+  :deep(.param-value) {
+    background-color: yellow; /* GitHub 风格的红色 */
   }
 </style>
