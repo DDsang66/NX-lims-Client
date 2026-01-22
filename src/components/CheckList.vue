@@ -25,7 +25,7 @@
             <!--v-for="row in list" :key="row.itemName"-->
             <td>{{ row.itemName }}</td>
             <td>{{ (row.standards || []).filter(p => p != null && p !== '').join(', ') }}</td>
-            <td>{{ row.parameters ?? "" }}</td>
+            <td><pre style="max-width: 150px">{{ formatData(row.parameters)}}</pre></td>
             <td contenteditable="true"
                 :ref="(el) => setRef(el, idx)"
                 @blur="syncSample($event, row)"
@@ -67,7 +67,40 @@ import {nextTick, ref, watch} from 'vue'
 
   // 声明 ref
   const myTable = ref(null)
+//param格式化
+function formatData(maybeRefArr) {
+  if (!Array.isArray(maybeRefArr)||!maybeRefArr) return maybeRefArr;
+  // 兼容 ref / reactive / 普通数组
+  const arr = Array.isArray(maybeRefArr)
+    ? maybeRefArr
+    : (maybeRefArr?.value || []);
 
+  return arr
+    .map(item => {
+      // item 也可能是响应式对象，但 Object.entries 能正常遍历
+      const lines = [`${item.sample}:`];
+
+      for (const [key, value] of Object.entries(item)) {
+        if (key === 'sample') continue;
+
+        if (value !== null && typeof value === 'object') {
+          // 展开对象的一层
+          for (const [innerKey, innerValue] of Object.entries(value)) {
+            if (innerValue === '' || innerValue == null) continue;
+            // 注意：末尾加逗号！
+            lines.push(`\t${innerKey}: ${innerValue},`);
+          }
+        } else {
+          // 非对象：直接输出
+          if (value === '' || value == null) continue;
+          lines.push(`\t${key}: ${value},`);
+        }
+      }
+
+      return lines.join('\n');
+    })
+    .join('\n');
+}
   // 👇 新增：安全的单元格合并函数（兼容额外行）
 function mergeSameCells(table, colIndex = 0) {
   if (!table?.tBodies?.[0]) return;
