@@ -70,7 +70,7 @@
     sampleDescription.value = data.sampleDescription;
   }
 
-
+  const requireLabelDoM=ref(null)
 
   /* 接收 BuyerInfo 回传数据 */
   const onBuyerData = (response) => {
@@ -187,7 +187,8 @@
          @field-change="handleFieldChange"/>
       <div style="border: 1px solid #cae2e8;">
         <RequireLabel
-         :buyer="currentBuyer"
+          ref="requireLabelDoM"
+          :buyer="currentBuyer"
          :orderNumber="orderNumber"
          :menuName="menuName"
          :reviewer ="currentReviewer"
@@ -203,7 +204,8 @@
       <CheckList title="Wet" :list="WetList" style="width: 100%" @update:checked="onRowToggle" />
 <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
       <SubmitCheckList
-       :buyer="currentBuyer"
+        :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
+        :buyer="currentBuyer"
        :orderNumber="orderNumber"
        :menuName="menuName"
        :reviewer ="currentReviewer"

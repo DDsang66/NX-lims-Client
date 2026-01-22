@@ -227,6 +227,32 @@ const handleRowsSingle = (fiberCom) => {
 // };
 
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
+const seamParameter=computed(()=>{
+  return seamGroups.value.flatMap(group=>{
+    return group.samples.map(sample=>({sample,locationInfos:group.locationInfos}))
+  })
+})
+const sampleDescription=computed(()=>{
+  if (['Primark', 'OVS'].includes(props.buyer))
+    return ''
+  let mountDescription = '';
+  for (let property of sampleDescrip.value.propertyTable) {
+    //拼接
+    if (property.type === 'Input' || property.type === 'Single') {
+      mountDescription += '-' + property.value
+    } else {
+      mountDescription += '-' + property.value.join('-')
+    }
+  }
+  return mountDescription.substring(1)
+})
+
+const sampleDescripBoundSingleDto=ref()
+
+defineExpose({
+  seamParameter,
+  sampleDescripBoundSingleDto
+})
 
 // function-----------------------------------------------------------------------------------------
 //部位type改变
@@ -321,10 +347,9 @@ const confirmAction = async () => {
   if (afterWashs.value.some(item => !item.testPoint)) {
     return alert('Please fill in the Sample')
   }
-  let sampleDescripBoundSingleDto
   if (['Primark', 'OVS'].includes(props.buyer)) {
     //sampleDescripBoundSingleDto
-    sampleDescripBoundSingleDto = (() => {
+    sampleDescripBoundSingleDto.value = (() => {
       if (!['Primark', 'OVS'].includes(props.buyer))
         return null
       return sampleDescripBoundSingle.value.descripGroups.flatMap(group => {
@@ -341,7 +366,7 @@ const confirmAction = async () => {
     //获取样品set
     let sampleSet = new Set()
     let hasDuplicated = false
-    sampleDescripBoundSingleDto.forEach(descrip => {
+    sampleDescripBoundSingleDto.value.forEach(descrip => {
       if (!sampleSet.has(descrip.sample))
         sampleSet.add(descrip.sample)
       else
@@ -358,7 +383,7 @@ const confirmAction = async () => {
     if (!containAllSample)
       return alert('Some samples in Sample Description are missing')
     //样描格式转换
-    sampleDescripBoundSingleDto = sampleDescripBoundSingleDto.map(descrip => {
+    sampleDescripBoundSingleDto.value = sampleDescripBoundSingleDto.value.map(descrip => {
       descrip.description.forEach(item => {
         if (item.type === 'Multiple' && Array.isArray(item.value)) {
           item.value = item.value.join('-')
@@ -414,25 +439,10 @@ const confirmAction = async () => {
 
       return updatedItems;
     })(),
-    seamParameter:seamGroups.value.flatMap(group=>{
-      return group.samples.map(sample=>({sample,locationInfos:group.locationInfos}))
-    }),
+    seamParameter:seamParameter.value,
     additionalRequire: additionalRequire.value,
-    sampleDescription: (() => {
-      if (['Primark', 'OVS'].includes(props.buyer))
-        return ''
-      let mountDescription = '';
-      for (let property of sampleDescrip.value.propertyTable) {
-        //拼接
-        if (property.type === 'Input' || property.type === 'Single') {
-          mountDescription += '-' + property.value
-        } else {
-          mountDescription += '-' + property.value.join('-')
-        }
-      }
-      return mountDescription.substring(1)
-    })(),
-    sampleDescripBoundSingle: sampleDescripBoundSingleDto,
+    sampleDescription: sampleDescription.value,
+    sampleDescripBoundSingle: sampleDescripBoundSingleDto.value,
     afterWash: afterWashs.value.map(item => item.testPoint + '-' + item.afterWash.join('-')),
     additionalItems: selectedItems.value
   };
