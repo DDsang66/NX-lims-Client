@@ -40,17 +40,17 @@
             </td>
           </tr>
           <!-- 当 itemName 命中目标值时渲染额外框体 -->
-          <tr v-if="[
-              'Seam Slippage',
-              'Seam Strength',
-              'Bursting Strength',
-              'Water Resistance-Hydrostatic Pressure',
-              'Seam Slippage of Garment Seams'
-              ].includes(row.itemName)">
-            <td colspan="5">
-              <ExtraForm :type="row.itemName" v-model="row.extra" />
-            </td>
-          </tr>
+<!--          <tr v-if="[-->
+<!--              'Seam Slippage',-->
+<!--              'Seam Strength',-->
+<!--              'Bursting Strength',-->
+<!--              'Water Resistance-Hydrostatic Pressure',-->
+<!--              'Seam Slippage of Garment Seams'-->
+<!--              ].includes(row.itemName)">-->
+<!--            <td colspan="5">-->
+<!--              <ExtraForm :type="row.itemName" v-model="row.extra" />-->
+<!--            </td>-->
+<!--          </tr>-->
         </template>
         </tbody>
       </table>
