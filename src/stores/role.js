@@ -18,6 +18,7 @@ import LPP from "@/Views/Review/LPP.vue";
 import LTAG from "@/Views/Review/LTAG.vue";
 import Focus from "@/Views/Review/Focus.vue";
 import Woolworth from "@/Views/Review/Woolworth.vue";
+import ExcelTry from "@/Views/ExcelTry.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -32,17 +33,19 @@ const useRoleStore = defineStore('role', {
         {path:'Kik',name:'Kik',component:Kik},
         {path:'Pep&co',name:'Pep&co',component:Pepco},
         {path:'Next',name:'Next',component: Next},
-        {path: 'OVS',name:'OVS',component:OVS},
         {path:'LPP',name:'LPP',component:LPP},
         {path:'LTAG',name:'LTAG',component:LTAG},
         {path:'Focus',name:'Focus',component:Focus},
         {path: 'Woolworth',name:'Woolworth',component:Woolworth},
-        {path:'Review',name: 'Review',component: Review}
       ],
       OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
       OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
-      LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}]
+      LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}],
+      Unpublished:[{path: 'OVS',name:'OVS',component:OVS},
+        {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
+        {path:'Review',name: 'Review',component: Review}
+      ]
     }))
   }),
   getters: {
@@ -53,7 +56,7 @@ const useRoleStore = defineStore('role', {
         case 'Leader':
           return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Admin':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut','Unpublished'];
         case 'Phy-Supervisor':
           return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Wet-Supervisor':
