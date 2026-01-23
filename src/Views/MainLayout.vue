@@ -119,9 +119,6 @@
             <el-menu-item index="/main/Next">
               <span>NEXT</span>
             </el-menu-item>
-            <el-menu-item index="/main/OVS">
-              <span>OVS</span>
-            </el-menu-item>
             <el-menu-item index="/main/Woolworth">
               <span>Woolworth</span>
             </el-menu-item>
@@ -135,9 +132,21 @@
               <span>Focus</span>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item index="/main/Review">
-            <span>Review</span>
-          </el-menu-item>
+<!--          未发布的-->
+          <el-sub-menu index="4" v-if="hasPower('Unpublished')">
+            <el-menu-item index="/main/Review">
+              <span>Review</span>
+            </el-menu-item>
+            <template #title>
+              <span>Unpublished</span>
+            </template>
+            <el-menu-item index="/main/OVS">
+              <span>OVS</span>
+            </el-menu-item>
+            <el-menu-item index="/main/ExcelTry">
+              <span>ExcelTry</span>
+            </el-menu-item>
+          </el-sub-menu>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>
             <span>Manual Management</span>
