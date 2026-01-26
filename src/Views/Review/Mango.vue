@@ -68,9 +68,9 @@
 
     data.forEach(patch => {
       // const row = rowMap.get(patch.itemName)  //获取对应旧值
-      const row=countList.filter(item=>{
+      const row=countList.find(item=>{
         return item.itemName===patch.itemName&&item.standards[0]===patch.standard
-      })[0]
+      })
       if (!row) return
 
       // 1. 通过新值获取parameters
