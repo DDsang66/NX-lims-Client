@@ -7,7 +7,7 @@
 <!--          粗体-->
           <div style="font-weight: bolder">Buyer</div>
         </template>
-        <el-input style="width: 100px"></el-input>
+        <el-input style="width: 100px" v-model="buyer"></el-input>
       </el-form-item>
       <el-form-item>
         <template #label>
