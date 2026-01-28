@@ -48,6 +48,9 @@
         <el-button @click="loadDocument" style="margin-left: 10px" :disabled="loading">
           {{ loading ? '加载中...' : '获取 Excel' }}
         </el-button>
+<!--        <el-button @click="closeEditor">-->
+<!--          关闭-->
+<!--        </el-button>-->
       </el-form-item>
     </el-form>
     <div style="width: 100%; height: 80vh; margin-top: 20px;">
@@ -58,8 +61,10 @@
 </template>
 
 <script setup>
-import {computed, reactive, inject,ref} from 'vue'
+import {computed, reactive, inject, ref, onBeforeUnmount, onMounted} from 'vue'
+import '@/utils/loadOnlyOffice.js'
 
+const userStore=inject('userAuthStore')
 const loading = ref(false)
 const request=inject('request')
 var twoDigitYear=ref(new Date().getFullYear()%100)
@@ -73,6 +78,8 @@ const reportNums=reactive({
 const buyer=ref('')
 const reportNum=computed(()=>reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5)
 const group=ref('Phy')
+//编辑器
+const onlyofficeEditor=ref(null)
 
   //失去焦点，判断四位数
 function data4Blur(){
@@ -107,22 +114,29 @@ let config={
   style: {height:'100vh'},
   document: {
     // title:res.data.fileName ,
-    key: '1',
     // title:FILE_NAME,
     url:FILE_URL,
-    fileType: 'xlsx'
+    fileType: 'xlsx',
+    // key:'1'
   },
   documentType: 'cell', // Excel 必须是 'cell'
   editorConfig: {
     mode: 'edit', // 或 'edit'
     lang: 'zh-CN',
-    user: { name: '演示用户' }, // 必填！否则弹协作窗口
+    user: { name: userStore.user }, // 必填！否则弹协作窗口
     customization: {
       chat: false,
       comments: false,
-      feedback: false
+      feedback: false,
+      close:{
+        visible: true,
+        text: "Close file",
+      }
     }
-  }
+  },
+  events: {
+    onRequestClose,
+  },
   // 注意：没有 token 字段！因为 JWT 已关闭
 }
 
@@ -143,27 +157,26 @@ async function loadDocument() {
         buyer:buyer.value
       }
     })
-    config.document.title=res.data.fileName
-    config.document.url=res.data.downloadUrl
     // console.log('已拿到')
   } catch (error){
     loading.value=false
     console.error('获取url失败:', error)
     alert('获取url失败')
   }
-
+  config.document.title=res.data.fileName
+  config.document.url=res.data.downloadUrl
+  config.document.key=Math.random().toString()
+  // console.log(config)
   try {
-    // 动态加载 OnlyOffice SDK（关键！）
-    await loadOnlyOfficeScript()
-
     // 销毁已有实例（避免重复初始化）
-    if (window.onlyofficeEditor) {
-      window.onlyofficeEditor.destroyEditor()
+    if (onlyofficeEditor.value) {
+      onlyofficeEditor.value.destroyEditor()
+      onlyofficeEditor.value = null
     }
-
+    // console.log('编辑钱',config)
     // 初始化编辑器
-    window.onlyofficeEditor = new DocsAPI.DocEditor('onlyoffice-editor',config)
-
+    onlyofficeEditor.value = new DocsAPI.DocEditor('onlyoffice-editor',config)
+    onlyofficeEditor.value.refreshFile()
   } catch (error) {
     console.error('OnlyOffice 加载失败:', error)
     alert('文档加载失败，请检查控制台')
@@ -172,21 +185,22 @@ async function loadDocument() {
   }
 }
 
-// 动态加载 OnlyOffice JS SDK
-function loadOnlyOfficeScript() {
-  return new Promise((resolve, reject) => {
-    // 如果已加载，直接返回
-    if (window.DocsAPI) {
-      resolve()
-      return
-    }
-    const script = document.createElement('script')
-    script.src = request.documentSrc
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Failed to load OnlyOffice SDK'))
-    document.head.appendChild(script)
-  })
+//关闭编辑器
+function onRequestClose(){
+  //由另一个标签页打开的情况
+  if (window.opener) {
+    window.close();
+    return;
+  }
+  onlyofficeEditor.value.destroyEditor()
 }
+
+onBeforeUnmount(() => {
+  if (onlyofficeEditor.value) {
+    onlyofficeEditor.value.destroyEditor() // 销毁编辑器
+    onlyofficeEditor.value = null
+  }
+})
 </script>
 
 <style scoped>
