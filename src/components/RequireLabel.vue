@@ -44,7 +44,7 @@
                   <el-select v-model="group.samples" placeholder="" multiple
                              style="flex:1;"
                              @change="oneGroupSamplesChange">
-                    <el-option v-for="sample in sampleSummary" :key="sample" :value="sample"></el-option>
+                    <el-option v-for="sample in seamSamples" :key="sample" :value="sample"></el-option>
                   </el-select>
                   <el-button type="danger" @click="deleteGroup(index)">
                     <el-icon><Delete /></el-icon>
@@ -67,7 +67,10 @@
                         All
                       </el-checkbox>
                     </template>
-                    <el-option v-for="location in seamType_LocationsMap.get(group.locationsDraft.type)" :key="location" :value="location"></el-option>
+                    <el-option v-for="location in seamType_LocationsMap.get(group.locationsDraft.type)"
+                               :key="location.value"
+                               :label="location.label"
+                               :value="location.value"></el-option>
                   </el-select>
                   <el-button @click="addLocations(group)">+</el-button>
                 </div>
@@ -194,8 +197,24 @@ const unGroupedSeamSamples = computed(() => {
 })
 const newSeamSampleGroup = ref([]);
 const seamTypeOptions = ['Top', 'Bottom']
-const seamType_LocationsMap = new Map([['Top', ['Side', 'Sleeve','Armhole','Shoulder',]],
-  ['Bottom', ['Armprit', 'Front Panel','Back Panel','Outside','Inside','Back Rise','Front Crotch','Cross']]])
+const seamType_LocationsMap = new Map([
+  ['Top', [
+    {value:'Side', label:'Side(侧缝)'},
+    {value:'Sleeve', label: 'Sleeve(袖缝)'} ,
+    {value:'Armhole', label: 'Armhole(袖笼)'},
+    {value:'Shoulder', label: 'Shoulder(肩缝)'},]
+  ],
+  ['Bottom', [
+    {value:'Armprit', label: 'Armprit(腋下缝)'},
+    {value:'Front Panel', label: 'Front Panel(前片)'},
+    {value:'Back Panel', label:'Back Panel(后片)'},
+    {value:'Outside', label: 'Outside(外缝)'},
+    {value:'Inside', label:'Inside(内缝)'},
+    {value:'Back Rise', label: 'Back Rise(后档缝)'},
+    {value:'Front Crotch', label: 'Front Crotch(裆下缝)'},
+    {value:'Cross', label:'Cross(X缝，十字缝)'}]
+  ]
+])
 //原因
 const seamReasons = ['拼缝', '接缝长度不足','该接缝不存在','织物结构为针织']
 
