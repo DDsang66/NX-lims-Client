@@ -40,10 +40,10 @@
                    :size="size"
                    filterable placeholder="" >
           <!--                自定义头部-->
-          <el-option value="Physics">Physics</el-option>
+          <el-option value="Phy" label="Physics"></el-option>
           <el-option value="Wet">Wet</el-option>
-          <el-option value="Fiber">Fiber</el-option>
-          <el-option value="Flam">Flam</el-option>
+<!--          <el-option value="Fiber">Fiber</el-option>-->
+<!--          <el-option value="Flam">Flam</el-option>-->
         </el-select>
         <el-button @click="loadDocument" style="margin-left: 10px" :disabled="loading">
           {{ loading ? '加载中...' : '获取 Excel' }}
@@ -72,7 +72,7 @@ const reportNums=reactive({
 })
 const buyer=ref('')
 const reportNum=computed(()=>reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5)
-const group=ref('Physics')
+const group=ref('Phy')
 
   //失去焦点，判断四位数
 function data4Blur(){
@@ -103,11 +103,33 @@ function data4Keydown(e){
   }
 }
 
+let config={
+  style: {height:'100vh'},
+  document: {
+    // title:res.data.fileName ,
+    key: '1',
+    // title:FILE_NAME,
+    url:FILE_URL,
+    fileType: 'xlsx'
+  },
+  documentType: 'cell', // Excel 必须是 'cell'
+  editorConfig: {
+    mode: 'edit', // 或 'edit'
+    lang: 'zh-CN',
+    user: { name: '演示用户' }, // 必填！否则弹协作窗口
+    customization: {
+      chat: false,
+      comments: false,
+      feedback: false
+    }
+  }
+  // 注意：没有 token 字段！因为 JWT 已关闭
+}
 
 // 公开的 Excel 文件
 // const FILE_URL = 'https://test234234535.oss-cn-hangzhou.aliyuncs.com/pepco_sheet.xlsx'
-// const FILE_URL = 'http://localhost:8087/pepco_sheet.xlsx'
-// const FILE_NAME = 'pepco_sheet.xlsx'
+const FILE_URL = 'http://localhost:8087/pepco_sheet.xlsx'
+const FILE_NAME = 'pepco_sheet.xlsx'
 
 async function loadDocument() {
   if (loading.value) return
@@ -121,10 +143,15 @@ async function loadDocument() {
         buyer:buyer.value
       }
     })
+    config.document.title=res.data.fileName
+    config.document.url=res.data.downloadUrl
+    // console.log('已拿到')
   } catch (error){
+    loading.value=false
     console.error('获取url失败:', error)
-    return alert('获取url失败')
+    alert('获取url失败')
   }
+
   try {
     // 动态加载 OnlyOffice SDK（关键！）
     await loadOnlyOfficeScript()
@@ -135,26 +162,7 @@ async function loadDocument() {
     }
 
     // 初始化编辑器
-    window.onlyofficeEditor = new DocsAPI.DocEditor('onlyoffice-editor', {
-      style: {height:'100vh'},
-      document: {
-        title:res.data.fileName ,
-        url: res.data.downloadUrl,
-        fileType: 'xlsx'
-      },
-      documentType: 'cell', // Excel 必须是 'cell'
-      editorConfig: {
-        mode: 'view', // 或 'edit'
-        lang: 'zh-CN',
-        user: { name: '演示用户' }, // 必填！否则弹协作窗口
-        customization: {
-          chat: false,
-          comments: false,
-          feedback: false
-        }
-      }
-      // 注意：没有 token 字段！因为 JWT 已关闭
-    })
+    window.onlyofficeEditor = new DocsAPI.DocEditor('onlyoffice-editor',config)
 
   } catch (error) {
     console.error('OnlyOffice 加载失败:', error)
@@ -172,9 +180,8 @@ function loadOnlyOfficeScript() {
       resolve()
       return
     }
-
     const script = document.createElement('script')
-    script.src = 'http://localhost/web-apps/apps/api/documents/api.js'
+    script.src = request.documentSrc
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Failed to load OnlyOffice SDK'))
     document.head.appendChild(script)
