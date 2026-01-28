@@ -26,18 +26,18 @@
       <div class="form-group col-xl-5">
         <div class="input-group">
           <select class="form-control" v-model="Component" v-if="type!=='Water Resistance-Hydrostatic Pressure'">
-            <option value="Side">Side Seam</option>
-            <option value="Sleeve">Sleeve Seam</option>
-            <option value="Armhole">Armhole Seam</option>
-            <option value="Shoulder">Shoulder Seam</option>
-            <option value="Armprit">Armprit Seam</option>
-            <option value="Front Panel">Front Panel Seam</option>
-            <option value="Back Panel">Back Panel Seam</option>
-            <option value="Outside">Out-side Seam</option>
-            <option value="Inside">In-side Seam</option>
-            <option value="Back Rise">Back Rise Seam</option>
-            <option value="Front Crotch">Front Crotch Seam</option>
-            <option value="Cross">Cross Seam</option>
+            <option value="Side">Side Seam(侧缝)</option>
+            <option value="Sleeve">Sleeve Seam(袖缝)</option>
+            <option value="Armhole">Armhole Seam(袖笼)</option>
+            <option value="Shoulder">Shoulder Seam(肩缝)</option>
+            <option value="Armprit">Armprit Seam(腋下缝)</option>
+            <option value="Front Panel">Front Panel Seam(前片)</option>
+            <option value="Back Panel">Back Panel Seam(后片)</option>
+            <option value="Outside">Out-side Seam(外缝)</option>
+            <option value="Inside">In-side Seam(内缝)</option>
+            <option value="Back Rise">Back Rise Seam(后档缝)</option>
+            <option value="Front Crotch">Front Crotch Seam(裆下缝)</option>
+            <option value="Cross">Cross Seam(X缝，十字缝)</option>
           </select>
           <select class="form-control" v-model="Component" v-else>
             <option value="mbar">mbar</option>
