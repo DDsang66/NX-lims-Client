@@ -2,10 +2,10 @@ import axios from 'axios';
 import qs from 'qs'
 const api = axios.create({
   baseURL: 'http://localhost:5051/api',
-  timeout: 15000,
+  timeout: 10000,
   headers: { 'Content-Type': 'application/json' }
 });
-
+api.documentSrc="http://localhost/web-apps/apps/api/documents/api.js"
 // 请求拦截器：自动带上 Access Token
 api.interceptors.request.use(config => {
   const accessToken = localStorage.getItem('accessToken');
