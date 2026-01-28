@@ -23,9 +23,11 @@
                      default-first-option
                      @change="inputChange"
                      ref="selectInputDom"
+                     :size="size"
                      class="input-select">
           </el-select>
           <el-icon style="margin-left: auto" @click="visible=!visible"><Grid /></el-icon>
+          <el-icon @click="clearData"><CircleClose /></el-icon>
         </div>
       </template>
       <div class="gridPopover" @mousedown.prevent>
@@ -102,7 +104,7 @@
 <script setup>
 
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
-import {ArrowLeft, ArrowLeftBold, ArrowRightBold, Grid} from "@element-plus/icons-vue";
+import {ArrowLeft, ArrowLeftBold, ArrowRightBold, CircleClose, Grid} from "@element-plus/icons-vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import GlobalFunctions from "@/utils/globalFunctions.js";
 
@@ -239,6 +241,12 @@ const optionCategoryMap = {
 }
 
 /* Methods------------------------------------------------------------------------------------------*/
+//清空
+function clearData() {
+  inputValue.value = ''
+  props.modelValue.length=0
+}
+
 //包含额外选项
 function withAdditionalSuffixes(gridSuffixes) {
   let allSuffixes = [...suffixes]
@@ -584,6 +592,9 @@ function refreshBasedOnLabel(){
 }
 //将modelValue转为两个真实数据
 function modelValueToRealData(){
+  //清空map和set
+  suffixedValueMap.value.clear()
+  commonValueSet.value.clear()
   props.modelValue.forEach(value => {
     if(value.includes('-')){
       //-前的部分
@@ -634,7 +645,7 @@ $grid-gap:5px;
   border-radius: var(--el-border-radius-base);
   box-shadow: 0 0 0 1px var(--el-border-color);
   box-sizing: border-box;
-  padding: 4px 4px 4px 2px;
+  padding: 0 4px 0 4px;
 }
 .mySelect{
   cursor: pointer;
