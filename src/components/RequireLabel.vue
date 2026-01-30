@@ -302,7 +302,7 @@ function handleLocationCheckAll(val, locationsDraft) {
   locationsDraft.indeterminate = false
   if (val) {
     //全选
-    locationsDraft.locations = seamType_LocationsMap.get(locationsDraft.type)
+    locationsDraft.locations = seamType_LocationsMap.get(locationsDraft.type).map(location=>location.value)
     locationsDraft.locationCheckAll = true
     locationsDraft.indeterminate = false
   } else {
