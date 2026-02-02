@@ -49,15 +49,20 @@
                   <el-button type="danger" @click="deleteGroup(index)">
                     <el-icon><Delete /></el-icon>
                   </el-button>
+                  <label>Type</label>
+                  <el-select :disabled="group.samples.some(sample=>sample.includes('-'))" style="width: 100px" v-model="group.samplesType">
+                    <el-option v-for="type in seamSampleTypes" :key="type.value" :value='type.value' :label="type.label"></el-option>
+                  </el-select>
                 </div>
                 <!--            添加部位-->
                 <div class="line-flex-container">
-                  <label>Type</label>
-                  <el-select style="width: 250px" v-model="group.locationsDraft.type" @change="locationTypeChange(group.locationsDraft)">
+                  <label>Garment Type</label>
+                  <el-select style="width: 100px" v-model="group.locationsDraft.type" @change="locationTypeChange(group.locationsDraft)">
                     <el-option v-for="type in seamTypeOptions" :key="type" :value='type'></el-option>
                   </el-select>
+                  <el-button @click="addLocationsByType(group)">+</el-button>
                   <label style="margin-left: 10px">Locations</label>
-                  <el-select v-model="group.locationsDraft.locations" multiple @change="locationsSelectChange(group.locationsDraft)">
+                  <el-select style="flex:1" v-model="group.locationsDraft.locations" multiple @change="locationsSelectChange(group.locationsDraft)">
                     <template #header>
                       <el-checkbox
                         v-model="group.locationsDraft.locationCheckAll"
@@ -67,7 +72,7 @@
                         All
                       </el-checkbox>
                     </template>
-                    <el-option v-for="location in seamType_LocationsMap.get(group.locationsDraft.type)"
+                    <el-option v-for="location in getAllLocations()"
                                :key="location.value"
                                :label="location.label"
                                :value="location.value"></el-option>
@@ -77,7 +82,7 @@
                 <!--            参数-->
                 <el-table class="removeTableGaps" :data="group.locationInfos" border>
                   <el-table-column label="Location" prop="location" width="200px"></el-table-column>
-                  <el-table-column label="NA" width="50px">
+                  <el-table-column label="N/A" width="55px">
                     <template #default="scope">
                       <el-checkbox v-model="scope.row.isNA"></el-checkbox>
                     </template>
@@ -196,25 +201,34 @@ const unGroupedSeamSamples = computed(() => {
   return seamSamples.value.filter(s => !groupedSamples.includes(s))
 })
 const newSeamSampleGroup = ref([]);
-const seamTypeOptions = ['Top', 'Bottom']
 const seamType_LocationsMap = new Map([
   ['Top', [
     {value:'Side', label:'Side(侧缝)'},
     {value:'Sleeve', label: 'Sleeve(袖缝)'} ,
     {value:'Armhole', label: 'Armhole(袖笼)'},
-    {value:'Shoulder', label: 'Shoulder(肩缝)'},]
+    {value:'Shoulder', label: 'Shoulder(肩缝)'},
+    {value:'Armprit', label: 'Armprit(腋下缝)'},
+  ]
   ],
   ['Bottom', [
-    {value:'Armprit', label: 'Armprit(腋下缝)'},
-    {value:'Front Panel', label: 'Front Panel(前片)'},
-    {value:'Back Panel', label:'Back Panel(后片)'},
     {value:'Outside', label: 'Outside(外缝)'},
     {value:'Inside', label:'Inside(内缝)'},
     {value:'Back Rise', label: 'Back Rise(后档缝)'},
     {value:'Front Crotch', label: 'Front Crotch(裆下缝)'},
-    {value:'Cross', label:'Cross(X缝，十字缝)'}]
-  ]
+  ]],
+  ['Other',[
+    {value:'Front Panel', label: 'Front Panel(前片)'},
+    {value:'Back Panel', label:'Back Panel(后片)'},
+    {value:'Cross', label:'Cross(X缝，十字缝)'}
+  ]]
 ])
+const seamTypeOptions = (()=>{
+  let options = []
+  seamType_LocationsMap.forEach((locations, type) => {
+    options.push(type)
+  })
+  return options
+})()
 //原因
 const seamReasons = ['拼缝', '接缝长度不足','该接缝不存在','织物结构为针织']
 
@@ -248,7 +262,7 @@ const handleRowsSingle = (fiberCom) => {
 const emit = defineEmits(['submit', 'api-response', 'api-error'])
 const seamParameter=computed(()=>{
   return seamGroups.value.flatMap(group=>{
-    return group.samples.map(sample=>({sample,locationInfos:group.locationInfos}))
+    return group.samples.map(sample=>({sample,type:group.samplesType,locationInfos:group.locationInfos}))
   })
 })
 const sampleDescription=computed(()=>{
@@ -267,6 +281,9 @@ const sampleDescription=computed(()=>{
 })
 
 const sampleDescripBoundSingleDto=ref()
+const seamSampleTypes=ref([{value:'shell',label:'shell'},
+  {value:'lining',label: 'lining'}
+])
 
 defineExpose({
   seamParameter,
@@ -274,6 +291,12 @@ defineExpose({
 })
 
 // function-----------------------------------------------------------------------------------------
+//获取所有缝的位置
+function getAllLocations(){
+  let allLocations = []
+  seamType_LocationsMap.forEach(locations=> allLocations.push(...locations))
+  return allLocations
+}
 //部位type改变
 function locationTypeChange(locationsDraft){
   locationsDraft.locations=[]
@@ -321,6 +344,10 @@ function addLocations(group) {
     }))
       group.locationInfos.push({location, isNA: false, reason: ''})
   })
+}
+//根据type添加部位
+function addLocationsByType(group){
+  group.locationInfos.push(...seamType_LocationsMap.get(group.locationsDraft.type).map(location=>({location:location.value,isNA:false,reason:''})))
 }
 
 //添加新分组
