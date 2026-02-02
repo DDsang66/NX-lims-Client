@@ -281,8 +281,8 @@ const sampleDescription=computed(()=>{
 })
 
 const sampleDescripBoundSingleDto=ref()
-const seamSampleTypes=ref([{value:'shell',label:'shell'},
-  {value:'lining',label: 'lining'}
+const seamSampleTypes=ref([{value:'Shell',label:'Shell'},
+  {value:'Lining',label: 'Lining'}
 ])
 
 defineExpose({
