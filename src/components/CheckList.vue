@@ -69,7 +69,7 @@ import {nextTick, ref, watch} from 'vue'
   const myTable = ref(null)
 //param格式化为html
 function formatDataAsHtml(arr) {
-  if(!arr) return '';
+  if (!arr) return '';
   if (!Array.isArray(arr)) return arr;
 
   // 安全转义函数（防止 XSS）
@@ -78,11 +78,25 @@ function formatDataAsHtml(arr) {
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      . replace(/>/g, '&gt;');
+      .replace(/>/g, '&gt;');
+  };
+
+  // 检查对象是否包含非空属性（排除 sample 属性）
+  const hasNonEmptyProperties = (obj) => {
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === 'sample') continue;
+      if (value !== null && value !== '' && !(typeof value === 'object' && Object.keys(value).length === 0)) {
+        return true;
+      }
+    }
+    return false;
   };
 
   return arr
     .map(item => {
+      // 如果除了 sample 外没有其他非空属性，则不显示该项
+      if (!hasNonEmptyProperties(item)) return '';
+
       const lines = [`<strong>${escape(item.sample)}:</strong>`];
 
       for (const [key, value] of Object.entries(item)) {
@@ -106,6 +120,7 @@ function formatDataAsHtml(arr) {
 
       return lines.join('<br>');
     })
+    .filter(line => line.length > 0) // 移除空字符串
     .join('<br>');
 }
   // 👇 新增：安全的单元格合并函数（兼容额外行）
