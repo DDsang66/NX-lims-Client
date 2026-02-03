@@ -381,6 +381,17 @@ function oneGroupSamplesChange() {
 }
 
 const confirmAction = async () => {
+  //对于接缝参数，判断是否有shell或者lining
+  if(seamParameter.value){
+    //判断Shell或者Lining有没有
+    let hasSL=true
+    seamParameter.value.forEach(parameter=>{
+      if(!(parameter.sample.includes('Shell')||parameter.sample.includes('Lining'))&&!(parameter.type==='Shell'||parameter.type==='Lining'))
+        hasSL=false
+    })
+    if(!hasSL)
+      return alert('"Shell" or "Lining" is required.')
+  }
   // console.log(seamGroups.value)
   if (props.orderNumber.replace(' ', '').includes('..')) {
     alert('Please enter the order number.')
