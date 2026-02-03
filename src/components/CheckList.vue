@@ -70,7 +70,10 @@ import {nextTick, ref, watch} from 'vue'
 //param格式化为html
 function formatDataAsHtml(arr) {
   if (!arr) return '';
-  if (!Array.isArray(arr)) return arr;
+  if (!Array.isArray(arr)){
+    //将字符串中的,换成换行符
+    return arr.replaceAll(',', '\n')
+  }
 
   // 安全转义函数（防止 XSS）
   const escape = (str) => {
