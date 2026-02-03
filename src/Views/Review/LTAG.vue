@@ -146,6 +146,7 @@
          :items="items"
          :selectedRows="selectedRows"
          @api-response="onBuyerParamData"
+          washLabelRegionDefault="USA"
          @submit="onSubmitData"/>
       </div>
     </div>
