@@ -312,11 +312,12 @@ function locationsSelectChange(locationsDraft) {
   if (locationsDraft.locations.length === 0) {
     locationsDraft.locationCheckAll = false
     locationsDraft.indeterminate = false
-  } else if (locationsDraft.locations.length === seamType_LocationsMap.get(locationsDraft.type).length) {
+  } else if (locationsDraft.locations.length === getAllLocations().length) {
     locationsDraft.locationCheckAll = true
     locationsDraft.indeterminate = false
   } else {
     locationsDraft.indeterminate = true
+    locationsDraft.locationCheckAll = false
   }
 }
 
@@ -325,7 +326,7 @@ function handleLocationCheckAll(val, locationsDraft) {
   locationsDraft.indeterminate = false
   if (val) {
     //全选
-    locationsDraft.locations = seamType_LocationsMap.get(locationsDraft.type).map(location=>location.value)
+    locationsDraft.locations = getAllLocations()
     locationsDraft.locationCheckAll = true
     locationsDraft.indeterminate = false
   } else {
