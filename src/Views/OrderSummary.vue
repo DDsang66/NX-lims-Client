@@ -1,445 +1,447 @@
 <template>
-  <div style="margin-left: auto ;
+  <div class="allContainer">
+    <div style="margin-left: auto ;
   display: flex;flex-direction: column;align-items: center;gap: 20px;width: 100%;height: 100%">
-    <div class="mainSelectContainer">
-      <div>
-        <el-text size="large">ReportNo.</el-text>
-        <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
-        <el-button type="primary" @click="search">Search</el-button>
+      <div class="mainSelectContainer">
+        <div>
+          <el-text size="large">ReportNo.</el-text>
+          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+          <el-button type="primary" @click="search">Search</el-button>
+        </div>
+        <div>
+          <el-text size="large">TimeOpt</el-text>
+          <el-select v-model="searchParams.timeOpt" style="width: 100px">
+            <el-option value="default" label="Default">Default</el-option>
+            <el-option value="dueDate" label="DueDate">DueDate</el-option>
+            <el-option value="labIn" label="LabIn">LabIn</el-option>
+            <el-option value="ReviewFinish" label="ReviewFinish">ReviewFinish</el-option>
+            <el-option value="LabOut" label="LabOut">LabOut</el-option>
+          </el-select>
+          <el-text size="large">TimeType</el-text>
+          <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange" :disabled="searchParams.timeOpt==='default'">
+            <el-option v-for="type in DatePickerType" :key="type" :value="type"></el-option>
+          </el-select>
+          <el-text size="large">Time Range</el-text>
+          <el-date-picker v-model="searchParams.timeRange"
+                          :type="searchParams.timeType"
+                          placeholder=""
+                          :disabled="searchParams.timeOpt==='default'"/>
+        </div>
+        <div>
+          <el-text>Group</el-text>
+          <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange" :disabled="groups.length===1">
+            <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
+          </el-select>
+        </div>
+        <div>
+          <el-text>Status</el-text>
+          <el-select v-model="searchParams.status" style="width: 150px" @change="search">
+            <el-option value="All">All</el-option>
+            <el-option value="In Lab">In Lab</el-option>
+            <el-option value="Review Finished">Review Finished</el-option>
+            <el-option value="Test Done">Test Done</el-option>
+          </el-select>
+        </div>
+        <div>
+          <el-text>Express</el-text>
+          <el-select v-model="searchParams.express" style="width: 100px" @change="search">
+            <el-option value="All">All</el-option>
+            <el-option value="Regular">Regular</el-option>
+            <el-option value="Express">Express</el-option>
+            <el-option value="Shuttle">Shuttle</el-option>
+            <el-option value="Same Day">Same Day</el-option>
+          </el-select>
+        </div>
+        <div>
+          <el-text>OrderEntry</el-text>
+          <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
+        </div>
       </div>
-      <div>
-        <el-text size="large">TimeOpt</el-text>
-        <el-select v-model="searchParams.timeOpt" style="width: 100px">
-          <el-option value="default" label="Default">Default</el-option>
-          <el-option value="dueDate" label="DueDate">DueDate</el-option>
-          <el-option value="labIn" label="LabIn">LabIn</el-option>
-          <el-option value="ReviewFinish" label="ReviewFinish">ReviewFinish</el-option>
-          <el-option value="LabOut" label="LabOut">LabOut</el-option>
-        </el-select>
-        <el-text size="large">TimeType</el-text>
-        <el-select v-model="searchParams.timeType" style="width: 100px" @change="timeTypeChange" :disabled="searchParams.timeOpt==='default'">
-          <el-option v-for="type in DatePickerType" :key="type" :value="type"></el-option>
-        </el-select>
-        <el-text size="large">Time Range</el-text>
-        <el-date-picker v-model="searchParams.timeRange"
-                        :type="searchParams.timeType"
-                        placeholder=""
-                        :disabled="searchParams.timeOpt==='default'"/>
-      </div>
-      <div>
-        <el-text>Group</el-text>
-        <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange" :disabled="groups.length===1">
-          <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
-        </el-select>
-      </div>
-      <div>
-        <el-text>Status</el-text>
-        <el-select v-model="searchParams.status" style="width: 150px" @change="search">
-          <el-option value="All">All</el-option>
-          <el-option value="In Lab">In Lab</el-option>
-          <el-option value="Review Finished">Review Finished</el-option>
-          <el-option value="Test Done">Test Done</el-option>
-        </el-select>
-      </div>
-      <div>
-        <el-text>Express</el-text>
-        <el-select v-model="searchParams.express" style="width: 100px" @change="search">
-          <el-option value="All">All</el-option>
-          <el-option value="Regular">Regular</el-option>
-          <el-option value="Express">Express</el-option>
-          <el-option value="Shuttle">Shuttle</el-option>
-          <el-option value="Same Day">Same Day</el-option>
-        </el-select>
-      </div>
-      <div>
-        <el-text>OrderEntry</el-text>
-        <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
-      </div>
+      <el-table class="removeTableGaps"
+                :data="reportList"
+                border
+                style="width:100%;" height="75%"
+                v-if="searchParams.group==='All'">
+        <el-table-column type="expand">
+          <template #default="props">
+            <div style="margin-left: 50px;">
+              <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
+                <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+                <el-table-column label="Lab-In" width="100">
+                  <template #default="scope">
+                    {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
+                <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
+                <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
+                <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
+                <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
+                <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
+                <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+                <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
+                <el-table-column width="75" fixed="right" label="Delete">
+                  <template #default="scope">
+                    <el-button type="danger"
+                               text
+                               @click="openDelete(scope.row)">
+                      ×
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
+        <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
+          <template #default="scope">
+            {{getExpresses(scope.row)}}
+          </template>
+        </el-table-column>
+        <el-table-column label="Operations" width="120">
+          <template #default="scope">
+            <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <!--    全展示单-->
+      <el-table class="removeTableGaps"
+                :data="reportGroupList"
+                border
+                style="width:100%;" height="600px"
+                v-if="searchParams.group!=='All'">
+        <!--订单id埋点，scope.row.recordId读取-->
+        <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="150" label="Lab-In">
+          <template #default="scope">
+            {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
+          </template>
+        </el-table-column>
+        <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
+        <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+        <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
+        <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
+        <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
+        <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
+        <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+        <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
+        <el-table-column label="Operations" width="150" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
+            <span style="margin: 0 8px; color: #dcdfe6">|</span>
+            <el-button link type="danger" @click="openDelete(scope.row)">Delete</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination v-model:current-page="currentPage"
+                     v-model:page-size="pageSize"
+                     :page-sizes="[10, 20, 30, 40]"
+                     size="large"
+                     background
+                     layout="total, sizes, pager, jumper"
+                     :total="total"
+                     @size-change="handleSizeChange"
+                     @current-change="handleCurrentChange"
+                     pager-count="12" />
     </div>
-    <el-table class="removeTableGaps"
-              :data="reportList"
-              border
-              style="width:100%;" height="75%"
-              v-if="searchParams.group==='All'">
-      <el-table-column type="expand">
-        <template #default="props">
-          <div style="margin-left: 50px;">
-            <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
-              <el-table-column label="Lab-In" width="100">
-                <template #default="scope">
-                  {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
-                </template>
-              </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
-              <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
-<!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-              <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
-              <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
-              <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
-              <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
-              <el-table-column width="75" fixed="right" label="Delete">
-                <template #default="scope">
-                  <el-button type="danger"
-                             text
-                             @click="openDelete(scope.row)">
-                    ×
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
-      <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
-        <template #default="scope">
-          {{getExpresses(scope.row)}}
-        </template>
-      </el-table-column>
-      <el-table-column label="Operations" width="120">
-        <template #default="scope">
-          <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!--    全展示单-->
-    <el-table class="removeTableGaps"
-              :data="reportGroupList"
-              border
-              style="width:100%;" height="600px"
-              v-if="searchParams.group!=='All'">
-      <!--订单id埋点，scope.row.recordId读取-->
-      <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" label="Lab-In">
-        <template #default="scope">
-          {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
-        </template>
-      </el-table-column>
-      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
-      <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
-<!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-      <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="300" prop="remark" label="Remark" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-      <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
-      <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
-      <el-table-column label="Operations" width="150" fixed="right">
-        <template #default="scope">
-          <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
-          <span style="margin: 0 8px; color: #dcdfe6">|</span>
-          <el-button link type="danger" @click="openDelete(scope.row)">Delete</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination v-model:current-page="currentPage"
-                   v-model:page-size="pageSize"
-                   :page-sizes="[10, 20, 30, 40]"
-                   size="large"
-                   background
-                   layout="total, sizes, pager, jumper"
-                   :total="total"
-                   @size-change="handleSizeChange"
-                   @current-change="handleCurrentChange"
-                   pager-count="12" />
-  </div>
 
-  <!--删除确认框-->
-  <el-dialog top="10vh"
-             v-model="deleteDialogOpen"
-             title="Delete"
-             width="50%"
-             :before-close="deleteBeforeClose">
-    <el-form>
-      <el-descriptions :column="2" border>
-        <!-- 订单id-->
-        <el-descriptions-item label="RecordId.">
-          <el-input v-model="reportGroupDelete.recordId" readonly />
-        </el-descriptions-item>
-        <!--申请人，应该直接取store中的User-->
-        <el-descriptions-item label="Applicant">
-          <el-input v-model="authStore.user" readonly />
-        </el-descriptions-item>
-        <!--理由-->
-        <el-descriptions-item label="Reason">
-          <el-input v-model="reason" type="textarea" :rows="5" placeholder="Please input delete reason" />
-        </el-descriptions-item>
+    <!--删除确认框-->
+    <el-dialog top="10vh"
+               v-model="deleteDialogOpen"
+               title="Delete"
+               width="50%"
+               :before-close="deleteBeforeClose">
+      <el-form>
+        <el-descriptions :column="2" border>
+          <!-- 订单id-->
+          <el-descriptions-item label="RecordId.">
+            <el-input v-model="reportGroupDelete.recordId" readonly />
+          </el-descriptions-item>
+          <!--申请人，应该直接取store中的User-->
+          <el-descriptions-item label="Applicant">
+            <el-input v-model="authStore.user" readonly />
+          </el-descriptions-item>
+          <!--理由-->
+          <el-descriptions-item label="Reason">
+            <el-input v-model="reason" type="textarea" :rows="5" placeholder="Please input delete reason" />
+          </el-descriptions-item>
 
-      </el-descriptions>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="deleteDialogOpen = false">Cancel</el-button>
-        <el-button type="primary" @click="deleteDialogConfirm">
-          Confirm
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+        </el-descriptions>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="deleteDialogOpen = false">Cancel</el-button>
+          <el-button type="primary" @click="deleteDialogConfirm">
+            Confirm
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
-  <!--编辑框-->
-  <el-dialog top="5vh"
-             v-model="editDialogOpen"
-             title="Edit"
-             width="800px"
-             :before-close="editBeforeClose">
-    <el-form v-if="searchParams.group==='All'">
-      <el-descriptions :column="2" border>
-        <!-- Report 基本信息 -->
-        <el-descriptions-item label="Report No.">
-          <el-input v-model="reportEdit.data1" style="width: 50px;" :size="size" disabled></el-input>
-          <el-select v-model="reportEdit.data2"
-                     filterable
-                     style="width: 80px;" >
-            <el-option value="405.">405.</el-option>
-            <el-option value="441.">441.</el-option>
-          </el-select>
-          <el-input v-model="reportEdit.data3"
-                    style="width: 45px;"></el-input>
-          <el-input v-model="reportEdit.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
-          <el-input v-model="reportEdit.data5" style="width: 60px;" :size="size"></el-input>
-        </el-descriptions-item>
-        <el-descriptions-item label="Order Entry">
-          <el-select v-model="reportEdit.orderEntryId"
-                     filterable
-                     placeholder=""
-                     style="width: 150px;">
-            <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
-          </el-select>
-        </el-descriptions-item>
-        <el-descriptions-item label="CS">
-          <el-select  v-model="reportEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
-            <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
-          </el-select>
-        </el-descriptions-item>
-        <el-descriptions-item label="Test Groups">
-          {{reportEdit.testGroups}}
-        </el-descriptions-item>
-      </el-descriptions>
+    <!--编辑框-->
+    <el-dialog top="5vh"
+               v-model="editDialogOpen"
+               title="Edit"
+               width="800px"
+               :before-close="editBeforeClose">
+      <el-form v-if="searchParams.group==='All'">
+        <el-descriptions :column="2" border>
+          <!-- Report 基本信息 -->
+          <el-descriptions-item label="Report No.">
+            <el-input v-model="reportEdit.data1" style="width: 50px;" :size="size" disabled></el-input>
+            <el-select v-model="reportEdit.data2"
+                       filterable
+                       style="width: 80px;" >
+              <el-option value="405.">405.</el-option>
+              <el-option value="441.">441.</el-option>
+            </el-select>
+            <el-input v-model="reportEdit.data3"
+                      style="width: 45px;"></el-input>
+            <el-input v-model="reportEdit.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+            <el-input v-model="reportEdit.data5" style="width: 60px;" :size="size"></el-input>
+          </el-descriptions-item>
+          <el-descriptions-item label="Order Entry">
+            <el-select v-model="reportEdit.orderEntryId"
+                       filterable
+                       placeholder=""
+                       style="width: 150px;">
+              <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
+            </el-select>
+          </el-descriptions-item>
+          <el-descriptions-item label="CS">
+            <el-select  v-model="reportEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
+              <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
+            </el-select>
+          </el-descriptions-item>
+          <el-descriptions-item label="Test Groups">
+            {{reportEdit.testGroups}}
+          </el-descriptions-item>
+        </el-descriptions>
 
-      <!-- 多个 Group 的编辑 -->
-      <b>Groups</b>
-      <div v-for="(group, index) in reportEdit.groups" :key="index" style="position: relative; margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px;">
-        <!-- 右上角 × -->
-        <el-button type="danger"
-                   text
-                   style="position: absolute; top: 6px; right: 6px;"
-                   @click="reportEdit.groups.splice(index, 1)">×</el-button>
-        <el-descriptions :column="2" size="small" border>
+        <!-- 多个 Group 的编辑 -->
+        <b>Groups</b>
+        <div v-for="(group, index) in reportEdit.groups" :key="index" style="position: relative; margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px;">
+          <!-- 右上角 × -->
+          <el-button type="danger"
+                     text
+                     style="position: absolute; top: 6px; right: 6px;"
+                     @click="reportEdit.groups.splice(index, 1)">×</el-button>
+          <el-descriptions :column="2" size="small" border>
+            <el-descriptions-item label="Group">
+              <el-select v-model="group.group" filterable placeholder="">
+                <el-option value="Physics">Physics</el-option>
+                <el-option value="Wet">Wet</el-option>
+                <el-option value="Fiber">Fiber</el-option>
+                <el-option value="Flam">Flam</el-option>
+              </el-select>
+            </el-descriptions-item>
+            <el-descriptions-item label="Lab-In">
+              <el-date-picker v-model="group.labIn"
+                              type="datetime"
+                              format="YYYY-MM-DD HH:mm:ss"
+                              placeholder="选择时间" />
+            </el-descriptions-item>
+            <el-descriptions-item label="Due Date">
+              <el-date-picker v-model="group.dueDate"
+                              type="date"
+                              format="YYYY-MM-DD"
+                              placeholder="选择日期" />
+            </el-descriptions-item>
+            <el-descriptions-item label="Express">
+              <el-select v-model="group.express" filterable placeholder="">
+                <el-option value="Regular" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=4">Regular</el-option>
+                <el-option value="Express" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=3">Express</el-option>
+                <el-option value="Shuttle" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=2">Shuttle</el-option>
+                <el-option value="Same Day" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<1">Same Day</el-option>
+              </el-select>
+            </el-descriptions-item>
+            <el-descriptions-item label="No. of Sample">
+              <el-input v-model="group.testSampleNum" />
+            </el-descriptions-item>
+            <el-descriptions-item label="Reviewer">
+              <el-select v-model="group.reviewerId" filterable placeholder="">
+                <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
+              </el-select>
+            </el-descriptions-item>
+            <el-descriptions-item label="Review Finish">
+              <el-date-picker v-model="group.reviewFinish"
+                              type="datetime"
+                              format="YYYY-MM-DD HH:mm:ss"
+                              placeholder="" />
+            </el-descriptions-item>
+            <el-descriptions-item label="Lab Out">
+              <el-date-picker v-model="group.labOut"
+                              type="datetime"
+                              format="YYYY-MM-DD HH:mm:ss"
+                              placeholder=""/>
+            </el-descriptions-item>
+            <el-descriptions-item label="Remark" span="2">
+              <el-input v-model="group.remark" type="textarea" :rows="2" />
+            </el-descriptions-item>
+            <el-descriptions-item label="Delay Type" span="2">
+              <el-select v-model="group.delayType"  placeholder="" style="width: 40%">
+                <el-option label="Internal" value="Internal"></el-option>
+                <el-option label="External" value="External"></el-option>
+              </el-select>
+            </el-descriptions-item>
+            <el-descriptions-item label="Delay Reason" span="2">
+              <el-input type="textarea" v-model="group.delayReason" placeholder="" />
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-form>
+      <el-form v-if="searchParams.group !== 'All'">
+        <!--        无嵌套-->
+        <el-descriptions :column="2" border>
+
+          <!-- ReportNo. -->
+          <el-descriptions-item label="ReportNo.">
+            <!--          <el-input v-model="reportGroupEdit.reportNum" />-->
+            <el-input v-model="reportGroupEdit.data1" style="width: 40px;" :size="size" disabled></el-input>
+            <el-select v-model="reportGroupEdit.data2"
+                       filterable
+                       style="width: 75px;" >
+              <el-option value="405.">405.</el-option>
+              <el-option value="441.">441.</el-option>
+            </el-select>
+            <el-input v-model="reportGroupEdit.data3"
+                      style="width: 45px;"></el-input>
+            <el-input v-model="reportGroupEdit.data4" style="width: 60px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+            <el-input v-model="reportGroupEdit.data5" style="width: 40px;" :size="size"></el-input>
+          </el-descriptions-item>
+
+          <!-- OrderEntry -->
+          <el-descriptions-item label="OrderEntry">
+            <el-select v-model="reportGroupEdit.orderEntryId" filterable placeholder="">
+              <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
+            </el-select>
+          </el-descriptions-item>
+
+          <!-- CS -->
+          <el-descriptions-item label="CS">
+            <el-select  v-model="reportGroupEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
+              <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
+            </el-select>
+          </el-descriptions-item>
+
+          <!-- Groups -->
+          <!--        <el-descriptions-item label="Groups">-->
+          <!--          <el-input v-model="reportGroupEdit.testGroups" />-->
+          <!--        </el-descriptions-item>-->
+
+          <!-- Group -->
           <el-descriptions-item label="Group">
-            <el-select v-model="group.group" filterable placeholder="">
+            <el-select v-model="reportGroupEdit.group" filterable placeholder="">
               <el-option value="Physics">Physics</el-option>
               <el-option value="Wet">Wet</el-option>
               <el-option value="Fiber">Fiber</el-option>
               <el-option value="Flam">Flam</el-option>
             </el-select>
+
           </el-descriptions-item>
+
+          <!-- Lab-In -->
           <el-descriptions-item label="Lab-In">
-            <el-date-picker v-model="group.labIn"
+            <el-date-picker v-model="reportGroupEdit.labIn"
                             type="datetime"
-                            format="YYYY-MM-DD HH:mm:ss"
-                            placeholder="选择时间" />
+                            placeholder="">
+            </el-date-picker>
           </el-descriptions-item>
-          <el-descriptions-item label="Due Date">
-            <el-date-picker v-model="group.dueDate"
+
+          <!-- Due-Date -->
+          <el-descriptions-item label="Due-Date">
+            <el-date-picker v-model="reportGroupEdit.dueDate"
                             type="date"
-                            format="YYYY-MM-DD"
-                            placeholder="选择日期" />
+                            placeholder="">
+            </el-date-picker>
           </el-descriptions-item>
+
+          <!-- Express -->
           <el-descriptions-item label="Express">
-            <el-select v-model="group.express" filterable placeholder="">
-              <el-option value="Regular" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=4">Regular</el-option>
-              <el-option value="Express" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=3">Express</el-option>
-              <el-option value="Shuttle" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<=2">Shuttle</el-option>
-              <el-option value="Same Day" :disabled="(Math.ceil((new Date(group.dueDate)-new Date(group.labIn))/ (1000 * 60 * 60 * 24))+1)<1">Same Day</el-option>
+            <el-select v-model="reportGroupEdit.express" filterable placeholder="">
+              <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
+              <el-option value="Express" :disabled="expressDisable">Express</el-option>
+              <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
+              <el-option value="Same Day">Same Day</el-option>
             </el-select>
           </el-descriptions-item>
+
+          <!-- TestSampleNum -->
           <el-descriptions-item label="No. of Sample">
-            <el-input v-model="group.testSampleNum" />
+            <el-input v-model="reportGroupEdit.testSampleNum" />
           </el-descriptions-item>
+
+          <!-- TestItemNum -->
+          <!--        <el-descriptions-item label="TestItemNum">-->
+          <!--          <el-input v-model="reportGroupEdit.testItemNum" />-->
+          <!--        </el-descriptions-item>-->
+
+          <!-- Reviewer -->
           <el-descriptions-item label="Reviewer">
-            <el-select v-model="group.reviewerId" filterable placeholder="">
+            <el-select v-model="reportGroupEdit.reviewerId" filterable placeholder="">
               <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
             </el-select>
           </el-descriptions-item>
-          <el-descriptions-item label="Review Finish">
-            <el-date-picker v-model="group.reviewFinish"
+
+          <!-- ReviewFinish -->
+          <el-descriptions-item label="Review-Finish">
+            <el-date-picker v-model="reportGroupEdit.reviewFinish"
                             type="datetime"
-                            format="YYYY-MM-DD HH:mm:ss"
-                            placeholder="" />
+                            placeholder="">
+            </el-date-picker>
           </el-descriptions-item>
-          <el-descriptions-item label="Lab Out">
-            <el-date-picker v-model="group.labOut"
+
+          <!-- LabOut -->
+          <el-descriptions-item label="Lab-Out">
+            <el-date-picker v-model="reportGroupEdit.labOut"
                             type="datetime"
-                            format="YYYY-MM-DD HH:mm:ss"
-                            placeholder=""/>
+                            placeholder="">
+            </el-date-picker>
           </el-descriptions-item>
-          <el-descriptions-item label="Remark" span="2">
-            <el-input v-model="group.remark" type="textarea" :rows="2" />
+
+          <!-- Status -->
+          <el-descriptions-item label="Status">
+            <el-input v-model="reportGroupEdit.status" />
+          </el-descriptions-item>
+
+          <!-- Remark -->
+          <el-descriptions-item label="Remark" :span="2">
+            <el-input v-model="reportGroupEdit.remark" type="textarea" :rows="3" />
           </el-descriptions-item>
           <el-descriptions-item label="Delay Type" span="2">
-            <el-select v-model="group.delayType"  placeholder="" style="width: 40%">
+            <el-select v-model="reportGroupEdit.delayType"  placeholder="" style="width: 40%">
               <el-option label="Internal" value="Internal"></el-option>
               <el-option label="External" value="External"></el-option>
             </el-select>
           </el-descriptions-item>
           <el-descriptions-item label="Delay Reason" span="2">
-            <el-input type="textarea" v-model="group.delayReason" placeholder="" />
+            <el-input type="textarea" v-model="reportGroupEdit.delayReason" placeholder="" />
           </el-descriptions-item>
         </el-descriptions>
-      </div>
-    </el-form>
-    <el-form v-if="searchParams.group !== 'All'">
-      <!--        无嵌套-->
-      <el-descriptions :column="2" border>
-
-        <!-- ReportNo. -->
-        <el-descriptions-item label="ReportNo.">
-<!--          <el-input v-model="reportGroupEdit.reportNum" />-->
-          <el-input v-model="reportGroupEdit.data1" style="width: 40px;" :size="size" disabled></el-input>
-          <el-select v-model="reportGroupEdit.data2"
-                     filterable
-                     style="width: 75px;" >
-            <el-option value="405.">405.</el-option>
-            <el-option value="441.">441.</el-option>
-          </el-select>
-          <el-input v-model="reportGroupEdit.data3"
-                    style="width: 45px;"></el-input>
-          <el-input v-model="reportGroupEdit.data4" style="width: 60px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
-          <el-input v-model="reportGroupEdit.data5" style="width: 40px;" :size="size"></el-input>
-        </el-descriptions-item>
-
-        <!-- OrderEntry -->
-        <el-descriptions-item label="OrderEntry">
-          <el-select v-model="reportGroupEdit.orderEntryId" filterable placeholder="">
-            <el-option v-for="orderEntry in userList" :key="orderEntry.userId" :value="orderEntry.userId" :label="orderEntry.nickName"></el-option>
-          </el-select>
-        </el-descriptions-item>
-
-        <!-- CS -->
-        <el-descriptions-item label="CS">
-          <el-select  v-model="reportGroupEdit.csId" filterable placeholder="" :size="size" style="width: 150px">
-            <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
-          </el-select>
-        </el-descriptions-item>
-
-        <!-- Groups -->
-<!--        <el-descriptions-item label="Groups">-->
-<!--          <el-input v-model="reportGroupEdit.testGroups" />-->
-<!--        </el-descriptions-item>-->
-
-        <!-- Group -->
-        <el-descriptions-item label="Group">
-          <el-select v-model="reportGroupEdit.group" filterable placeholder="">
-            <el-option value="Physics">Physics</el-option>
-            <el-option value="Wet">Wet</el-option>
-            <el-option value="Fiber">Fiber</el-option>
-            <el-option value="Flam">Flam</el-option>
-          </el-select>
-
-        </el-descriptions-item>
-
-        <!-- Lab-In -->
-        <el-descriptions-item label="Lab-In">
-          <el-date-picker v-model="reportGroupEdit.labIn"
-                          type="datetime"
-                          placeholder="">
-          </el-date-picker>
-        </el-descriptions-item>
-
-        <!-- Due-Date -->
-        <el-descriptions-item label="Due-Date">
-          <el-date-picker v-model="reportGroupEdit.dueDate"
-                          type="date"
-                          placeholder="">
-          </el-date-picker>
-        </el-descriptions-item>
-
-        <!-- Express -->
-        <el-descriptions-item label="Express">
-          <el-select v-model="reportGroupEdit.express" filterable placeholder="">
-            <el-option value="Regular" :disabled="regularDisable">Regular</el-option>
-            <el-option value="Express" :disabled="expressDisable">Express</el-option>
-            <el-option value="Shuttle" :disabled="shuttleDisable">Shuttle</el-option>
-            <el-option value="Same Day">Same Day</el-option>
-          </el-select>
-        </el-descriptions-item>
-
-        <!-- TestSampleNum -->
-        <el-descriptions-item label="No. of Sample">
-          <el-input v-model="reportGroupEdit.testSampleNum" />
-        </el-descriptions-item>
-
-        <!-- TestItemNum -->
-<!--        <el-descriptions-item label="TestItemNum">-->
-<!--          <el-input v-model="reportGroupEdit.testItemNum" />-->
-<!--        </el-descriptions-item>-->
-
-        <!-- Reviewer -->
-        <el-descriptions-item label="Reviewer">
-          <el-select v-model="reportGroupEdit.reviewerId" filterable placeholder="">
-            <el-option v-for="reviewer in userList" :key="reviewer.userId" :value="reviewer.userId" :label="reviewer.nickName"></el-option>
-          </el-select>
-        </el-descriptions-item>
-
-        <!-- ReviewFinish -->
-        <el-descriptions-item label="Review-Finish">
-          <el-date-picker v-model="reportGroupEdit.reviewFinish"
-                          type="datetime"
-                          placeholder="">
-          </el-date-picker>
-        </el-descriptions-item>
-
-        <!-- LabOut -->
-        <el-descriptions-item label="Lab-Out">
-          <el-date-picker v-model="reportGroupEdit.labOut"
-                          type="datetime"
-                          placeholder="">
-          </el-date-picker>
-        </el-descriptions-item>
-
-        <!-- Status -->
-        <el-descriptions-item label="Status">
-          <el-input v-model="reportGroupEdit.status" />
-        </el-descriptions-item>
-
-        <!-- Remark -->
-        <el-descriptions-item label="Remark" :span="2">
-          <el-input v-model="reportGroupEdit.remark" type="textarea" :rows="3" />
-        </el-descriptions-item>
-        <el-descriptions-item label="Delay Type" span="2">
-          <el-select v-model="reportGroupEdit.delayType"  placeholder="" style="width: 40%">
-            <el-option label="Internal" value="Internal"></el-option>
-            <el-option label="External" value="External"></el-option>
-          </el-select>
-        </el-descriptions-item>
-        <el-descriptions-item label="Delay Reason" span="2">
-          <el-input type="textarea" v-model="reportGroupEdit.delayReason" placeholder="" />
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="editDialogOpen = false">Cancel</el-button>
-        <el-button type="primary" @click="editDialogConfirm2">
-          Confirm
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="editDialogOpen = false">Cancel</el-button>
+          <el-button type="primary" @click="editDialogConfirm2">
+            Confirm
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">

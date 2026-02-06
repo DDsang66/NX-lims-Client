@@ -157,8 +157,8 @@
           </el-menu-item>
         </el-menu>
       </el-aside>
-      <el-main style="height: 100%">
-        <router-view />
+      <el-main style="height: 100%;padding: 0">
+        <router-view style="padding: 20px" />
       </el-main>
     </el-container>
   </el-container>

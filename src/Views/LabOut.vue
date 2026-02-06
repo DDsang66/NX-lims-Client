@@ -1,187 +1,189 @@
 <template>
-  <div style="margin-left: auto ;
+  <div class="allContainer">
+    <div style="margin-left: auto ;
   display: flex;flex-direction: column;align-items: center;gap: 20px;width: 100%;height: 100%">
-    <div class="line-left-flex-container" style="width: 100%">
-      <div class="mainSelectContainer">
-        <div>
-          <el-text size="large">ReportNo.</el-text>
-          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
-          <el-button type="primary" @click="search">Search</el-button>
-        </div>
-        <div>
-          <el-text>Group</el-text>
-          <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange" :disabled="groups.length===1">
-            <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
-          </el-select>
-        </div>
-        <div>
-          <el-text>Status</el-text>
-          <el-select v-model="searchParams.status" style="width: 150px" @change="search">
-            <el-option value="All">All</el-option>
-            <el-option value="In Lab">In Lab</el-option>
-            <el-option value="Review Finished">Review Finished</el-option>
-            <el-option value="Test Done">Test Done</el-option>
-          </el-select>
+      <div class="line-left-flex-container" style="width: 100%">
+        <div class="mainSelectContainer">
+          <div>
+            <el-text size="large">ReportNo.</el-text>
+            <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+            <el-button type="primary" @click="search">Search</el-button>
+          </div>
+          <div>
+            <el-text>Group</el-text>
+            <el-select v-model="searchParams.group" style="width: 100px;" @change="searchGroupChange" :disabled="groups.length===1">
+              <el-option v-for="op in groups" :key="op" :value="op" :label="op"></el-option>
+            </el-select>
+          </div>
+          <div>
+            <el-text>Status</el-text>
+            <el-select v-model="searchParams.status" style="width: 150px" @change="search">
+              <el-option value="All">All</el-option>
+              <el-option value="In Lab">In Lab</el-option>
+              <el-option value="Review Finished">Review Finished</el-option>
+              <el-option value="Test Done">Test Done</el-option>
+            </el-select>
+          </div>
         </div>
       </div>
+      <el-table class="removeTableGaps"
+                :data="reportList"
+                border
+                style="width:100%;" height="75%"
+                v-if="searchParams.group==='All'"
+                row-key="reportNum"
+                :expand-row-keys="expandRowKeys"
+                @expand-change="handleExpandChange">
+        <el-table-column type="expand">
+          <template #default="props">
+            <div style="margin-left: 50px;">
+              <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
+                <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+                <el-table-column label="Lab-In" width="100">
+                  <template #default="scope">
+                    {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
+                <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="testSampleNum" label="No. of Sample" width="90" >
+                  <template #default="scope">
+                    <el-input v-model="scope.row.testSampleNum"></el-input>
+                  </template>
+                </el-table-column>
+                <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
+                <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
+                <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
+                <el-table-column label="Remark" min-width="300" :formatter="funcs.emptyDisplay" >
+                  <template #default="scope">
+                    <el-input v-model="scope.row.remark" type="textarea"></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
+                <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
+                <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
+                <el-table-column width="120" label="Operation" fixed="right">
+                  <template #default="scope">
+                    <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
+                      <el-button type="primary"
+                                 link
+                                 @click="labOut(scope.row)">
+                        LabOut
+                      </el-button>
+                      <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row,props.row)">
+                        Delay
+                      </el-button>
+                    </div>
+                    <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
+                      Unreviewed
+                    </el-text>
+                    <el-text type="success" v-else>
+                      Test Done
+                    </el-text>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
+        <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
+          <template #default="scope">
+            {{getExpresses(scope.row)}}
+          </template>
+        </el-table-column>
+      </el-table>
+      <!--    全展示单-->
+      <el-table class="removeTableGaps"
+                :data="reportGroupList"
+                border
+                style="width:100%;" height="600px"
+                v-if="searchParams.group!=='All'">
+        <!--订单id埋点，scope.row.recordId读取-->
+        <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="150" label="Lab-In">
+          <template #default="scope">
+            {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
+          </template>
+        </el-table-column>
+        <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
+        <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" label="No. of Sample" >
+          <template #default="scope">
+            <el-input v-model="scope.row.testSampleNum"></el-input>
+          </template>
+        </el-table-column>
+        <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
+        <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
+        <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
+        <el-table-column width="300" label="Remark" :formatter="funcs.emptyDisplay" >
+          <template #default="scope">
+            <el-input v-model="scope.row.remark" type="textarea"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
+        <el-table-column label="Operations" width="120" fixed="right">
+          <template #default="scope">
+            <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
+              <el-button type="primary"
+                         link
+                         @click="labOut(scope.row)">
+                LabOut
+              </el-button>
+              <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row)">
+                Delay
+              </el-button>
+            </div>
+            <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
+              Unreviewed
+            </el-text>
+            <el-text type="success" v-else>
+              Test Done
+            </el-text>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination v-model:current-page="currentPage"
+                     v-model:page-size="pageSize"
+                     :page-sizes="[10, 20, 30, 40]"
+                     size="large"
+                     background
+                     layout="total, sizes, pager, jumper"
+                     :total="total"
+                     @size-change="handleSizeChange"
+                     @current-change="handleCurrentChange"
+                     pager-count="12" />
     </div>
-    <el-table class="removeTableGaps"
-              :data="reportList"
-              border
-              style="width:100%;" height="75%"
-              v-if="searchParams.group==='All'"
-              row-key="reportNum"
-              :expand-row-keys="expandRowKeys"
-              @expand-change="handleExpandChange">
-      <el-table-column type="expand">
-        <template #default="props">
-          <div style="margin-left: 50px;">
-            <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
-              <el-table-column label="Lab-In" width="100">
-                <template #default="scope">
-                  {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
-                </template>
-              </el-table-column>
-              <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
-              <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" width="90" >
-                <template #default="scope">
-                  <el-input v-model="scope.row.testSampleNum"></el-input>
-                </template>
-              </el-table-column>
-              <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-              <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
-              <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
-              <el-table-column label="Remark" min-width="300" :formatter="funcs.emptyDisplay" >
-                <template #default="scope">
-                  <el-input v-model="scope.row.remark" type="textarea"></el-input>
-                </template>
-              </el-table-column>
-              <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
-              <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
-              <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
-              <el-table-column width="120" label="Operation" fixed="right">
-                <template #default="scope">
-                  <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
-                    <el-button type="primary"
-                               link
-                               @click="labOut(scope.row)">
-                      LabOut
-                    </el-button>
-                    <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row,props.row)">
-                      Delay
-                    </el-button>
-                  </div>
-                  <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
-                    Unreviewed
-                  </el-text>
-                  <el-text type="success" v-else>
-                    Test Done
-                  </el-text>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
-      <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
-        <template #default="scope">
-          {{getExpresses(scope.row)}}
-        </template>
-      </el-table-column>
-    </el-table>
-    <!--    全展示单-->
-    <el-table class="removeTableGaps"
-              :data="reportGroupList"
-              border
-              style="width:100%;" height="600px"
-              v-if="searchParams.group!=='All'">
-      <!--订单id埋点，scope.row.recordId读取-->
-      <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" label="Lab-In">
-        <template #default="scope">
-          {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
-        </template>
-      </el-table-column>
-      <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
-      <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" label="No. of Sample" >
-        <template #default="scope">
-          <el-input v-model="scope.row.testSampleNum"></el-input>
-        </template>
-      </el-table-column>
-      <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
-      <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="150" prop="labOut" label="Lab-Out" :formatter="funcs.strTimeColumnFormatter" />
-      <el-table-column width="300" label="Remark" :formatter="funcs.emptyDisplay" >
-        <template #default="scope">
-          <el-input v-model="scope.row.remark" type="textarea"></el-input>
-        </template>
-      </el-table-column>
-      <el-table-column width="100" prop="status" label="Status" :formatter="funcs.emptyDisplay"></el-table-column>
-      <el-table-column label="Operations" width="120" fixed="right">
-        <template #default="scope">
-          <div class="line-flex-container" style="gap: 0;" v-if="scope.row.status==='Review Finished'">
-            <el-button type="primary"
-                       link
-                       @click="labOut(scope.row)">
-              LabOut
-            </el-button>
-            <el-button type="danger" style="margin-left:0" link @click="openDelay(scope.row)">
-              Delay
-            </el-button>
-          </div>
-          <el-text type="danger" v-else-if="scope.row.status==='In Lab'">
-            Unreviewed
-          </el-text>
-          <el-text type="success" v-else>
-            Test Done
-          </el-text>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination v-model:current-page="currentPage"
-                   v-model:page-size="pageSize"
-                   :page-sizes="[10, 20, 30, 40]"
-                   size="large"
-                   background
-                   layout="total, sizes, pager, jumper"
-                   :total="total"
-                   @size-change="handleSizeChange"
-                   @current-change="handleCurrentChange"
-                   pager-count="12" />
+    <el-dialog v-model="delayDialogVisible"  width="50%">
+      <el-form inline label-width="auto" style="width: 100%;font-weight: 600">
+        <el-form-item label="ReportNo.:">{{delayForm.reportNum}}</el-form-item>
+        <el-form-item label="Group:">{{delayForm.group}}</el-form-item>
+      </el-form>
+      <el-form label-width="auto" style="width: 100%">
+        <el-form-item label="Delay Type">
+          <el-select v-model="delayForm.delayType" style="width: 100px" placeholder="">
+            <el-option label="Internal" value="Internal"></el-option>
+            <el-option label="External" value="External"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Delay Reason">
+          <el-input type="textarea" v-model="delayForm.delayReason" placeholder="" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="delayDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="delayConfirm">Confirm</el-button>
+      </template>
+    </el-dialog>
   </div>
-  <el-dialog v-model="delayDialogVisible"  width="50%">
-    <el-form inline label-width="auto" style="width: 100%;font-weight: 600">
-      <el-form-item label="ReportNo.:">{{delayForm.reportNum}}</el-form-item>
-      <el-form-item label="Group:">{{delayForm.group}}</el-form-item>
-    </el-form>
-    <el-form label-width="auto" style="width: 100%">
-      <el-form-item label="Delay Type">
-        <el-select v-model="delayForm.delayType" style="width: 100px" placeholder="">
-          <el-option label="Internal" value="Internal"></el-option>
-          <el-option label="External" value="External"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="Delay Reason">
-        <el-input type="textarea" v-model="delayForm.delayReason" placeholder="" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="delayDialogVisible = false">Cancel</el-button>
-      <el-button type="primary" @click="delayConfirm">Confirm</el-button>
-    </template>
-  </el-dialog>
 </template>
 <script setup>
 
