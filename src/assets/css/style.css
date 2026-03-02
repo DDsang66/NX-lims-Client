@@ -67,9 +67,33 @@
   align-items: center;
   gap: 5px;
 }
+.column-stretch-flex-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 5px;
+}
 /*去除浏览器自带焦点样式*/
 button:focus {
   outline: none;
+}
+/*错误样式*/
+.is-error-el .el-input__wrapper, .is-error-el .el-input__wrapper:hover, .is-error-el .el-input__wrapper:focus, .is-error-el .el-input__wrapper.is-focus, .is-error-el .el-textarea__inner, .is-error-el .el-textarea__inner:hover, .is-error-el .el-textarea__inner:focus, .is-error-el .el-textarea__inner.is-focus, .is-error-el .el-select__wrapper, .is-error-el .el-select__wrapper:hover, .is-error-el .el-select__wrapper:focus, .is-error-el .el-select__wrapper.is-focus, .is-error-el .el-input-tag__wrapper, .is-error-el .el-input-tag__wrapper:hover, .is-error-el .el-input-tag__wrapper:focus, .is-error-el .el-input-tag__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset;
+}
+
+/*警告样式*/
+.warningMy{
+  color: var(--el-color-warning);
+  font-size:12px;
+  left:0;
+  line-height:1;
+  padding-top:2px;
+}
+/*去除el-select下拉列表选项间隔*/
+.el-select-dropdown__wrap ul li,.el-select-dropdown__wrap ol li {
+  margin: 0;
 }
 /* === Keyframes === */
 @keyframes wave {

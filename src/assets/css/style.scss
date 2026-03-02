@@ -9,6 +9,14 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
+  gap: 5px;
+}
+@mixin column-stretch-flex-container(){
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
   gap: 5px;
 }
 @mixin line-flex-container(){

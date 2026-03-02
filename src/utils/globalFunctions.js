@@ -54,11 +54,13 @@ var globalFunctions={
     return globalFunctions.formatDate(new Date(value))
   },
   //买家名转小写，并去除空格
-  cleanAndLowercase:(str)=> {
-  if (typeof str !== 'string') {
-    throw new Error('输入必须是字符串');
-  }
-  return str.replace(/\s+/g, '').toLowerCase();
+  cleanAndLowercase: (str) => {
+    if (!str)
+      return str
+    if (typeof str !== 'string') {
+      throw new Error('输入必须是字符串');
+    }
+    return str.replace(/\s+/g, '').toLowerCase();
   },
   // 二分排序插入(默认字典升序排序)修改原数组
   sortInsertArray:(array, item, compareFn)=>{

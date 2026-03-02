@@ -5,12 +5,12 @@
     <el-popover :width="500"
       placement="bottom"
       :visible="visible"
-      :append-to="root"
+      ref="firstPopover"
     >
       <template #reference>
         <div class="likeInput mySelect" :style="inputBoxStyle" >
-          <div class="selectTags">
-            <el-tag :size="size" v-for="(sample,index) in showSamplezse" :key="sample"
+          <div class="selectedTags">
+            <el-tag :size="size" v-for="(sample,index) in showSamples" :key="sample"
                     closable
                     disable-transitions
                     @close="removeSample(sample,index)" >{{sample}}</el-tag>
@@ -23,7 +23,6 @@
                      default-first-option
                      @change="inputChange"
                      ref="selectInputDom"
-                     :size="size"
                      class="input-select">
           </el-select>
           <el-icon style="margin-left: auto" @click="visible=!visible"><Grid /></el-icon>
@@ -62,20 +61,23 @@
             {{grid.value}}
           </div>
         </div>
+<!--        带后缀的-->
         <div class="suffixedOptionContainer" v-else>
           <el-popover
             trigger="click"
-            v-for="grid in currentSuffixedGrids"
+            v-for="(grid,idx) in currentSuffixedGrids"
             :key="grid.value"
             :width="380"
-            :append-to="root"
+            :ref="(el)=>{secondPopover[idx]=el}"
           >
             <template #reference>
               <div class="oneSuffixedGrid"
+                   @click="clickSuffixedGrid(idx)"
                    :class="{selectedGrid:grid.suffixes?.length>0}">
                 {{grid.value}}
               </div>
             </template>
+<!--            <span>{{idx}}</span>-->
             <el-checkbox-group v-model="grid.suffixes" @change="sampleSuffixesChange(grid)">
               <el-checkbox v-for="suffix in withAdditionalSuffixes(grid.suffixes)" :key="suffix"
                            :value="suffix"
@@ -88,7 +90,7 @@
 
         </div>
         <div class="likeInput popoverShowSelected" :style="inputBoxStyle" style="margin-top: 10px">
-          <div class="selectTags">
+          <div class="selectedTags">
             <el-tag :size="size" v-for="(sample,index) in modelValue" :key="sample"
                     closable
                     disable-transitions
@@ -103,7 +105,7 @@
 
 <script setup>
 
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
+import {computed, onBeforeUnmount, onMounted, reactive, ref, watch} from "vue";
 import {ArrowLeft, ArrowLeftBold, ArrowRightBold, CircleClose, Grid} from "@element-plus/icons-vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import GlobalFunctions from "@/utils/globalFunctions.js";
@@ -127,12 +129,16 @@ const props = defineProps({
   }
 
 })
+//当前激活的后缀格子编号
+const activeSuffixedGridIndex=ref(-1)
 //输入框值
 const inputValue=ref('')
 //默认关闭
 const visible=ref(false)
-
+//dom
 const root = ref(null)
+const firstPopover=ref(null)
+const secondPopover=ref([])
 const selectInputDom=ref(null)
 const sizeMap = new Map([['default',32],['small',24],['large',40]])
 const inputBoxStyle=ref({
@@ -190,11 +196,11 @@ const optionCategory=computed(()=>optionCategoryMap[optionCategoryName.value])
 // function getSelectList(){
 // }
 //选择框展示的标签数组
-const showSamplezse=computed(()=>{
+const showSamples=computed(()=>{
   return props.collapseTags ? props.modelValue.slice(0,props.maxShowNumber) : props.modelValue
 })
 //后缀
-const suffixes=new Set(['main fabric','main fabric with print','shem','lining','other part','outer','body','top','bottow'])
+const suffixes=new Set(['main fabric','main fabric with print','shell','lining','other part','outer','body','top','bottow'])
 
 //四种类对象列表
 const optionCategoryMap = {
@@ -219,32 +225,40 @@ const optionCategoryMap = {
     additionalAttributes: {},
   }
   , suffixedLetter: {
-      label: 'A-xx',
-      allGrids: allSuffixedLetterGrids,
-      currentGrids: currentSuffixedGrids,
-      onePageNumber: 26,
-      addOnePage() {
-        addOneLetterPage(this.allGrids, this.additionalAttributes)
-      },
-      additionalAttributes: {suffixes: []}
-    }
+    label: 'A-xx',
+    allGrids: allSuffixedLetterGrids,
+    currentGrids: currentSuffixedGrids,
+    onePageNumber: 26,
+    addOnePage() {
+      addOneLetterPage(this.allGrids, this.additionalAttributes)
+    },
+    additionalAttributes: {suffixes: []}
+  }
   , suffixedNumber: {
-      label: '001-xx',
-      allGrids: allSuffixedNumberGrids,
-      currentGrids: currentSuffixedGrids,
-      onePageNumber: 30,
-      addOnePage() {
-        addOneNumberPage(this.allGrids, this.onePageNumber, this.additionalAttributes)
-      },
-      additionalAttributes: {suffixes: []}
-    }
+    label: '001-xx',
+    allGrids: allSuffixedNumberGrids,
+    currentGrids: currentSuffixedGrids,
+    onePageNumber: 30,
+    addOnePage() {
+      addOneNumberPage(this.allGrids, this.onePageNumber, this.additionalAttributes)
+    },
+    additionalAttributes: {suffixes: []}
+  }
 }
 
+//事件
+const emit = defineEmits(['change'])
 /* Methods------------------------------------------------------------------------------------------*/
+//点击后缀格子
+function clickSuffixedGrid(idx) {
+  activeSuffixedGridIndex.value = idx
+  console.log('change：',idx)
+}
 //清空
 function clearData() {
   inputValue.value = ''
   props.modelValue.length=0
+  emit('change', [])
 }
 
 //包含额外选项
@@ -301,34 +315,37 @@ function sampleSuffixesChange(grid){
       GlobalFunctions.sortInsertArray(props.modelValue,key+'-'+suffix)
     }
   })
+  emit('change',props.modelValue)
 }
 //选择器输入框值改变
 function inputChange(value){
   inputValue.value=''
   if(value.includes('-')){
     //判断未有
-    if(!suffixedValueMap.value.has(value)){
+    if(!props.modelValue.has(value)){
       //-前
       let beforeHyphen=value.split('-')[0]
       //-后
       let afterHyphen=value.split('-')[1]
+      //有前缀
       if(suffixedValueMap.value.has(beforeHyphen)){
         suffixedValueMap.value.get(beforeHyphen).add(afterHyphen)
       }else{
         suffixedValueMap.value.set(beforeHyphen,new Set([afterHyphen]))
       }
-
       globalFunctions.sortInsertArray(props.modelValue,value)
+      //刷新格子
+      refreshSuffixedGridsByMap()
+      emit('change',props.modelValue)
     }
-    //刷新格子
-    refreshSuffixedGridsByMap()
   }else{
     if(!commonValueSet.value.has(value)){
       commonValueSet.value.add(value)
       globalFunctions.sortInsertArray(props.modelValue,value)
+      //刷新格子
+      isSelectedBySet()
+      emit('change',props.modelValue)
     }
-    //刷新格子
-    isSelectedBySet()
   }
 }
 
@@ -392,10 +409,16 @@ function refreshSuffixedGridsByMap(){
   allSuffixedNumberGrids.value.map(grid=>{
     if(suffixedValueMap.value.has(grid.value))
       grid.suffixes=[...suffixedValueMap.value.get(grid.value)]
+    else
+      //无则清空
+      grid.suffixes=[]
   })
   allSuffixedLetterGrids.value.map(grid=>{
     if(suffixedValueMap.value.has(grid.value))
       grid.suffixes=[...suffixedValueMap.value.get(grid.value)]
+    else
+      //无则清空
+      grid.suffixes=[]
   })
 }
 
@@ -405,12 +428,12 @@ function optionCategoryChange(){
   let category=optionCategory.value
   category.currentGrids.value=category.allGrids.value.slice(0,category.onePageNumber)
 }
-//设置当前页grids
+//设置为当前页grids
 function setCurrentGrids(){
   let pageIndex=currentPageIndex.value;
   let number=optionCategory.value.onePageNumber;
   let allGrids=optionCategory.value.allGrids;
-  return allGrids.value.slice((pageIndex-1)*number,pageIndex*number)
+  optionCategory.value.currentGrids.value= allGrids.value.slice((pageIndex-1)*number,pageIndex*number)
 }
 
 
@@ -440,13 +463,16 @@ function addOneLetterPage(allGrids,additionalAttributes){
 function addOneNumberPage(allGrids,onePageNumber,addtionalAttributes){
   let lastNumber=allGrids.value.length
   for (let i = 1; i <=onePageNumber ; i++) {
-    allNumberGrids.value.push({value:String(lastNumber+i).padStart(3,'0'),index:i+lastNumber-1,...addtionalAttributes})
+    allGrids.value.push({value:String(lastNumber+i).padStart(3,'0'),index:i+lastNumber-1,...addtionalAttributes})
   }
+  // console.log('添加一页')
+  // console.log(allGrids.value)
 }
 
 
 //通用下一页
 function toNextPageGrids(){
+  // console.log('下一页')
   //页数加一
   currentPageIndex.value++;
   //判断是否不够
@@ -492,7 +518,7 @@ function removeSample(sample,index){
     //刷新选项状态
     isSelectedBySet();
   }
-
+  emit('change',props.modelValue)
 }
 
 
@@ -521,6 +547,7 @@ function gridClick(grid){
         commonValueSet.value.add(thisGrid.value)
         globalFunctions.sortInsertArray(props.modelValue, thisGrid.value)
       }
+      emit('change',props.modelValue)
     }
 
   }else {
@@ -563,28 +590,43 @@ function changeGridStatus(grid,status){
   if(grid.status!=='selected')
     grid.status=status
 }
-
+//退出选择
+function exitSelect(){
+  //重置为未开始前状态。
+  selectStart=false;
+  for(let i=0;i<allLetterGrids.value.length;i++){
+    if(allLetterGrids.value[i].status.includes('to'))
+      allLetterGrids.value[i].status='unselected'
+  }
+}
 //按键事件
 function keyDownHandle(e){
   if(e.key==='Escape'){
     //如果已经开始选
     if(selectStart){
-      //重置为未开始前状态。
-      selectStart=false;
-      for(let i=0;i<allLetterGrids.value.length;i++){
-        if(allLetterGrids.value[i].status.includes('to'))
-          allLetterGrids.value[i].status='unselected'
-      }
+      exitSelect()
     }
   }
 }
 //鼠标按下监听器
 function docMouseDownClosePopover(e){
-  if(!root.value?.contains(e.target))
+  // console.log('start')
+  // if(secondPopover.value&&secondPopover.value.length>0){
+  //   // console.log('secondPopover',secondPopover.value)
+  //   console.log('activeSuffixedGridIndex',activeSuffixedGridIndex.value)
+  //   console.log('e.target',e.target)
+  //
+  //   console.log('contentRef',secondPopover.value[activeSuffixedGridIndex.value]?.popperRef?.contentRef)
+  // }
+
+  if(!root.value?.contains(e.target)&&!firstPopover.value?.popperRef?.contentRef?.contains(e.target)
+    //小弹窗
+    &&(!secondPopover.value||secondPopover.value.length===0||!secondPopover.value[activeSuffixedGridIndex.value].popperRef.contentRef.contains(e.target)))
     visible.value=false
+  // console.log('end')
 }
 
-//根据值刷新
+//根据标签刷新
 function refreshBasedOnLabel(){
   modelValueToRealData()
   isSelectedBySet()
@@ -612,18 +654,36 @@ function modelValueToRealData(){
       commonValueSet.value.add(value)
     }
   })
+  // //打印了两个真实数据
+  // console.log('普通数据',commonValueSet.value)
+  // console.log('后缀数据',suffixedValueMap.value)
 }
 
 watch(visible,(newValue)=>{
   if(newValue)
     //鼠标按下监听器，关闭popover
     document.addEventListener('mousedown',docMouseDownClosePopover)
-  else
+  else{
+    //关闭
+    //移除监听器
     document.removeEventListener('mousedown',docMouseDownClosePopover)
+    //退出选择
+    //如果已经开始选
+    if(selectStart){
+      exitSelect()
+    }
+  }
+
 })
-watch(props.modelValue,()=>{
+watch(()=>{ return props.modelValue},()=>{
   refreshBasedOnLabel()
-})
+  //重新定位
+  if(firstPopover.value){
+    // console.log('重新定位')
+    firstPopover.value.popperRef.popperInstanceRef.update();
+  }
+  // console.log('popover',firstPopover.value)
+},{deep:true})
 onMounted(()=>{
   //升序排序
   props.modelValue.sort();
@@ -643,17 +703,19 @@ $grid-gap:5px;
 }
 .likeInput{
   border-radius: var(--el-border-radius-base);
-  box-shadow: 0 0 0 1px var(--el-border-color);
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
   box-sizing: border-box;
   padding: 0 4px 0 4px;
 }
 .mySelect{
   cursor: pointer;
+  background-color: white;
   @include line-left-flex-container;
 }
-.selectTags{
+.selectedTags{
   @include line-left-flex-container;
   flex-wrap: wrap;
+  padding: 4px 0;
 }
 
 .suffixedOptionContainer{
@@ -693,23 +755,29 @@ $grid-gap:5px;
   background-color: rgb(160, 207, 255);
   color:white;
 }
-/*选择器输入框*/
-.selectInput{
-  border:none;
-  min-width: 10px;
-  width: 10px;
-  flex: 1;
-}
-.selectInput:focus{
-  outline: none;
-}
+///*选择器输入框*/
+//.selectInput{
+//  border:none;
+//  min-width: 10px;
+//  width: 10px;
+//  flex: 1;
+//}
+//.selectInput:focus{
+//  outline: none;
+//}
 /*输入功能*/
 .input-select{
+  margin: 2px 0;
   flex: 1;
+  //border-top:1px solid var(--el-border-color);
+  //border-bottom: 1px solid var(--el-border-color);
 }
 .input-select :deep(.el-select__wrapper){
   border-radius: 0;
+  min-height: 0;
   box-shadow: none;
+  //原本4,12px
+  padding:2px 0;
 }
 /*多选框*/
 :deep(.el-checkbox){
