@@ -49,6 +49,7 @@ export default {
   buyer: 'Buyer',
   menus:'Menus',
   item: 'Item',
+  items: 'Items',
   standardCode: 'Standard Code',
   menuName: 'MenuName',
   samplePlease:'Please select samples for the corresponding projects.',
@@ -59,4 +60,7 @@ export default {
   group: 'Group',
   reset: 'Reset',
   parameters: 'Parameters',
+  afterWashing: 'After Washing',
+  remainingItems: 'Remaining Items',
+  afterWashes: 'After Washes',
 }

@@ -49,6 +49,7 @@ export default {
   buyer: '买家',
   menus: '套餐',
   item: '项目',
+  items: '项目',
   standardCode: '标准编号',
   menuName: '套餐名称',
   samplePlease:'请为相应的项目选择样品。',
@@ -59,4 +60,7 @@ export default {
   group: '组别',
   reset: '重置',
   parameters: '参数',
+  afterWashing: '洗后',
+  remainingItems: '剩余项目',
+  afterWashes: '洗后遍数',
 }

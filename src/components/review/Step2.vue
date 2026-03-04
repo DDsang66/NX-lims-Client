@@ -1,7 +1,7 @@
 <template>
   <div class="paramsContainer thisBlock">
     <div class="sharedParametersContainer">
-      <span class="blockTitle">{{$t('sharedParameters')}}</span>
+<!--      <span class="blockTitle">{{$t('sharedParameters')}}</span>-->
       <div class="pieceContainer">
         <div class="thisPiece careLabelContainer">
           <span class="paramTitle">{{$t('careLabel')}}</span>
@@ -28,36 +28,41 @@
           <span class="paramTitle">{{$t('otherParameters')}}</span>
           <div class="pieceContent otherParamsContainer">
             <div class="line-flex-container" v-for="param in orderParams" :key="param.name">
-              <el-text>{{ param.name }}</el-text>
+              <label>{{ $t(param.name) }}</label>
               <el-input v-model="param.value" v-if="param.type==='input'"
                         style="width: 100px"></el-input>
               <el-select v-model="param.value" v-else-if="param.type==='select'"
-                         style="width: 100px">
-                <el-option v-for="option in param.options" :key="option" :value="option">
+                         placeholder=""
+                         style="width: 200px">
+                <el-option v-for="option in param.options" :key="option.value" :value="option.value" :label="option.label">
                 </el-option>
               </el-select>
               <el-select v-model="param.value" v-else multiple style="width: 100px">
-                <el-option v-for="option in param.options" :key="option" :value="option">
+                <el-option v-for="option in param.options" :key="option.value" :value="option.value" :label="option.label">
                 </el-option>
               </el-select>
             </div>
           </div>
-
         </div>
-      </div>
-    </div>
-    <div class="itemSpecificParameterContainer">
-      <span class="blockTitle">{{$t('itemSpecificParameters')}}</span>
-      <div class="pieceContainer">
         <div class="thisPiece" v-if="seamSamples.length>0">
           <span class="paramTitle">{{$t('seamParameter')}}</span>
           <SeamRequire class="pieceContent" :seamSamples="seamSamples"/>
         </div>
-        <div class="thisPiece" v-if="needAfterWash">
-          <span class="paramTitle">{{$t('seamParameter')}}</span>
-          <SeamRequire class="pieceContent" :seamSamples="seamSamples"/>
-        </div>
       </div>
+    </div>
+    <div class="itemSpecificParameterContainer">
+<!--      <span class="blockTitle">{{$t('itemSpecificParameters')}}</span>-->
+<!--      <div class="oneItemSpecificParameter">-->
+<!--        <span class="blockTitle">{{$t('afterWashing')}}</span>-->
+        <div class="thisPiece">
+          <span class="paramTitle">{{$t('afterWashing')}}</span>
+          <AfterWashingSelect class="pieceContent" :afterWashItems="afterWashItems" :sampleSummary="allSample"/>
+        </div>
+<!--      </div>-->
+        <div class="thisPiece">
+          <span class="paramTitle">{{$t('detergent')}}</span>
+          <DetergentSelect class="pieceContent" :detergentItems="detergentItems" :sampleSummary="allSample"/>
+        </div>
     </div>
   </div>
 </template>
@@ -68,11 +73,15 @@ import {computed, reactive, ref} from "vue";
 import SampleSpecificComposition from "@/components/review/SampleSpecificComposition.vue";
 import SampleSpecificDescrip from "@/components/review/SampleSpecificDescrip.vue";
 import SeamRequire from "@/components/review/ItemRequire/SeamRequire.vue";
+import AfterWashingSelect from "@/components/review/ItemRequire/AfterWashingSelect.vue";
+import DetergentSelect from "@/components/review/ItemRequire/DetergentSelect.vue";
 
 const props=defineProps({
   step1Dom: Object,
   buyerNameDto: String,
 })
+const afterWashItems=ref(["item1","item2"])
+const detergentItems=ref(["item1","item2"])
 //洗标数据
 const careLabelData=ref({
   selectedWashingProcedure:{
@@ -125,9 +134,9 @@ let allSample=computed(()=>{
   return Array.from(samples).sort()
 })
 const orderParams = ref([
-  {name: 'param1', type: 'input', value: '', options: []},
-  {name: 'param2', type: 'select', value: '', options: ['option1', 'option2']},
-  {name: 'param3', type: 'mulSelect', value: '', options: ['option1', 'option2']},
+  {name: 'afterIron', type: 'select', value: '', options: [{label:'After Iron',value:'After Iron'},{label:'Before and After Iron',value:'Before and After Iron'},{label:'Do Not Iron',value:''}]},
+  // {name: 'param2', type: 'select', value: '', options: ['option1', 'option2']},
+  // {name: 'param3', type: 'mulSelect', value: '', options: ['option1', 'option2']},
 ])
 //和样品绑定的成分
 const fiberCompositionSingle=ref([])
@@ -160,21 +169,21 @@ const seamSamples = computed(() => {
 })
 //所有需要洗后遍数的项目
 const itemNeedAfterWashAll =['item1','item2']
-//需要洗后的项目汇总
-const needAfterWashItems = computed(() => {
-  let needAfterWashItemsArray = []
-  //如果分组
-  if(props.step1Dom.menus.groups){
-    for (const group of props.step1Dom.menus.groups) {
-      for (const item of group.items) {
-        if(itemNeedAfterWashAll.includes(item.itemName))
-          needAfterWashItemsArray.push(item)
-      }
-    }
-  }
-  //不分组
-
-})
+// 需要洗后的项目汇总
+// const needAfterWashItems = computed(() => {
+//   let needAfterWashItemsArray = []
+//   //如果分组
+//   if(props.step1Dom.menus.groups){
+//     for (const group of props.step1Dom.menus.groups) {
+//       for (const item of group.items) {
+//         if(itemNeedAfterWashAll.includes(item.itemName))
+//           needAfterWashItemsArray.push(item)
+//       }
+//     }
+//   }
+//   //不分组
+//
+// })
 /*function------------------------------------------------------------------------------------------*/
 //获取成分
 const handleRowsSingle = (fiberCom) => {
@@ -194,6 +203,7 @@ const handleRowsSingle = (fiberCom) => {
   //--border-second-level:none;
   //--border-second-level:1px solid #aaa6a6;
   --border-second-level:1px solid #e1dede;
+  gap:15px;
 }
 .paramsContainer > div {
   padding: 5px;
@@ -234,6 +244,10 @@ const handleRowsSingle = (fiberCom) => {
 
 }
 .pieceContainer{
+  @include column-stretch-flex-container;
+  gap: 20px;
+}
+.itemSpecificParameterContainer{
   @include column-stretch-flex-container;
   gap: 20px;
 }
