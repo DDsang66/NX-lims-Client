@@ -23,21 +23,21 @@
       <div class="oneGroupComposForm">
         <!-- 输入 -->
         <div class="line-flex-container">
-          <div style="width: 50%" class="line-left-flex-container">
+          <div style="flex:1" class="line-left-flex-container">
             <div class="groupLabelContainer">
               <span class="formLabel">{{ $t('composition') }}<span class="text-danger">*</span></span>
             </div>
             <el-select v-model="group.inputRow.composition" placeholder="" filterable
-                       style="width: 200px">
+                       style="flex:1">
               <el-option v-for="item in allCompositions" :key="item" :value="item">{{item }}</el-option>
             </el-select>
           </div>
-          <div style="width: 50%" class="line-left-flex-container">
+          <div class="line-left-flex-container">
             <div class="groupLabelContainer">
               <span class="formLabel">{{ $t('rate') }}<span class="text-danger">*</span></span>
             </div>
             <div class="line-flex-container">
-              <el-input type="number" placeholder="" style="width: 200px;"
+              <el-input type="number" placeholder="" style="width: 70px;"
                         v-model.number="group.inputRow.rate" :min="0" :max="100"/>
               <el-button @click="addRow(group)">+</el-button>
             </div>

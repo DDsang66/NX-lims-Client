@@ -7,22 +7,24 @@
           <span class="paramTitle">{{$t('careLabel')}}</span>
           <CareLabelSelect class="pieceContent" v-model="careLabelData"/>
         </div>
-        <div class="thisPiece">
-          <span class="paramTitle">{{$t('sampleComposition')}}</span>
-          <SampleSpecificComposition
-            class="pieceContent"
-            @confirm="handleRowsSingle"
-            :sampleSummary="allSample"
-          />
-        </div>
-        <div class="thisPiece">
-          <span class="paramTitle">{{$t('sampleDescription')}}</span>
-          <SampleSpecificDescrip
-            class="pieceContent"
-            :sampleSummary="allSample"
-            :buyerNameDto="buyerNameDto"
-            ref="sampleSpecificDescripDoM"
-          />
+        <div class="oneLinePiece" >
+          <div class="thisPiece">
+            <span class="paramTitle">{{$t('sampleComposition')}}</span>
+            <SampleSpecificComposition
+              class="pieceContent"
+              @confirm="handleRowsSingle"
+              :sampleSummary="allSample"
+            />
+          </div>
+          <div class="thisPiece">
+            <span class="paramTitle">{{$t('sampleDescription')}}</span>
+            <SampleSpecificDescrip
+              class="pieceContent"
+              :sampleSummary="allSample"
+              :buyerNameDto="buyerNameDto"
+              ref="sampleSpecificDescripDoM"
+            />
+          </div>
         </div>
         <div class="thisPiece">
           <span class="paramTitle">{{$t('otherParameters')}}</span>
@@ -227,12 +229,21 @@ const handleRowsSingle = (fiberCom) => {
   gap:0
 }
 .thisPiece{
-  @include column-flex-container;
+  @include column-up-flex-container;
+  align-items: stretch;
   gap:10px;
   border: var(--border-first-level);
   border-radius: 10px;
   padding: 10px 15px;
-  background-color: rgb(0,70,173,0.05);
+  background-color: rgb(247, 248, 252);
+  width: 90%;
+  margin: 0 auto;
+}
+.oneLinePiece{
+  @include line-stretch-flex-container;
+  gap:10px;
+  border: var(--border-first-level);
+  border-radius: 10px;
   width: 90%;
   margin: 0 auto;
 }
@@ -240,7 +251,7 @@ const handleRowsSingle = (fiberCom) => {
   background-color: white;
   border-radius: 5px  ;
   padding: 20px;
-  width: 94%;
+  //width: 94%;
 }
 .multipleItemsContainer{
 

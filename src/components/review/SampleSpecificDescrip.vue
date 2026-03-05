@@ -4,12 +4,12 @@
       <div>
         <span class="samplesLabel">{{ $t('applyToAll') }}</span>
       </div>
-      <el-form label-position="left" inline style="display: flex" class="formMargin">
+      <el-form label-position="left" inline style="display: flex" class="thisForm">
         <el-form-item>
           <template #label>
             <span class="formLabel">{{$t('property')}}</span>
           </template>
-          <el-select v-model="uniformProperty" style="width: 200px" value-key="propertyName"
+          <el-select v-model="uniformProperty" style="flex:1" value-key="propertyName"
                      @change="uniformPropertyChange">
             <el-option v-for="option in descripPropertyOptions" :key="option.propertyName" :value="option"
                        :label="option.propertyName">
@@ -60,12 +60,12 @@
         <div class="warningMy" v-if="group.warnMessage">{{group.warnMessage}}</div>
       </div>
       <div class="oneGroupDescripForm">
-        <el-form label-position="left" inline style="display: flex">
+        <el-form label-position="left" inline style="display: flex" class="thisForm">
           <el-form-item>
             <template #label>
               <span class="formLabel">{{$t('property')}}</span>
             </template>
-            <el-select v-model="group.thisProperty" style="width: 200px" value-key="propertyName">
+            <el-select v-model="group.thisProperty" style="flex:1" value-key="propertyName">
               <el-option v-for="option in descripPropertyOptions" :key="option.propertyName" :value="option"
                          :label="option.propertyName">
               </el-option>
@@ -96,7 +96,7 @@
           </el-form-item>
         </el-form>
         <el-table :data="group.propertyTable" class="removeTableGaps" border>
-          <el-table-column :label="$t('property')" prop="propertyName" width="300px">
+          <el-table-column :label="$t('property')" prop="propertyName" >
           </el-table-column>
           <el-table-column :label="$t('value')">
             <template #default="scope">
@@ -393,6 +393,10 @@ onMounted(()=>{
 </script>
 
 <style scoped lang="scss">
+.thisForm :deep(.el-form-item){
+  margin-right: 5px;
+  flex: 1;
+}
 .sigma_btn-custom::before {
   background-color: #18086a;
 }

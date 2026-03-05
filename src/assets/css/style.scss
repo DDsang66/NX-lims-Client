@@ -12,6 +12,13 @@
   align-items: flex-start;
   gap: 5px;
 }
+@mixin column-up-flex-container(){
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  gap: 5px;
+}
 @mixin column-stretch-flex-container(){
   display: flex;
   flex-direction: column;
@@ -23,6 +30,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 5px;
+}
+@mixin line-stretch-flex-container(){
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   gap: 5px;
 }
 @mixin line-left-flex-container(){
