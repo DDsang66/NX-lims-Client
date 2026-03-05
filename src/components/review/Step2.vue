@@ -33,11 +33,12 @@
                         style="width: 100px"></el-input>
               <el-select v-model="param.value" v-else-if="param.type==='select'"
                          placeholder=""
+                         :empty-values="[null,undefined]"
                          style="width: 200px">
                 <el-option v-for="option in param.options" :key="option.value" :value="option.value" :label="option.label">
                 </el-option>
               </el-select>
-              <el-select v-model="param.value" v-else multiple style="width: 100px">
+              <el-select v-model="param.value" v-else multiple style="width: 100px" :empty-values="[null,undefined]">
                 <el-option v-for="option in param.options" :key="option.value" :value="option.value" :label="option.label">
                 </el-option>
               </el-select>
@@ -133,6 +134,7 @@ let allSample=computed(()=>{
   })
   return Array.from(samples).sort()
 })
+//订单参数
 const orderParams = ref([
   {name: 'afterIron', type: 'select', value: '', options: [{label:'After Iron',value:'After Iron'},{label:'Before and After Iron',value:'Before and After Iron'},{label:'Do Not Iron',value:''}]},
   // {name: 'param2', type: 'select', value: '', options: ['option1', 'option2']},

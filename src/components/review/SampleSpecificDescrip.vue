@@ -147,6 +147,7 @@
         </el-icon>
       </el-button>
     </div>
+    <div class="warningMy" v-if="remainSampleWarn">All samples must have description.</div>
   </div>
 </template>
 
@@ -185,6 +186,10 @@ const unGroupedSamples=computed(()=>{
   //已分组样品
   let groupedSamples = descripGroups.value.flatMap(g => g.samples)
   return props.sampleSummary.filter(s => !groupedSamples.includes(s))
+})
+//剩余样品是否警告
+const remainSampleWarn = computed(()=>{
+  return unGroupedSamples.value.length>0
 })
 //新分组
 const newSampleGroup=ref([])

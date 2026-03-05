@@ -54,16 +54,7 @@
                 </el-table-column>
                 <el-table-column :label="$t('parameters')" width="200px" prop="parameters">
                 </el-table-column>
-                <el-table-column :label="$t('copies')" width="90px">
-                  <template #default="scope">
-                    <el-input-number
-                      v-model="scope.row.copies"
-                      :min="1"
-                      controls-position="right"
-                      :size="size"
-                      style="width: 75px;"
-                    />
-                  </template>
+                <el-table-column :label="$t('copies')" width="80px" prop="copies">
                 </el-table-column>
               </el-table>
             </div>

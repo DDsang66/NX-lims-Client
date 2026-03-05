@@ -260,7 +260,7 @@
     </div>
     <div class="specialCareInstructionContainer">
       <label>{{$t('specialCareInstruction')}}</label>
-      <el-select v-model="modelValue.specialCareInstruction" multiple style="flex: 1">
+      <el-select v-model="modelValue.specialCareInstruction" multiple style="flex: 1" clearable>
         <el-option v-for="instruction in specialCareInstructionOptions" :key="instruction.value" :value="instruction.value" :label="instruction.label">
         </el-option>
       </el-select>
