@@ -67,4 +67,5 @@ export default {
   add: '添加',
   operation: '操作',
   displayName: '显示名称',
+  testGroup: '测试组别',
 }

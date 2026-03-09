@@ -67,4 +67,5 @@ export default {
   add: 'Add',
   operation: 'Operation',
   displayName: 'Display Name',
+  testGroup: 'Test Group',
 }

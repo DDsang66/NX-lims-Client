@@ -149,6 +149,9 @@
             <el-menu-item index="/main/ItemConfig">
               <span>ItemConfig</span>
             </el-menu-item>
+            <el-menu-item index="/main/StandardConfig">
+              <span>StandardConfig</span>
+            </el-menu-item>
           </el-sub-menu>
           <!-- Manual Management（无跳转） -->
           <el-menu-item index="/main/ManualManagement" disabled>

@@ -20,6 +20,7 @@ import Focus from "@/Views/Review/Focus.vue";
 import Woolworth from "@/Views/Review/Woolworth.vue";
 import ExcelTry from "@/Views/ExcelTry.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
+import StandardConfig from "@/Views/Config/StandardConfig.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -47,7 +48,9 @@ const useRoleStore = defineStore('role', {
         {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
         {path:'Review',name: 'Review',component: Review}
       ],
-      Config:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig}]
+      Config:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig},
+        {path:'StandardConfig',name:'StandardConfig',component:StandardConfig},
+      ]
     }))
   }),
   getters: {
