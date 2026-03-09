@@ -63,4 +63,8 @@ export default {
   afterWashing: '洗后',
   remainingItems: '剩余项目',
   afterWashes: '洗后遍数',
+  search: '搜索',
+  add: '添加',
+  operation: '操作',
+  displayName: '显示名称',
 }

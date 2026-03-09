@@ -19,6 +19,7 @@ import LTAG from "@/Views/Review/LTAG.vue";
 import Focus from "@/Views/Review/Focus.vue";
 import Woolworth from "@/Views/Review/Woolworth.vue";
 import ExcelTry from "@/Views/ExcelTry.vue";
+import ItemConfig from "@/Views/Config/ItemConfig.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -45,7 +46,8 @@ const useRoleStore = defineStore('role', {
       Unpublished:[{path: 'OVS',name:'OVS',component:OVS},
         {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
         {path:'Review',name: 'Review',component: Review}
-      ]
+      ],
+      Config:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig}]
     }))
   }),
   getters: {
@@ -56,7 +58,7 @@ const useRoleStore = defineStore('role', {
         case 'Leader':
           return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Admin':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut','Unpublished'];
+          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut','Unpublished','Config'];
         case 'Phy-Supervisor':
           return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
         case 'Wet-Supervisor':

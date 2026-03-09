@@ -63,4 +63,8 @@ export default {
   afterWashing: 'After Washing',
   remainingItems: 'Remaining Items',
   afterWashes: 'After Washes',
+  search: 'Search',
+  add: 'Add',
+  operation: 'Operation',
+  displayName: 'Display Name',
 }
