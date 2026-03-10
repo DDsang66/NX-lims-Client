@@ -22,6 +22,7 @@ import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
 import useRoleStore from '@/stores/role.js'
 import request from "@/utils/request.js";
+import {newRequest} from "@/utils/request.js";
 import globalFunctions from "@/utils/globalFunctions.js";
 import i18n from './i18n'
 import router from './router';
@@ -45,6 +46,7 @@ const auth = userAuthStore()
 app.provide('roleStore',useRoleStore())
 app.provide('userAuthStore',auth)
 app.provide('request',request)
+app.provide('newRequest',newRequest)
 app.provide('funcs',globalFunctions)
 
 auth.init()

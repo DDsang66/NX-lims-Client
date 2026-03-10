@@ -1,42 +1,56 @@
 import axios from 'axios';
 import qs from 'qs'
-const api = axios.create({
+
+//旧的请求配置
+const oldConfig={
   baseURL: 'http://localhost:5051/api',
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' }
-});
-api.documentSrc="http://localhost/web-apps/apps/api/documents/api.js"
-// 请求拦截器：自动带上 Access Token
-api.interceptors.request.use(config => {
-  const accessToken = localStorage.getItem('accessToken');
-  if (accessToken) {
-    config.headers['accessToken'] = accessToken;
-  }
-  if (config.method === 'get') {
-    config.paramsSerializer = function(params) {
-      return qs.stringify(params, { arrayFormat: 'repeat' })
+}
+//工厂函数
+function createAxiosInstance(config){
+  const instance = axios.create({
+    timeout: 10000,
+    headers: { 'Content-Type': 'application/json' },
+    ...config // 允许覆盖其他默认配置
+  });
+  // 请求拦截器：自动带上 Access Token
+  instance.interceptors.request.use(config => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      config.headers['accessToken'] = accessToken;
     }
-  }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
-
-api.interceptors.response.use(
-  res => res,
-  error => {
-    console.log(error);
-    const { response } = error;
-    if (!response) {
-      // 后端没有任何响应
-      console.log('后端没有任何响应');
+    if (config.method === 'get') {
+      config.paramsSerializer = function(params) {
+        return qs.stringify(params, { arrayFormat: 'repeat' })
+      }
+    }
+    return config;
+  }, error => {
+    return Promise.reject(error);
+  });
+  instance.interceptors.response.use(
+    res => res,
+    error => {
+      console.log(error);
+      const { response } = error;
+      if (!response) {
+        // 后端没有任何响应
+        console.log('后端没有任何响应');
+        return Promise.reject(error)
+      }
+      // 错误的处理才是我们需要最关注的
+      errorHandle(response.status, response.info)
       return Promise.reject(error)
     }
-    // 错误的处理才是我们需要最关注的
-    errorHandle(response.status, response.info)
-    return Promise.reject(error)
-  }
-)
+  )
+  return instance
+}
+const api = createAxiosInstance(oldConfig)
+api.documentSrc="http://localhost/web-apps/apps/api/documents/api.js"
+
+const newRequest=createAxiosInstance({baseURL:"http://localhost:5102"})
+
 //错误处理的方法
 const errorHandle = (status, info) => {
   switch (status) {
@@ -63,6 +77,6 @@ const errorHandle = (status, info) => {
       break;
   }
 }
-
+export {newRequest};
 export default api;
 
