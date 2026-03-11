@@ -3,7 +3,7 @@
     <h3>{{ step1Dom?.buyerName ? step1Dom.buyerName : 'BuyerName' }}</h3>
     <div class="reviewSteps">
       <el-steps :active="3" align-center style="flex:1">
-        <el-step v-for="step in steps" class="myStep" :key="step.index" :status="step.status" :title="step.title" @click="toCertainStep(step.index)"/>
+        <el-step v-for="step in steps" class="myStep" :key="step.index" :status="step.status" :title="$t(step.title)" @click="toCertainStep(step.index)"/>
       </el-steps>
       <el-button v-if="thisStepIndex!==steps.length" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
       <el-button v-else @click="printReport" class="header-button">{{$t('print')}}</el-button>
@@ -34,17 +34,17 @@ const thisStepIndex = ref(1)
 const steps=reactive([
   {
     index: 1,
-    title: 'step 1',
+    title: 'step1',
     status:'process'
   },
   {
     index: 2,
-    title: 'step 2',
+    title: 'step2',
     status:'wait'
   },
   {
     index: 3,
-    title: 'step 3',
+    title: 'step3',
     status:'wait'
   }
 ])

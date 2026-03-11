@@ -3,16 +3,16 @@
     <div class="domContent">
       <div class="searchParametersContanier">
         <el-form inline>
-          <el-form-item label="IdStandard">
+          <el-form-item :label="$t('standardId')">
             <el-input style="width: 150px" v-model="form.standardId" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="StandardCode">
+          <el-form-item :label="$t('standardCode')">
             <el-input style="width: 200px" v-model="form.standardCode" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="CodeName-EN">
+          <el-form-item :label="$t('standardNameEn')">
             <el-input style="width: 100px" v-model="form.standardNameEn" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="CodeName-CPIN" >
+          <el-form-item :label="$t('standardNameChn')">
             <el-input  v-model="form.standardNameChn" style="width: 150px" placeholder=""></el-input>
           </el-form-item>
           <el-form-item :label="$t('testGroup')">
@@ -21,7 +21,7 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="Standard Family">
+          <el-form-item :label="$t('standardFamily')">
             <el-input style="width: 100px" v-model="form.standardFamilyCode"></el-input>
             <el-button type="primary" style="margin-left: 10px" @click="searchList">{{$t("search")}}</el-button>
             <el-button type="primary" style="margin-left: 10px" @click="addOpen">{{$t("add")}}</el-button>
@@ -29,15 +29,15 @@
         </el-form>
       </div>
       <el-table :data="itemTableData" border class="removeTableGaps">
-        <el-table-column label="standardId" prop="standardId" width="200">
+        <el-table-column :label="$t('standardId')" prop="standardId" width="200">
         </el-table-column>
-        <el-table-column label="Standard Code" prop="standardCode" width="200">
+        <el-table-column :label="$t('standardCode')" prop="standardCode" width="200">
         </el-table-column>
-        <el-table-column label="Code Name-EN" prop="standardNameEn">
+        <el-table-column :label="$t('standardNameEn')" prop="standardNameEn">
         </el-table-column>
-        <el-table-column label="Code Name-CPIN" prop="standardNameChn"></el-table-column>
-        <el-table-column label="TestGroup" prop="testGroup" width="110"></el-table-column>
-        <el-table-column label="Standard Family" prop="standardFamilyCode">
+        <el-table-column :label="$t('standardNameChn')" prop="standardNameChn"></el-table-column>
+        <el-table-column :label="$t('testGroup')" prop="testGroup" width="110"></el-table-column>
+        <el-table-column :label="$t('standardFamily')" prop="standardFamily">
         </el-table-column>
         <el-table-column :label="$t('operation')" width="124">
           <template #default="scope">
@@ -55,29 +55,31 @@
         </el-table-column>
       </el-table>
     </div>
-    <el-dialog :title="$t(dialogTitle)" v-model="dialogVisible" width="60%">
+    <el-dialog :title="$t(dialogTitle)" v-model="dialogVisible" width="65%">
       <div class="formContainer">
         <el-form inline label-width="auto">
-          <el-form-item label="IdStandard">
-            <el-input style="width: 150px" v-model="dialogFormstandardId" placeholder=""></el-input>
+          <el-form-item :label="$t('standardId')">
+            <el-input style="width: 150px" v-model="dialogForm.standardId" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="StandardCode">
-            <el-input style="width: 150px" v-model="dialogFormstandardCode" placeholder=""></el-input>
+          <el-form-item :label="$t('standardCode')">
+            <el-input style="width: 150px" v-model="dialogForm.standardCode" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="CodeName-EN">
-            <el-input style="width: 150px" v-model="dialogFormstandardNameEn" placeholder=""></el-input>
+          <el-form-item :label="$t('standardNameEn')">
+            <el-input style="width: 150px" v-model="dialogForm.standardNameEn" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="CodeName-CPIN" >
-            <el-input  v-model="dialogFormstandardNameChn" style="width: 150px" placeholder=""></el-input>
+          <el-form-item :label="$t('standardNameChn')">
+            <el-input  v-model="dialogForm.standardNameChn" style="width: 150px" placeholder=""></el-input>
           </el-form-item>
           <el-form-item :label="$t('testGroup')">
-            <el-select style="width: 150px" v-model="dialogFormtestGroup"  placeholder="">
+            <el-select style="width: 150px" v-model="dialogForm.testGroup"  placeholder="">
               <el-option v-for="item in testGroupOptions" :key="item" :label="item" :value="item">
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="Standard Family">
-            <el-input style="width: 150px" v-model="dialogFormstandardFamilyCode"></el-input>
+          <el-form-item :label="$t('standardFamily')">
+            <el-select style="width: 150px" v-model="dialogForm.standardFamilyCode">
+              <el-options></el-options>
+            </el-select>
           </el-form-item>
         </el-form>
       </div>
@@ -121,9 +123,7 @@ const dialogTitle=ref('')
 function confirm(){
   if(dialogTitle.value==='add')
     newRequest.post('/config/standard-add',dialogForm.value).then(res=>{
-      if(res.data.success){
         dialogVisible.value=false
-      }
     })
   else if(dialogTitle.value==='edit')
     newRequest.post('/config/standard-update',dialogForm.value).then(res=>{

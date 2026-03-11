@@ -3,13 +3,16 @@
   <div class="domContent">
     <div class="searchParametersContanier">
       <el-form inline style="display: flex">
-        <el-form-item label="Buyer">
+        <el-form-item :label="$t('buyer')">
           <el-select style="width: 200px" v-model="form.buyer" placeholder=""></el-select>
         </el-form-item>
-        <el-form-item label="Item">
+        <el-form-item :label="$t('item')">
           <el-select style="width: 300px" v-model="form.items" placeholder=""></el-select>
         </el-form-item>
-        <el-form-item label="standard" style="flex: 1;margin-right: 0">
+        <el-form-item :label="$t('displayName')">
+          <el-input v-model="form.displayName" placeholder=""></el-input>
+        </el-form-item>
+        <el-form-item :label="$t('standard')" style="flex: 1;margin-right: 0">
           <el-select v-model="form.standard" style="flex: 1" placeholder=""></el-select>
           <el-button type="primary" style="margin-left: 10px" @click="searchList">{{$t("search")}}</el-button>
           <el-button type="primary" style="margin-left: 10px" @click="addOpen">{{$t("add")}}</el-button>
@@ -46,24 +49,24 @@
   <el-dialog :title="$t(dialogTitle)" v-model="dialogVisible" width="70%">
     <div class="formContainer">
       <el-form inline style="display: flex">
-        <el-form-item label="Buyer">
+        <el-form-item :label="$t('buyer')">
           <el-select style="width: 200px" v-model="dialogForm.buyer" placeholder=""></el-select>
         </el-form-item>
-        <el-form-item label="Item">
-          <el-select style="width: 200px" v-model="dialogForm.items" placeholder=""></el-select>
+        <el-form-item :label="$t('item')">
+          <el-select style="width: 150px" v-model="dialogForm.items" placeholder="" filterable allow-create default-first-option></el-select>
         </el-form-item>
-        <el-form-item label="standard" style="flex: 1;margin-right: 0">
-          <el-select v-model="dialogForm.standard" placeholder=""></el-select>
+        <el-form-item :label="$t('standard')" style="flex: 1;">
+          <el-select v-model="dialogForm.standard" placeholder="" filterable allow-create default-first-option></el-select>
+        </el-form-item>
+        <el-form-item :label="$t('displayName')" style="margin-right: 0">
+          <el-input v-model="dialogForm.displayName" placeholder=""></el-input>
         </el-form-item>
       </el-form>
       <el-form label-width="auto" label-position="left">
-        <el-form-item label="DisplayName">
-          <el-input v-model="dialogForm.displayName" placeholder=""></el-input>
-        </el-form-item>
-        <el-form-item label="Requirement">
+        <el-form-item :label="$t('requirement')">
           <el-input v-model="dialogForm.requirement" placeholder=""></el-input>
         </el-form-item>
-        <el-form-item label="Remark">
+        <el-form-item :label="$t('remark')">
           <el-input v-model="dialogForm.remark" type="textarea" placeholder=""></el-input>
         </el-form-item>
       </el-form>
