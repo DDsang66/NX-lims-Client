@@ -84,4 +84,26 @@ export default {
   step1: '步骤 1',
   step2: '步骤 2',
   step3: '步骤 3',
+  reportMessage:{
+    fourth:{
+      empty:'第四个输入框不能为空.',
+      notNumber:'第四个输入框只能包含数字'
+    },
+    fifth:{
+      empty:'第五个输入框不能为空.',
+      formatError:'第五个输入框的格式应该是 \'.01\''
+    }
+  },
+  // message:{
+  //   itemSelect:'Please select a item.',
+  //   buyerSelect:'Please select a buyer.',
+  //   standardSelect:'Please select a standard.',
+  //   oneMenu:'There must be at least one Menu'
+  // }
+  message:{
+    itemSelect:'请选择项目.',
+    buyerSelect:'请选择买家.',
+    standardSelect:'请选择标准.',
+    oneMenu:'至少需要一个套餐.'
+  }
 }

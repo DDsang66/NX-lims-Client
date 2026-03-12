@@ -84,4 +84,20 @@ export default {
   step1: 'Step 1',
   step2: 'Step 2',
   step3: 'Step 3',
+  reportMessage:{
+    fourth:{
+      empty:'The fourth input box cannot be empty.',
+      notNumber:'The fourth input box must only contain numbers'
+    },
+    fifth:{
+      empty:'The fifth input box cannot be empty.',
+      formatError:'The format of the fifth input box should be like \'.01\''
+    }
+  },
+  message:{
+    itemSelect:'Please select a item.',
+    buyerSelect:'Please select a buyer.',
+    standardSelect:'Please select a standard.',
+    oneMenu:'There must be at least one Menu'
+  }
 }

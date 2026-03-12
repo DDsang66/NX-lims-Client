@@ -41,7 +41,7 @@
                       @blur="data5Blur"
                       :size="size"></el-input>
             <div class="el-form-item__error" v-if="reportIsError">
-              {{reportError}}
+              {{$t(reportError)}}
             </div>
           </el-form-item>
           <el-form-item required prop="buyerName">
@@ -251,7 +251,9 @@ import globalFunctions from "@/utils/globalFunctions.js";
 import {data} from "@visactor/vtable";
 import {Search} from "@element-plus/icons-vue";
 import axios from "axios";
+import {useI18n} from "vue-i18n";
 
+const { t } = useI18n()
 const props=defineProps({
   size: {
     type: String,
@@ -423,26 +425,31 @@ let form1=reactive({
   menus: menus,
   reportNo:reportNums
 })
-let rules1={
-  'buyerName': [
-    {required: true, message: 'Please select a buyer',trigger: 'change'}
-  ],
-  'menus': [
-    {required: true, message: 'There must be at least one Menu',trigger: 'change'},
-  ],
-}
+const rules1=computed(()=>{
+  return {
+    'buyerName': [
+      {required: true, message: t('message.buyerSelect'),trigger: 'change'}
+    ],
+    'menus': [
+      {required: true, message: t('message.oneMenu'),trigger: 'change'},
+    ],
+  }
+})
 //第二表单
 let form2=reactive({
   newItem
 })
-let rules2={
-  'newItem': [
-    {required: true, message: 'Please select a item',trigger: 'change'},
-  ],
-  'newItem.standardCode': [
-    {required: true, message: 'Please select a standard code',trigger: 'change'},
-  ],
-}
+let rules2=computed(()=>{
+  return {
+    'newItem': [
+      {required: true, message: t('message.itemSelect'),trigger: 'change'},
+    ],
+    'newItem.standardCode': [
+      {required: true, message: t('message.standardSelect'),trigger: 'change'},
+    ],
+  }
+})
+
 /*function------------------------------------------------------------------------------------------*/
 //获取买家选项
 async function getBuyerOptions(){
@@ -524,8 +531,8 @@ function data5Blur() {
 }
 //检查data4的输入
 function data4Check(){
-  let emptyErrorMessage = 'The fourth input box cannot be empty.'
-  let formatErrorMessage = 'The fourth input box must only contain numbers'
+  let emptyErrorMessage = 'reportMessage.fourth.empty'
+  let formatErrorMessage = 'reportMessage.fourth.notNumber'
   //先判断为空
   if (!reportNums.data4){
     reportErrorSummary.add(emptyErrorMessage)
@@ -544,8 +551,8 @@ function data4Check(){
 }
 //检验data5输入
 function data5Check() {
-  let emptyErrorMessage = 'The fifth input box cannot be empty.'
-  let formatErrorMessage = 'The format of the fifth input box should be like \'.01\''
+  let emptyErrorMessage = 'reportMessage.fifth.empty'
+  let formatErrorMessage = 'reportMessage.fifth.formatError'
   //先判断为空
   if (!reportNums.data5){
     reportErrorSummary.add(emptyErrorMessage)
