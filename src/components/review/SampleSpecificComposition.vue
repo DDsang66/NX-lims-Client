@@ -18,7 +18,7 @@
             </el-icon>
           </el-button>
         </div>
-        <div class="warningMy" v-if="group.warnMessage">{{group.warnMessage}}</div>
+        <div class="warningMy" v-if="group.warnMessage">{{$t(group.warnMessage)}}</div>
       </div>
       <div class="oneGroupComposForm">
         <!-- 输入 -->
@@ -111,6 +111,9 @@ import '@/assets/css/style.css';
 import {ref, reactive, computed, watch, onMounted, onBeforeUnmount, inject} from 'vue'
 import {Check, Delete} from "@element-plus/icons-vue";
 import {ElMessage} from "element-plus";
+import {useI18n} from "vue-i18n";
+
+const { t } = useI18n()
 const emit = defineEmits(['confirm']);
 
 const props=defineProps({
@@ -209,7 +212,7 @@ function checkAllDuplicateSamples() {
 
     if (shouldHaveWarning && !currentHasWarning) {
       // 情况 A: 应该有警告，但现在没有 -> 添加警告
-      group.warnMessage = 'Some samples are duplicated with other groups.';
+      group.warnMessage = 'message.group.sampleDuplicated';
     } else if (!shouldHaveWarning && currentHasWarning) {
       // 情况 B: 不应该有警告，但现在有 -> 清空警告
       group.warnMessage = '';
@@ -223,13 +226,13 @@ function oneGroupSamplesChange() {
 }
 /* 添加行 */
 function addRow(group) {
-  if (!group.inputRow.composition.trim() || group.inputRow.rate <= 0) return ElMessage.warning('Please enter the component and rate.')
+  if (!group.inputRow.composition?.trim() || group.inputRow.rate <= 0) return ElMessage.warning(t('message.enterComponentAndRate'))
   //总比例
   let countRate=getCountRate(group.rows)
   if(group.rows.some(c=> c.composition===group.inputRow.composition))
-    return ElMessage.warning('This component already exists')
+    return ElMessage.warning(t('componentExist'))
   if(countRate+group.inputRow.rate>100){
-    ElMessage.warning('The proportion cannot exceed 100');
+    ElMessage.warning(t('message.proportionExceed'));
   }else {
     group.rows.push({ composition: group.inputRow.composition.trim(), rate: group.inputRow.rate })
     group.inputRow.composition = ''
@@ -292,10 +295,10 @@ function handleKeydown(e) {
 // 失焦时才进行校验和更新
 function updateRateOnBlur(group, rate) {
   if(!rate)
-    return ElMessage.warning('Please enter the rate')
+    return ElMessage.warning(t('message.enterRate'))
   //比例超过100
   if(getCountRate(group.rows)>100)
-    return ElMessage.warning('The rate cannot exceed 100')
+    return ElMessage.warning(t('rateExceed'))
 }
 onMounted(()=>{
   getCompositions()

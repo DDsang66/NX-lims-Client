@@ -22,7 +22,7 @@
             </el-icon>
           </el-button>
         </div>
-        <div class="warningMy" v-if="group.warnMessage">{{group.warnMessage}}</div>
+        <div class="warningMy" v-if="group.warnMessage">{{$t(group.warnMessage)}}</div>
       </div>
       <div class="oneGroupSeamForm">
         <!--            添加部位-->
@@ -249,7 +249,7 @@ function checkAllDuplicateSamples() {
 
     if (shouldHaveWarning && !currentHasWarning) {
       // 情况 A: 应该有警告，但现在没有 -> 添加警告
-      group.warnMessage = 'Some samples are duplicated with other groups.';
+      group.warnMessage = 'message.group.sampleDuplicated';
     } else if (!shouldHaveWarning && currentHasWarning) {
       // 情况 B: 不应该有警告，但现在有 -> 清空警告
       group.warnMessage = '';

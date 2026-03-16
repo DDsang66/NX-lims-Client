@@ -75,8 +75,8 @@ export default {
   unit: '单位',
   result: '结果',
   standardId: '标准Id',
-  standardNameEn: '标准名称（英文）',
-  standardNameChn: '标准名称（中文）',
+  standardNameEn: '标准名称（英）',
+  standardNameChn: '标准名称（中）',
   standardFamily: '标准族',
   confirm: '确定',
   cancel: '取消',
@@ -84,6 +84,10 @@ export default {
   step1: '步骤 1',
   step2: '步骤 2',
   step3: '步骤 3',
+  addStandardFamily: '添加标准族',
+  editStandardFamily: '编辑标准族',
+  addStandard: '添加标准',
+  editStandard: '编辑标准',
   reportMessage:{
     fourth:{
       empty:'第四个输入框不能为空.',
@@ -94,16 +98,21 @@ export default {
       formatError:'第五个输入框的格式应该是 \'.01\''
     }
   },
-  // message:{
-  //   itemSelect:'Please select a item.',
-  //   buyerSelect:'Please select a buyer.',
-  //   standardSelect:'Please select a standard.',
-  //   oneMenu:'There must be at least one Menu'
-  // }
   message:{
-    itemSelect:'请选择项目.',
-    buyerSelect:'请选择买家.',
-    standardSelect:'请选择标准.',
-    oneMenu:'至少需要一个套餐.'
-  }
+    itemSelect:'请选择项目',
+    buyerSelect:'请选择买家',
+    standardSelect:'请选择标准',
+    oneMenu:'至少需要一个套餐',
+    descriptionMust:'所有样品都必须有描述',
+    enterComponentAndRate:'请填入成分和比例',
+    componentExist:'该成分已存在',
+    proportionExceed:'比例不能超过100%',
+    enterRate:'请输入比例',
+    rateExceed:'比例不能超过100%',
+    inputIsEmpty:'该输入框为空',
+    group:{
+      sampleDuplicated:'一些样本与其他组重复。'
+    }
+  },
+  'standardFamily:': '标准族: ',
 }

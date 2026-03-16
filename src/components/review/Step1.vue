@@ -8,6 +8,7 @@
                  label-position="left"
                  :rules="rules1"
                  ref="form1Ref"
+                 :validate-on-rule-change="false"
                  :model="form1">
           <el-form-item required>
             <template #label>
@@ -82,6 +83,7 @@
           :model="form2"
           ref="form2Ref"
           :rules="rules2"
+          :validate-on-rule-change="false"
           hide-required-asterisk
           inline>
           <el-form-item prop="newItem">

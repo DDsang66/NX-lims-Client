@@ -16,7 +16,7 @@
             </el-icon>
           </el-button>
         </div>
-        <div class="warningMy" v-if="group.sampleWarnMessage">{{group.sampleWarnMessage}}</div>
+        <div class="warningMy" v-if="group.sampleWarnMessage">{{$t(group.sampleWarnMessage)}}</div>
       </div>
 <!--      单组-->
       <div class="oneGroupDetergentForm">
@@ -53,7 +53,7 @@
                     {{ option }}
                   </el-option>
                 </el-select>
-                <div class="warningMy" v-if="scope.row.sampleWarnMessage">{{scope.row.sampleWarnMessage}}</div>
+                <div class="warningMy" v-if="scope.row.sampleWarnMessage">{{$t(scope.row.sampleWarnMessage)}}</div>
               </template>
             </el-table-column>
             <el-table-column :label="$t('detergent')">
@@ -65,7 +65,7 @@
                     {{ option }}
                   </el-option>
                 </el-select>
-                <div class="warningMy" v-if="scope.row.detergentWarnMessage">{{scope.row.detergentWarnMessage}}</div>
+                <div class="warningMy" v-if="scope.row.detergentWarnMessage">{{$t(scope.row.detergentWarnMessage)}}</div>
               </template>
             </el-table-column>
             <el-table-column label="action" width="75">
@@ -142,8 +142,8 @@ function checkAllSamplesAndAfterWashes(groups) {
 
   // --- 步骤 1: 建立全局样本索引 (逻辑不变) ---
   const sampleMap = new Map();
-  let detergentWarnMessage = 'The input box is empty.';
-  let sampleWarnMessage = 'The input box is empty.';
+  let detergentWarnMessage = 'message.inputIsEmpty';
+  let sampleWarnMessage = 'message.inputIsEmpty';
   groups.forEach(group => {
     if(!group.detergent){
       if(group.detergentWarnMessage!==detergentWarnMessage)
@@ -182,7 +182,7 @@ function checkAllSamplesAndAfterWashes(groups) {
 
   // --- 步骤 3: 差异化更新 (关键优化点) ---
   groups.forEach(group => {
-    let dumplicateWarnMessage = 'Some samples are duplicated with other groups.'
+    let dumplicateWarnMessage = 'message.group.sampleDuplicated'
     const shouldHaveWarning = groupsWithIssues.has(group);
     const currentHasWarning = group.sampleWarnMessage===dumplicateWarnMessage; // 当前是否有警告内容
 
@@ -250,7 +250,7 @@ function checkAllDuplicateItems() {
 
     if (shouldHaveWarning && !currentHasWarning) {
       // 情况 A: 应该有警告，但现在没有 -> 添加警告
-      group.sampleWarnMessage = 'Some items are duplicated with other groups.';
+      group.sampleWarnMessage = 'message.group.sampleDuplicated';
     } else if (!shouldHaveWarning && currentHasWarning) {
       // 情况 B: 不应该有警告，但现在有 -> 清空警告
       group.sampleWarnMessage = '';

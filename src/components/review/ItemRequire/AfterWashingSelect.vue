@@ -16,7 +16,7 @@
             </el-icon>
           </el-button>
         </div>
-        <div class="warningMy" v-if="group.sampleWarnMessage">{{group.sampleWarnMessage}}</div>
+        <div class="warningMy" v-if="group.sampleWarnMessage">{{$t(group.sampleWarnMessage)}}</div>
       </div>
       <div class="oneGroupAfterWashForm">
         <div class="line-flex-container">
@@ -53,7 +53,7 @@
                     {{ option }}
                   </el-option>
                 </el-select>
-                <div class="warningMy" v-if="scope.row.sampleWarnMessage">{{scope.row.sampleWarnMessage}}</div>
+                <div class="warningMy" v-if="scope.row.sampleWarnMessage">{{$t(scope.row.sampleWarnMessage)}}</div>
               </template>
             </el-table-column>
             <el-table-column :label="$t('afterWashes')">
@@ -66,7 +66,7 @@
                     {{ option }}
                   </el-option>
                 </el-select>
-                <div class="warningMy" v-if="scope.row.afterWashesWarnMessage">{{scope.row.afterWashesWarnMessage}}</div>
+                <div class="warningMy" v-if="scope.row.afterWashesWarnMessage">{{$t(scope.row.afterWashesWarnMessage)}}</div>
               </template>
             </el-table-column>
             <el-table-column label="action" width="75">
@@ -106,7 +106,9 @@
 <script setup>
 import {Check, Delete} from "@element-plus/icons-vue";
 import {computed, ref, watch} from "vue";
+import {useI18n} from "vue-i18n";
 
+const { t } = useI18n()
 const props = defineProps({
   afterWashItems: {
     type: Array,
@@ -143,8 +145,8 @@ function checkAllSamplesAndAfterWashes(groups) {
 
   // --- 步骤 1: 建立全局样本索引 (逻辑不变) ---
   const sampleMap = new Map();
-  let washesWarnMessage = 'The input box is empty.';
-  let sampleWarnMessage = 'The input box is empty.';
+  let washesWarnMessage = 'message.inputIsEmpty';
+  let sampleWarnMessage = 'message.inputIsEmpty';
   groups.forEach(group => {
     if(!group.afterWashes || !Array.isArray(group.afterWashes) || group.afterWashes.length===0){
       if(group.afterWashesWarnMessage!==washesWarnMessage)
@@ -183,7 +185,7 @@ function checkAllSamplesAndAfterWashes(groups) {
 
   // --- 步骤 3: 差异化更新 (关键优化点) ---
   groups.forEach(group => {
-    let dumplicateWarnMessage = 'Some samples are duplicated with other groups.'
+    let dumplicateWarnMessage = 'message.group.sampleDuplicated'
     const shouldHaveWarning = groupsWithIssues.has(group);
     const currentHasWarning = group.sampleWarnMessage===dumplicateWarnMessage; // 当前是否有警告内容
 
@@ -233,7 +235,7 @@ function checkAllDuplicateItems() {
 
     if (shouldHaveWarning && !currentHasWarning) {
       // 情况 A: 应该有警告，但现在没有 -> 添加警告
-      group.sampleWarnMessage = 'Some items are duplicated with other groups.';
+      group.sampleWarnMessage = 'message.group.sampleDuplicated';
     } else if (!shouldHaveWarning && currentHasWarning) {
       // 情况 B: 不应该有警告，但现在有 -> 清空警告
       group.sampleWarnMessage = '';

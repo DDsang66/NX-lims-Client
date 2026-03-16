@@ -84,6 +84,10 @@ export default {
   step1: 'Step 1',
   step2: 'Step 2',
   step3: 'Step 3',
+  addStandardFamily: 'Add Standard Family',
+  editStandardFamily: 'Edit Standard Family',
+  addStandard: 'Add Standard',
+  editStandard: 'Edit Standard',
   reportMessage:{
     fourth:{
       empty:'The fourth input box cannot be empty.',
@@ -98,6 +102,17 @@ export default {
     itemSelect:'Please select a item.',
     buyerSelect:'Please select a buyer.',
     standardSelect:'Please select a standard.',
-    oneMenu:'There must be at least one Menu'
-  }
+    oneMenu:'There must be at least one Menu',
+    descriptionMust:'All samples must have description.',
+    enterComponentAndRate:'Please enter the component and rate.',
+    componentExist:'This component already exists.',
+    proportionExceed:'The proportion cannot exceed 100%.',
+    enterRate:'Please enter the rate.',
+    rateExceed:'The rate cannot exceed 100%.',
+    inputIsEmpty:'The input box is empty.',
+    group:{
+      sampleDuplicated:'Some samples are duplicated with other groups.'
+    }
+  },
+  'standardFamily:':'Standard Family: '
 }

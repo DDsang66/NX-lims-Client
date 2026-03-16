@@ -57,7 +57,7 @@
             </el-icon>
           </el-button>
         </div>
-        <div class="warningMy" v-if="group.warnMessage">{{group.warnMessage}}</div>
+        <div class="warningMy" v-if="group.warnMessage">{{$t(group.warnMessage)}}</div>
       </div>
       <div class="oneGroupDescripForm">
         <el-form label-position="left" inline style="display: flex" class="thisForm">
@@ -118,7 +118,7 @@
               <el-button type="danger" @click="removeAllProperty(group)">x</el-button>
             </template>
             <template #default="scope">
-              <el-button v-if="scope.row.isNecessary.includes('N')" type="danger"
+              <el-button v-if="!scope.row.isNecessary?.includes('Y')" type="danger"
                          @click="removeProperty(group,scope.$index)">x
               </el-button>
             </template>
@@ -147,7 +147,7 @@
         </el-icon>
       </el-button>
     </div>
-    <div class="warningMy" v-if="remainSampleWarn">All samples must have description.</div>
+    <div class="warningMy" v-if="remainSampleWarn"></div>
   </div>
 </template>
 
@@ -274,7 +274,7 @@ function checkAllDuplicateSamples() {
 
     if (shouldHaveWarning && !currentHasWarning) {
       // 情况 A: 应该有警告，但现在没有 -> 添加警告
-      group.warnMessage = 'Some samples are duplicated with other groups.';
+      group.warnMessage = 'message.group.sampleDuplicated';
     } else if (!shouldHaveWarning && currentHasWarning) {
       // 情况 B: 不应该有警告，但现在有 -> 清空警告
       group.warnMessage = '';
@@ -293,7 +293,7 @@ function addNewGroup() {
   descripGroups.value.push({
     samples: newSampleGroup.value,
     thisProperty:{name:'',value:'',type:'',options:null,defaultValue:null},
-    propertyTable:descripPropertyOptions.value.filter(property => property.isNecessary.includes('Y')).map(
+    propertyTable:descripPropertyOptions.value.filter(property => property.isNecessary?.includes('Y')).map(
       property => {
         let newProperty= JSON.parse(JSON.stringify(property))
         if(newProperty.type==='Multiple'){
@@ -338,7 +338,7 @@ function addToTable(group){
 //去除所有非必选property
 function removeAllProperty(group){
   for (let i=group.propertyTable.length-1;i>0;i--){
-    if(!group.propertyTable[i].isNecessary.includes('Y'))
+    if(!group.propertyTable[i].isNecessary?.includes('Y'))
       group.propertyTable.splice(i,1)
   }
 }
