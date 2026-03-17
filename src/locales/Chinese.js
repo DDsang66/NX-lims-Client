@@ -1,4 +1,5 @@
 export default {
+  test: '测试',
   reportNumber: '报告号',
   reviewer: '审单人',
   'set Menu': '选择套餐',
@@ -99,6 +100,8 @@ export default {
     }
   },
   message:{
+    oldPasswordIncorrect:'旧密码输入错误',
+    twoPasswordInconsistent:'两次输入的密码不一致',
     itemSelect:'请选择项目',
     buyerSelect:'请选择买家',
     standardSelect:'请选择标准',

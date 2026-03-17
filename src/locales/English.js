@@ -1,4 +1,6 @@
 export default {
+  test: 'Test',
+  'report Number': 'Report Number',
   reportNumber: 'Report No.',
   reviewer: 'Reviewer',
   'set Menu': 'Set Menu',
@@ -99,6 +101,8 @@ export default {
     }
   },
   message:{
+    oldPasswordIncorrect:'The old password was entered incorrectly.',
+    twoPasswordInconsistent:'The two password inputs are inconsistent.',
     itemSelect:'Please select a item.',
     buyerSelect:'Please select a buyer.',
     standardSelect:'Please select a standard.',
