@@ -17,7 +17,7 @@
             trigger="click">
             <div style="display: flex;flex-direction: column">
               <!--            <el-link :underline="false" @click="geRenZiLiaoKuang=true">个人资料</el-link>-->
-              <el-link underline='never' @click="gaiMiMa" style="font-size: 18px">修改密码</el-link>
+              <el-link underline='never' @click="openChangePassword" style="font-size: 18px">修改密码</el-link>
 <!--              <el-link underline='never' @click="logOut" style="font-size: 18px">退出登录</el-link>-->
             </div>
             <template #reference>
@@ -168,6 +168,28 @@
       </el-aside>
       <el-main style="height: 100%;padding: 0">
         <router-view style="padding: 20px" />
+        <el-dialog title="修改密码"
+                   v-model="showChangePassword"
+                   width="30%">
+          <el-form :model="form3" label-width="80px">
+            <el-form-item label="用 户">
+              <span>{{form3.user}}</span>
+            </el-form-item>
+            <el-form-item label="旧密码">
+              <el-input v-model="form3.oldPassword" style="width: 90%;" placeholder="请输入旧密码"></el-input>
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input :prefix-icon="Lock" v-model="form3.newPassword" style="width: 90%;" placeholder="请输入新密码" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input :prefix-icon="Lock" v-model="form3.newPassword2" style="width: 90%;" placeholder="请再次输入新密码" show-password></el-input>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="showChangePassword= false">取消</el-button>
+            <el-button type="primary" @click="changePassword">确定</el-button>
+          </template>
+        </el-dialog>
       </el-main>
     </el-container>
   </el-container>
@@ -188,16 +210,16 @@ import '@/assets/css/style.css';
 import '@/assets/css/responsive.css';
   import {inject, ref} from 'vue'
   import router from "@/router/index.js";
-  import {ArrowDown, ArrowUp} from "@element-plus/icons-vue";
+  import {ArrowDown, ArrowUp, Lock} from "@element-plus/icons-vue";
   import {useI18n} from "vue-i18n";
+  import userAuthStore from "@/stores/auth.js";
+  import {ElMessage} from "element-plus";
 
   export default {
     name: 'MainLayout',
     components: {
       ArrowUp,
       ArrowDown,
-      HomeImage,
-      Header
     },
     setup() {
       const { locale } = useI18n()
@@ -207,7 +229,49 @@ import '@/assets/css/responsive.css';
       const userAuth = inject('userAuthStore')
       const xiaJianTou = ref(true)
       const globalStore=inject('globalStore')
+      const showChangePassword=ref(false)
+      // 修改密码表单数据
+      const form3=ref({
+        user:'',
+        oldPassword:'',
+        newPassword:'',
+        newPassword2:'',
+        id:''
+      })
+      //请求
+      const request = inject('request')
+      const { t } = useI18n()
       /* function----------------------------------------------------------------------------------- */
+      function changePassword() {
+        let oldPassword = ''
+        if(form3.value.oldPassword!==oldPassword){
+          return ElMessage({
+            message: t('message.oldPasswordIncorrect'),
+            type: "warning"
+          })
+        }
+        if(form3.value.newPassword!==form3.value.newPassword2){
+          return ElMessage({
+            message: t('message.twoPasswordInconsistent'),
+            type: "warning"
+          })
+        }
+        request.put("/zhangHao/changePassword",{id:form3.value.id,mima:form3.value.newPassword}).then(res=>{
+          if(res.code===1){
+            ElMessage({
+              message: res.msg,
+              type: "success"
+            })
+            showChangePassword.value = false
+            router.push("/login")
+          }
+        })
+      }
+      const openChangePassword=() => {
+        form3.value.user = userAuth.user
+        form3.value.id = userAuth.id
+        showChangePassword.value = true
+      }
       const logOut = async () => {
         userAuth.clearTokens();
         router.push('/Login');
@@ -223,7 +287,12 @@ import '@/assets/css/responsive.css';
         changeLanguage,
         globalStore,
         hasPower,
-        hasBigPower
+        hasBigPower,
+        openChangePassword,
+        showChangePassword,
+        form3,
+        changePassword,
+        Lock
       }
     }
   };
