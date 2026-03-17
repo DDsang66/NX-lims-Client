@@ -643,7 +643,8 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
     { value: 'Wash Inside Out,Close All Botton and Zipper before Washing', label: 'Wash Inside Out,Close All Botton and Zipper before Washing' },
     { value: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing' },
     {value:'Close fastener',label: 'Close fastener'},
-    {value: 'Close fastener before washing',label: 'Close fastener before washing'}
+    {value: 'Close fastener before washing',label: 'Close fastener before washing'},
+    {value:'Wash and Dry Inside Out',label: 'Wash and Dry Inside Out'}
   ]);
   const detergentOptions=ref([
     { value: 'Mild Detergent', label: 'Mild Detergent' },
