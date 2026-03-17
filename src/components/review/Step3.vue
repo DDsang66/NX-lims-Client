@@ -20,6 +20,7 @@
               <div class="itemLabel">{{$t('standardCode')}}</div>
               <el-input v-model="itemFuzzyQueryParameters.standardCode" style="width: 300px"></el-input>
             </div>
+            <el-button @click="itemFuzzyQuery" circle><el-icon><Search /></el-icon></el-button>
             <el-button @click="itemFuzzyQueryReset">{{$t('reset')}}</el-button>
           </div>
           <!--            分组-->
@@ -100,6 +101,7 @@
 <script setup>
 import SamplesSelect from "@/components/self made UI/SamplesSelect.vue";
 import {computed, reactive, ref, watch} from "vue";
+import {Search} from "@element-plus/icons-vue";
 
 const props = defineProps({
   step1Dom: Object,
