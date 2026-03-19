@@ -212,7 +212,7 @@ watch(
     })
     // ⭐ 等待 Vue 完成 DOM 更新后再合并
     await nextTick()
-    mergeSameCells(myTable.value, 0)
+    // mergeSameCells(myTable.value, 0)
   },
   { immediate: true, deep: true }
 )
