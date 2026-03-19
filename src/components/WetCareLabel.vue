@@ -292,7 +292,7 @@
       </div>
       <div class="form-group col-xl-8">
         <label>{{$t('detergent')}}</label>
-        <el-select :class="{valueNoClass:detergent===''}" v-model="detergent" clearable>
+        <el-select class="repair" :class="{valueNoClass:detergent===''}" v-model="detergent" clearable>
           <el-option v-for="option in detergentOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </el-option>
@@ -868,6 +868,9 @@ function closeSelectPopover(e){
 
 
 <style lang="scss" scoped>
+.repair :deep(.el-select__clear){
+  color: #191717;
+}
 .thisMulSelect :deep(.el-tag__close) {
   position: relative !important;
   top: auto !important;
