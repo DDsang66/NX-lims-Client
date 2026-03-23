@@ -13,6 +13,7 @@
     <Step1 ref="step1Dom" v-show="thisStepIndex===1" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
 
 <!--    第二步-->
+<!--    通过v-if控制，第一步成功之后再创建-->
     <Step2 :step1Dom="step1Dom" :buyerNameDto="buyerNameDto" v-if="steps[0].status==='success'" v-show="thisStepIndex===2" />
 <!--    第三步-->
     <step3 :step1Dom="step1Dom" v-if="steps[1].status==='success'" v-show="thisStepIndex===3"/>

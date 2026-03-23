@@ -131,6 +131,9 @@
             <el-menu-item index="/main/Focus">
               <span>Focus</span>
             </el-menu-item>
+            <el-menu-item index="/main/OVS">
+              <span>OVS</span>
+            </el-menu-item>
           </el-sub-menu>
 <!--          未发布的-->
           <el-sub-menu index="4" v-if="hasPower('Unpublished')">
@@ -140,9 +143,6 @@
             <template #title>
               <span>Unpublished</span>
             </template>
-            <el-menu-item index="/main/OVS">
-              <span>OVS</span>
-            </el-menu-item>
             <el-menu-item index="/main/ExcelTry">
               <span>ExcelTry</span>
             </el-menu-item>

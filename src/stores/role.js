@@ -28,6 +28,7 @@ const useRoleStore = defineStore('role', {
     role: localStorage.getItem('role') || 'Visitor',
     routeMap:new Map(Object.entries({
       Review:[{ path: 'Mango', name: 'Mango', component: Mango },
+        {path: 'OVS',name:'OVS',component:OVS},
         { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
         { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
         { path: 'Jako', name: 'Jako', component: Jako },
@@ -45,7 +46,7 @@ const useRoleStore = defineStore('role', {
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
       OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
       LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}],
-      Unpublished:[{path: 'OVS',name:'OVS',component:OVS},
+      Unpublished:[
         {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
         {path:'Review',name: 'Review',component: Review}
       ],
