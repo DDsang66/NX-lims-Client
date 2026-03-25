@@ -168,7 +168,3 @@
   </div>
 </template>
 
-
-
-<style>
-</style>

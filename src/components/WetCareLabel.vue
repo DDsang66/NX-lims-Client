@@ -1,4 +1,4 @@
-<template>
+<!--<template>
   <div style="margin-bottom: 5px">
     <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
       {{ $t('careLabel') }}
@@ -14,14 +14,14 @@
       </div>
       <div class="form-group col-xl-4">
         <label>{{$t('washing Procedure')}}</label>
-        <div class="input-group">
+        <div class="input-group">-->
 <!--          <select class="form-control" v-model="selectedWashingProcedure">-->
 <!--            <option value="">No Wash</option>-->
 <!--            <option v-for="option in washingProcedures" :key="option.value" :value="option.value">-->
 <!--              {{ option.label }}-->
 <!--            </option>-->
 <!--          </select>-->
-          <el-popover
+          <!--<el-popover
             placement="bottom-start"
             :width="950"
             :visible="washingProcedureVisible"
@@ -69,14 +69,14 @@
       </div>
       <div class="form-group col-xl-4">
         <label>{{$t('dryProcedure')}}</label>
-        <div class="input-group">
+        <div class="input-group">-->
 <!--          <select :class="{'form-control': true,valueNoClass:selectedDryProcedure===''}" v-model="selectedDryProcedure">-->
 <!--            <option value="">Do Not Dry</option>-->
 <!--            <option v-for="option in dryProcedures" :key="option.value" :value="option.value">-->
 <!--              {{ option.label }}-->
 <!--            </option>-->
 <!--          </select>-->
-          <el-popover
+          <!--<el-popover
             placement="bottom-start"
             :width="650"
             :visible="dryProcedureVisible"
@@ -123,14 +123,14 @@
       </div>
       <div class="form-group col-xl-4">
         <label>{{$t('DCProcedure')}}</label>
-        <div class="input-group">
+        <div class="input-group">-->
 <!--          <select :class="{'form-control': true,valueNoClass:selectedDCProcedure===''}" v-model="selectedDCProcedure">-->
 <!--            <option value="">Do not Dry Clean</option>-->
 <!--            <option v-for="option in dcProcedures" :key="option.value" :value="option.value">-->
 <!--              {{ option.label }}-->
 <!--            </option>-->
 <!--          </select>-->
-          <el-popover
+          <!--<el-popover
             placement="bottom-start"
             :width="650"
             :visible="DCProcedureVisible"
@@ -358,7 +358,367 @@
 
 
 
+</template>-->
+
+
+<template>
+  <div style="margin-bottom: 5px">
+    <a style="color:#3364d5;font-size: 20px;font-weight: bold" href="#" @click.prevent="toggleNotice()">
+      {{ $t('careLabel') }}
+    </a>
+  </div>
+  <transition name="fade">
+    <div class="row" v-if="isNoticeOpen">
+
+      <!-- 第一行：Care Label Region 单独占一行 -->
+      <div class="form-group col-xl-12">
+        <label class="mb-2 d-block">{{$t('careLabelRegion')}}</label>
+        <el-select v-model="washLabelRegion" @change="washLabelRegionChange" style="width: 100%; max-width: 100%;">
+          <el-option v-for="option in washLabelRegionOptions" :key="option" :value="option"></el-option>
+        </el-select>
+      </div>
+
+      <!-- 第二行：5个程序并排 -->
+      <div class="form-group col-xl-2 col-lg-4 col-md-6">
+        <label>{{$t('washing Procedure')}}</label>
+        <div class="input-group">
+          <el-popover placement="bottom-start"
+                      :width="950"
+                      :visible="washingProcedureVisible">
+            <template #reference>
+              <div class="procedureSelect washingProcedureSelect"
+                   ref="washingProcedureSelect"
+                   @click="washingProcedureVisible=!washingProcedureVisible;">
+                <div style="height: 100%;" v-for="(src,idx) in selectedWashingProcedure.src" :key="src">
+                  <span v-if="idx>0">&</span>
+                  <img class="labelImg" :src="src" />
+                </div>
+              </div>
+            </template>
+            <div ref="washingSelectPopover" class="popoverSon">
+              <el-select v-model="washingProcedureStandard"
+                         :append-to="washingSelectPopover"
+                         class="procedureStandardSelect">
+                <el-option v-for="standard in washingLabelStandardOptions" :key="standard" :value="standard">
+                </el-option>
+              </el-select>
+              <div class="procedureGroupContainer">
+                <div class="procedureGroup">
+                  <div class="head">{{washLabelRegion+' '+washingProcedureStandard}}</div>
+                  <div class="optionsContainer">
+                    <div class="procedureOption washingProcedureOption" v-for="label in washingLabelOptions"
+                         @click="selectedWashingProcedure=label;washingProcedureVisible=false" :key="label.value">
+                      <div class="optionLabelsContainer">
+                        <div style="height: 100%;" v-for="(src,idx) in label.src" :key="src">
+                          <span v-if="idx>0">&</span>
+                          <img class="labelImg" :src="src" />
+                        </div>
+                      </div>
+                      <div class="optionText">
+                        {{label.label}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-2 col-lg-4 col-md-6">
+        <label>{{$t('dryProcedure')}}</label>
+        <div class="input-group">
+          <el-popover placement="bottom-start"
+                      :width="650"
+                      :visible="dryProcedureVisible">
+            <template #reference>
+              <div class="procedureSelect dryProcedureSelect"
+                   ref="dryProcedureSelect"
+                   @click="dryProcedureVisible=!dryProcedureVisible;">
+                <div style="height: 100%;" v-for="(src,idx) in selectedDryProcedure.src" :key="src">
+                  <span v-if="idx>0">&</span>
+                  <img class="labelImg" :src="src" />
+                </div>
+              </div>
+            </template>
+            <div ref="drySelectPopover">
+              <el-select v-model="dryProcedureStandard"
+                         :append-to="drySelectPopover"
+                         class="procedureStandardSelect">
+                <el-option v-for="standard in dryLabelStandardOptions" :key="standard" :value="standard">
+                </el-option>
+              </el-select>
+              <div class="procedureGroupContainer">
+                <div class="procedureGroup">
+                  <div class="head">{{washLabelRegion+' '+dryProcedureStandard}}</div>
+                  <div class="optionsContainer">
+                    <div class="procedureOption dryProcedureOption" v-for="label in dryLabelOptions"
+                         @click="selectedDryProcedure=label;dryProcedureVisible=false" :key="label.value">
+                      <div class="optionLabelsContainer">
+                        <div style="height: 100%;" v-for="(src,idx) in label.src" :key="src">
+                          <span v-if="idx>0">&</span>
+                          <img class="labelImg" :src="src" />
+                        </div>
+                      </div>
+                      <div class="optionText">
+                        {{label.label}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-2 col-lg-4 col-md-6">
+        <label>{{$t('DCProcedure')}}</label>
+        <div class="input-group">
+          <el-popover placement="bottom-start"
+                      :width="650"
+                      :visible="DCProcedureVisible">
+            <template #reference>
+              <div class="procedureSelect DCProcedureSelect"
+                   ref="DCProcedureSelect"
+                   @click="DCProcedureVisible=!DCProcedureVisible;">
+                <div style="height: 100%;" v-for="(src,idx) in selectedDCProcedure.src" :key="src">
+                  <span v-if="idx>0">&</span>
+                  <img class="labelImg" :src="src" />
+                </div>
+              </div>
+            </template>
+            <div ref="DCSelectPopover">
+              <el-select v-model="DCProcedureStandard"
+                         :append-to="DCSelectPopover"
+                         class="procedureStandardSelect">
+                <el-option v-for="standard in DCLabelStandardOptions" :key="standard" :value="standard">
+                </el-option>
+              </el-select>
+              <div class="procedureGroupContainer">
+                <div class="procedureGroup">
+                  <div class="head">{{washLabelRegion+' '+DCProcedureStandard}}</div>
+                  <div class="optionsContainer">
+                    <div class="procedureOption DCProcedureOption" v-for="label in DCLabelOptions"
+                         @click="selectedDCProcedure=label;DCProcedureVisible=false" :key="label.value">
+                      <div class="optionLabelsContainer">
+                        <div style="height: 100%;" v-for="(src,idx) in label.src" :key="src">
+                          <span v-if="idx>0">&</span>
+                          <img class="labelImg" :src="src" />
+                        </div>
+                      </div>
+                      <div class="optionText">
+                        {{label.label}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-2 col-lg-4 col-md-6">
+        <label>{{$t('ironMethod')}}</label>
+        <div class="input-group">
+          <el-popover placement="bottom-start"
+                      :width="350"
+                      :visible="ironProcedureVisible">
+            <template #reference>
+              <div class="procedureSelect ironMethodSelect"
+                   ref="ironProcedureSelect"
+                   @click="ironProcedureVisible=!ironProcedureVisible;">
+                <div style="height: 100%;" v-for="(src,idx) in selectedIronMethod.src" :key="src">
+                  <span v-if="idx>0">&</span>
+                  <img class="labelImg" :src="src" />
+                </div>
+              </div>
+            </template>
+            <div ref="ironSelectPopover">
+              <el-select v-model="ironProcedureStandard"
+                         :append-to="ironSelectPopover"
+                         class="procedureStandardSelect">
+                <el-option v-for="standard in ironLabelStandardOptions" :key="standard" :value="standard">
+                </el-option>
+              </el-select>
+              <div class="procedureGroupContainer">
+                <div class="procedureGroup">
+                  <div class="head">{{washLabelRegion+' '+ironProcedureStandard}}</div>
+                  <div class="optionsContainer">
+                    <div class="procedureOption ironProcedureOption" v-for="label in ironLabelOptions"
+                         @click="selectedIronMethod=label;ironProcedureVisible=false" :key="label.value">
+                      <div class="optionLabelsContainer">
+                        <div style="height: 100%;" v-for="(src,idx) in label.src" :key="src">
+                          <span v-if="idx>0">&</span>
+                          <img class="labelImg" :src="src" />
+                        </div>
+                      </div>
+                      <div class="optionText">
+                        {{label.label}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-2 col-lg-4 col-md-6">
+        <label>{{$t('bleaching')}}</label>
+        <div class="input-group">
+          <el-popover placement="bottom-start"
+                      :width="350"
+                      :visible="bleachProcedureVisible">
+            <template #reference>
+              <div class="procedureSelect bleachProcedureSelect"
+                   ref="bleachProcedureSelect"
+                   @click="bleachProcedureVisible=!bleachProcedureVisible;">
+                <div style="height: 100%;" v-for="(src,idx) in selectedBleachProcedure.src" :key="src">
+                  <span v-if="idx>0">&</span>
+                  <img class="labelImg" :src="src" />
+                </div>
+              </div>
+            </template>
+            <div ref="bleachSelectPopover">
+              <el-select v-model="bleachProcedureStandard"
+                         :append-to="bleachSelectPopover"
+                         class="procedureStandardSelect">
+                <el-option v-for="standard in bleachLabelStandardOptions" :key="standard" :value="standard">
+                </el-option>
+              </el-select>
+              <div class="procedureGroupContainer">
+                <div class="procedureGroup">
+                  <div class="head">{{washLabelRegion+' '+bleachProcedureStandard}}</div>
+                  <div class="optionsContainer">
+                    <div class="procedureOption bleachProcedureOption" v-for="label in bleachLabelOptions"
+                         @click="selectedBleachProcedure=label;bleachProcedureVisible=false" :key="label.value">
+                      <div class="optionLabelsContainer">
+                        <div style="height: 100%;" v-for="(src,idx) in label.src" :key="src">
+                          <span v-if="idx>0">&</span>
+                          <img class="labelImg" :src="src" />
+                        </div>
+                      </div>
+                      <div class="optionText">
+                        {{label.label}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </div>
+      </div>
+
+      <!-- 剩余的其他表单项 -->
+      <div class="form-group col-xl-4">
+        <label>{{$t('afterIron')}}</label>
+        <div>
+          <el-select :class="{valueNoClass:selectedIronProcedure===''}" v-model="selectedIronProcedure">
+            <el-option value="">Do Not Iron</el-option>
+            <el-option v-for="option in afterIrons" :key="option" :value="option">
+              {{ option }}
+            </el-option>
+          </el-select>
+          <Transition name="fade">
+            <div v-show="showAppend" class="input-group-append" style="display:none">
+              <button class="sigma_btn-custom shadow-none btn-sm" style="background-color:#3364d5;font-size:large" @click="ironMethodLabelOpen=true">▮</button>
+            </div>
+          </Transition>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-8">
+        <label>{{$t('detergent')}}</label>
+        <el-select class="repair" :class="{valueNoClass:detergent===''}" v-model="detergent" clearable>
+          <el-option v-for="option in detergentOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </el-option>
+        </el-select>
+      </div>
+
+      <div class="form-group col-xl-4">
+        <label>{{$t('testPoint')}}</label>
+        <el-input type="text" v-model="testPoint" />
+      </div>
+
+      <div class="form-group col-xl-8">
+        <label>{{$t('afterWash')}}</label>
+        <div class="line-flex-container">
+          <el-select v-model="selectedAfterWashs"
+                     class="thisMulSelect"
+                     placeholder=""
+                     style="flex: 1"
+                     multiple>
+            <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+              {{ option }}
+            </el-option>
+          </el-select>
+          <el-button @click="addAfterWash" style="margin-left: 5px;">+</el-button>
+        </div>
+      </div>
+
+      <div class="form-group col-xl-12">
+        <el-table :data="props.afterWashs" border class="removeTableGaps">
+          <el-table-column label="Sample" width="100">
+            <template #default="scope">
+              <el-input v-model="scope.row.testPoint"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="afterWash">
+            <template #default="scope">
+              <el-select v-model="scope.row.afterWash"
+                         placeholder=""
+                         class="thisMulSelect"
+                         multiple>
+                <el-option v-for="option in afterWashOptions" :key="option" :value="option">
+                  {{ option }}
+                </el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="action" width="75">
+            <template #default="scope">
+              <el-button @click="removeAfterWash(scope.$index)" type="danger" link style="margin: auto;display: block">x</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <div class="form-group col-xl-12">
+        <label class="mb-2 d-block">{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
+        <el-select v-model="selectedSCI" class="w-100" clearable placeholder="N/A">
+          <el-option v-for="option in scis"
+                     :key="option.value"
+                     :label="option.label"
+                     :value="option.value">
+          </el-option>
+        </el-select>
+      </div>
+    </div>
+  </transition>
 </template>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <script setup>
 import {onMounted, onUnmounted, ref, watch} from 'vue';

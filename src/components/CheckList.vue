@@ -39,18 +39,6 @@
                      @change="syncCheck(row)" />
             </td>
           </tr>
-          <!-- 当 itemName 命中目标值时渲染额外框体 -->
-<!--          <tr v-if="[-->
-<!--              'Seam Slippage',-->
-<!--              'Seam Strength',-->
-<!--              'Bursting Strength',-->
-<!--              'Water Resistance-Hydrostatic Pressure',-->
-<!--              'Seam Slippage of Garment Seams'-->
-<!--              ].includes(row.itemName)">-->
-<!--            <td colspan="5">-->
-<!--              <ExtraForm :type="row.itemName" v-model="row.extra" />-->
-<!--            </td>-->
-<!--          </tr>-->
         </template>
         </tbody>
       </table>
@@ -280,6 +268,8 @@ watch(
       row.samples = txt
       row.selected = !!txt
     }
+    // 强制同步 DOM，防止叠加
+    e.target.textContent = row.samples
   }
 </script>
 
