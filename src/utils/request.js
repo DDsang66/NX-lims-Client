@@ -39,7 +39,6 @@ function createAxiosInstance(config){
         console.log('后端没有任何响应');
         return Promise.reject(error)
       }
-      // 错误的处理才是我们需要最关注的
       errorHandle(response.status, response.info)
       return Promise.reject(error)
     }

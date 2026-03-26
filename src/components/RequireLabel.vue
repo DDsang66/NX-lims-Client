@@ -119,22 +119,29 @@
     </div>
 
   </div>
-  <div class="row" style="padding:0 20px 0 20px" >
-    <div class="form-group col-xl-9 mb-0">
-      <label>{{ $t('additionalRequire') }}</label>
-      <input class="form-control"
-             readonly
-             placeholder="Order Notes (Optional)"
-             v-model="additionalRequire">
-    </div>
-    <div class="form-group col-xl-3">
-      <label>action</label>
-      <button type="button"
-              style="background-color: #3364d5"
-              class="sigma_btn-custom primary btn-block"
-              @click="confirmAction">
+  <div class="row" style="padding:0 20px 0 20px">
+    <!--<div class="form-group col-xl-9 mb-0">
+    <label>{{ $t('additionalRequire') }}</label>
+    <input class="form-control"
+           readonly
+           placeholder="Order Notes (Optional)"
+           v-model="additionalRequire">
+  </div>-->
+    <!--<div class="form-group col-xl-3">
+    <button type="button"
+            style="background-color: #3364d5"
+            class="sigma_btn-custom primary btn-block"
+            @click="confirmAction">
+      Confirm
+    </button>
+  </div>-->
+    <div class="form-group col-xl-12" style="margin-top: 15px;">
+      <el-button type="primary"
+                 size="large"
+                 style="width: 100%; background-color: #3364d5; font-size: 18px; height: 50px;"
+                 @click="confirmAction">
         Confirm
-      </button>
+      </el-button>
     </div>
   </div>
 </template>

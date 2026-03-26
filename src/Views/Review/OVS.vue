@@ -105,7 +105,7 @@
   const sampleDescription = ref();
 
   // 处理 BuyerInfo 返回的数据
-  const onBuyerData = (response) => {
+  const onBuyerData = (response) => {                                     
     const list = response.data || []
 
     // 直接存储原始数据，不再手动分类

@@ -1,48 +1,91 @@
 <template>
   <section style="margin-bottom: 10px">
-    <div style="border: 1px solid #cae2e8;border-bottom: none;padding: 0 20px">
-      <label style="font-size: 40px;font-weight: bold">{{buyer}}</label>
+    <!-- Buyer 标题区 -->
+    <div style="border: 1px solid #cae2e8; border-bottom: 2px solid #3364d5; padding: 10px 20px; background-color: #f5f7fa;">
+      <label style="font-size: 40px; font-weight: bold; color: #3364d5;">{{buyer}}</label>
     </div>
-    <div style="border: 1px solid #cae2e8;padding: 15px 0 0 15px;border-top: none">
-      <el-form class="firstForm" label-width="auto">
-        <el-form-item>
-          <template #label>
-            <label style="font-size: 16px">{{$t('reportNumber')}}</label>
-          </template>
-          <el-input v-model="reportNums.data1" style="width: 50px;" :size="size" disabled></el-input>
-          <el-select v-model="reportNums.data2"
-                     filterable
-                     :size="size"
-                     style="width: 80px;" >
-            <el-option value="405.">405.</el-option>
-            <el-option value="441.">441.</el-option>
-          </el-select>
-          <el-select v-model="reportNums.data3"
-                     :size="size"
-                     filterable
-                     style="width: 75px;" >
-            <el-option :value="twoDigitYear+'.'" ></el-option>
-            <el-option :value="twoDigitYear-1+'.'"></el-option>
-          </el-select>
-          <el-input v-model="reportNums.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
-          <el-input v-model="reportNums.data5" style="width: 60px;" :size="size"></el-input>
-        </el-form-item>
 
-        <!-- 菜单选择 -->
-        <el-form-item>
-          <template #label>
-            <label style="font-size: 16px">
-              {{$t('set Menu')}}
-            </label>
-          </template>
-          <el-select v-model="form.menuName" style="width: 80%;margin-right: 5px" :size="size" @change="submitForm">
-            <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label">
-            </el-option>
-          </el-select>
-          <el-button @click="submitForm" :size="size">
-            Reload
-          </el-button>
-        </el-form-item>
+    <!-- 表单区 -->
+    <div style="border: 1px solid #cae2e8; border-top: none; padding: 15px;">
+      <el-form class="firstForm" label-width="100px">
+
+        <!-- 第一行：Report Number | Addition Item -->
+        <div style="display: flex; align-items: center;">
+          <!-- 左侧：Report Number -->
+          <div style="display: flex; align-items: center; flex: 1;">
+            <el-form-item style="margin-bottom: 0;">
+              <template #label>
+                <label style="font-size: 16px">{{$t('reportNumber')}}</label>
+              </template>
+              <el-input v-model="reportNums.data1" style="width: 50px;" :size="size" disabled></el-input>
+              <el-select v-model="reportNums.data2"
+                         filterable
+                         :size="size"
+                         style="width: 80px;">
+                <el-option value="405.">405.</el-option>
+                <el-option value="441.">441.</el-option>
+              </el-select>
+              <el-select v-model="reportNums.data3"
+                         :size="size"
+                         filterable
+                         style="width: 75px;">
+                <el-option :value="twoDigitYear+'.'"></el-option>
+                <el-option :value="twoDigitYear-1+'.'"></el-option>
+              </el-select>
+              <el-input v-model="reportNums.data4" style="width: 80px;" :size="size" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+              <el-input v-model="reportNums.data5" style="width: 60px;" :size="size"></el-input>
+            </el-form-item>
+          </div>
+
+          <!-- 中间：垂直分割线 -->
+          <div style="width: 1px; height: 40px; background-color: #e0e0e0; margin: 0 20px;"></div>
+
+          <!-- 右侧：Addition Item -->
+          <div style="display: flex; align-items: center; flex: 1;">
+            <el-form-item style="margin-bottom: 0;">
+              <template #label>
+                <label style="font-size: 16px; white-space: nowrap;">Addition Item</label>
+              </template>
+              <el-select v-model="form.additionItem" style="width: 300px;" :size="size">
+                <el-option value=""></el-option>
+                <el-option v-for="item in additionItems" :key="item.value" :value="item.value" :label="item.label"></el-option>
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+
+        <!-- 第二行：Menu + Reload | Standard -->
+        <div style="display: flex; align-items: center; margin-top: 15px;">
+          <!-- 左侧：Menu + Reload -->
+          <div style="display: flex; align-items: center; flex: 1;">
+            <el-form-item style="margin-bottom: 0;">
+              <template #label>
+                <label style="font-size: 16px">{{$t('set Menu')}}</label>
+              </template>
+              <el-select v-model="form.menuName" style="width: 260px; margin-right: 5px;" :size="size" @change="submitForm">
+                <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label"></el-option>
+              </el-select>
+              <el-button @click="submitForm" :size="size">Reload</el-button>
+            </el-form-item>
+          </div>
+
+          <!-- 中间：垂直分割线 -->
+          <div style="width: 1px; height: 40px; background-color: #e0e0e0; margin: 0 20px;"></div>
+
+          <!-- 右侧：Standard -->
+          <div style="display: flex; align-items: center; flex: 1;">
+            <el-form-item style="margin-bottom: 0;">
+              <template #label>
+                <label style="font-size: 16px">Standard</label>
+              </template>
+              <el-select v-model="form.standard" style="width: 300px;" :size="size">
+                <el-option value=""></el-option>
+                <el-option v-for="s in standards" :key="s.value" :value="s.value" :label="s.label"></el-option>
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+
       </el-form>
     </div>
 
