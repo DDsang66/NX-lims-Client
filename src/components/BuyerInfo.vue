@@ -54,7 +54,6 @@
           </div>
         </div>
 
-        <!-- 第二行：Menu + Reload | Standard -->
         <div style="display: flex; align-items: center; margin-top: 15px;">
           <!-- 左侧：Menu + Reload -->
           <div style="display: flex; align-items: center; flex: 1;">
@@ -62,10 +61,17 @@
               <template #label>
                 <label style="font-size: 16px">{{$t('set Menu')}}</label>
               </template>
-              <el-select v-model="form.menuName" style="width: 260px; margin-right: 5px;" :size="size" @change="submitForm">
+              <!-- 修改点 1: 添加 multiple 属性 -->
+              <!-- 修改点 2: 建议添加 collapse-tags 以防止选项过多时占用太多空间 -->
+              <el-select v-model="form.menuName"
+                         style="width: 250px; margin-right: 5px;"
+                         :size="size"
+                         multiple
+                         collapse-tags
+                         @change="submitForm">
                 <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label"></el-option>
               </el-select>
-              <el-button @click="submitForm" :size="size">Reload</el-button>
+              <el-button @click="submitForm" :size="size">Load Menu</el-button>
             </el-form-item>
           </div>
 
@@ -134,7 +140,7 @@ const size='large'
     reportNumber: '',
     reviewer: props.reviewer,
     buyer: props.buyer,
-    menuName: '',
+    menuName: [],
     remark: '',
     extraItem: '',
     standard: ''
@@ -206,25 +212,38 @@ const size='large'
   })
 
 
-  // 提交方法 - 修正了变量名和逻辑
   const submitForm = async () => {
+    console.log('form.value structure:', JSON.parse(JSON.stringify(form.value)));
     try {
-      //直接调用API - 修正了变量名 formData → form
-      const response = await request.post('/buyer/confirm', {...form.value,buyer:globalFunctions.cleanAndLowercase(form.value.buyer)})
+      const currentMenu = form.value.menuName || [];
+      // 1. 将数组转换为字符串 (例如 ['A', 'B'] -> "A,B")
+      const menuString = form.value.menuName.join(',');
+
+      console.log('menuString:', menuString);
+      // 2. 构造参数对象
+      // 注意：这里使用展开运算符 ...form.value 会包含原始的数组 menuName
+      // 所以我们需要显式地覆盖它为 menuString
+      const params = {
+        ...form.value,
+        buyer: globalFunctions.cleanAndLowercase(form.value.buyer),
+        menuName: menuString // <--- 关键修改：覆盖为数组转换后的字符串
+      };
+
+      // 3. 发送请求
+      const response = await request.post('/buyer/confirm', params);
+
       // console.log('API Response:', response.data);
-      // 将完整API响应发送给父组件
-      emit('api-response', response.data)
-      emit('submit', response.data)
+      emit('api-response', response.data);
+      emit('submit', response.data);
 
     } catch (error) {
-      //将错误信息发送给父组件
       emit('api-error', {
         message: error.response?.data?.message || '请求失败',
         status: error.response?.status,
         error: error
-      })
+      });
     }
-  }
+  };
 </script>
 
 <style lang="scss" scoped>

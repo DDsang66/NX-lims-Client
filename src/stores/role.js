@@ -62,21 +62,21 @@ const useRoleStore = defineStore('role', {
         case 'Visitor':
           return ['FAQ','PersonalCenter'];
         case 'Leader':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut','Lab Management','Lab'];
         case 'Admin':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut','Unpublished','Config'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Unpublished', 'Config', 'Lab Management', 'Lab'];
         case 'Phy-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Lab'];
         case 'Wet-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Lab'];
         case 'Fiber-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Lab'];
         case 'Flam-Supervisor':
-          return ['OrderReporting','OrderSummary','OrderEntry','Review','LabOut'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Lab'];
         case 'Reviewer':
-          return ['Review'];
+          return ['Review', 'Lab'];
         case 'OrderEntry':
-          return ['OrderEntry'];
+          return ['OrderEntry', 'Lab'];
         default:
           return ['FAQ','PersonalCenter'];
       }

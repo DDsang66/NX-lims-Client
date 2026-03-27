@@ -26,15 +26,15 @@ function onVideoEnd()    { showPlayBtn.value = true; }
 const slides = ref([
   {
     image: banner1,
-    title: 'NX-lims Lab Command Sys Version 1.0',
+    title: 'NX-lims Version 1.0',
     subtitle: 'passionate experts',
-    description: 'Creative Laboratory & Science Research Template for all your future-ready science Laboratory It includes areas like Science Research & Technology.'
+    description: 'Add Value. Inspire trust.'
   },
   {
     image: banner2,
-    title: 'NX-lims Lab Command Sys Version 1.0',
-    subtitle: '3000 Different analyses',
-    description: 'Creative Laboratory & Science Research Template for all your future-ready science Laboratory It includes areas like Science Research & Technology.'
+    title: 'NX-lims Version 1.0',
+    subtitle: 'One-stop textile testing solution',
+    description: 'Add Value. Inspire trust..'
   }
 ]);
 
@@ -120,111 +120,6 @@ onUnmounted(() => {
   </div>
 
 
-
-
-  <div class="section pb-0">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-4 col-md-6">
-          <div class="sigma_portfolio-item style-6">
-            <img src="/src/assets/img/projects/style-2/1.jpg" alt="portfolio">
-            <div class="sigma_portfolio-item-content">
-              <div class="sigma_portfolio-item-content-inner">
-                <h5> <a href="#"> Central Forensic Science <i class="fal fa-arrow-right"></i> </a> </h5>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-          <div class="sigma_portfolio-item style-6">
-            <img src="/src/assets/img/projects/style-2/2.jpg" alt="portfolio">
-            <div class="sigma_portfolio-item-content">
-              <div class="sigma_portfolio-item-content-inner">
-                <h5> <a href="#"> Our Research Center <i class="fal fa-arrow-right"></i> </a> </h5>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-          <div class="sigma_portfolio-item style-6">
-            <img src="/src/assets/img/projects/style-2/3.jpg" alt="portfolio">
-            <div class="sigma_portfolio-item-content">
-              <div class="sigma_portfolio-item-content-inner">
-                <h5> <a href="#"> NABL Certificate Award <i class="fal fa-arrow-right"></i> </a> </h5>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section section-padding pt-0">
-    <div class="container">
-      <div class="section-title text-center">
-        <p class="subtitle">Services</p>
-        <h4 class="title">What We Do</h4>
-      </div>
-      <div class="row">
-        <div class="col-lg-4 col-md-6">
-          <a href="#" class="sigma_service style-4">
-            <i class="flaticon-microscope"></i>
-            <div class="sigma_service-body">
-              <h5>Chrinic Disease</h5>
-              <p>Scientific laboratories can be found as research room and learning spaces in schools and universities. </p>
-            </div>
-            <div class="sigma_service-footer">
-              <ul>
-                <li>Commercial company</li>
-                <li>Quality services</li>
-                <li>Operational excellence through</li>
-              </ul>
-            </div>
-          </a>
-        </div>
-        <div class="col-lg-4 col-md-6">
-          <a href="#" class="sigma_service style-4">
-            <i class="flaticon-research"></i>
-            <div class="sigma_service-body">
-              <h5>Cancer Biology</h5>
-              <p> A physics laboratory might contain a particle accelerator or vacuum chamber, while a metallurgy. </p>
-            </div>
-            <div class="sigma_service-footer">
-              <ul>
-                <li>Commercial company</li>
-                <li>Quality services</li>
-                <li>Operational excellence through</li>
-              </ul>
-            </div>
-          </a>
-        </div>
-        <div class="col-lg-4 col-md-6">
-          <a href="#" class="sigma_service style-4">
-            <i class="flaticon-laboratory-1"></i>
-            <div class="sigma_service-body">
-              <h5>Atherosclerosis</h5>
-              <p>The organisation and contents of laboratories are determined by the differing requirements. </p>
-            </div>
-            <div class="sigma_service-footer">
-              <ul>
-                <li>Commercial company</li>
-                <li>Quality services</li>
-                <li>Operational excellence through</li>
-              </ul>
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section section-padding pt-0">
-    <div class="container">
-      <div class="section-title text-left">
-        <h1>Check the video, learn more about Lims.</h1>
-      </div>
-    </div>
-  </div>
 
   <div class="section secondary-overlay bg-center bg-cover pt-0":style="{ backgroundImage: `url(${banner2})` }">
 
