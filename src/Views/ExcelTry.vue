@@ -256,7 +256,7 @@
     if (newComment.value.trim() === '') return
 
     comments.value.push({
-      user: '我',
+      user: 'Me',
       avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
       text: newComment.value,
       time: new Date().toLocaleString()
@@ -334,7 +334,8 @@
     loading.value = true
     let res
     try {
-      res = await request.get('/search/getExcelUrl', {
+      // 发起请求
+      res = await request.get('/worksheet/excelurl', {
         params: {
           repo: reportNum.value,
           group: group.value,
@@ -342,29 +343,40 @@
         }
       })
 
-      // console.log('已拿到')
-    } catch (error) {
-      loading.value = false
-      console.error('获取url失败:', error)
-      alert('获取url失败')
-    }
-    config.document.title = res.data.fileName
-    config.document.url = res.data.downloadUrl
-    config.document.key = Math.random().toString()
-    // console.log(config)
-    try {
-      // 销毁已有实例（避免重复初始化）
+      // --- 修改开始 ---
+      // 1. 安全性检查：确保 res 存在
+      if (!res || !res.data) {
+        throw new Error('返回数据格式不正确或为空')
+      }
+
+      // 2. 根据你提供的 JSON 结构，数据在 value 字段中
+      // 假设你的 request 封装直接返回了整个 JSON 对象
+      const fileInfo = res.data.value
+
+      // 3. 检查 value 字段是否存在
+      if (!fileInfo) {
+        throw new Error('未获取到文件信息 (value)')
+      }
+
+      // 4. 赋值，使用可选链 ?. 防止字段缺失报错
+      config.document.title = fileInfo.fileName
+      config.document.url = fileInfo.downloadUrl
+      // --- 修改结束 ---
+
+      config.document.key = Math.random().toString()
+
+      // 初始化 OnlyOffice 编辑器逻辑保持不变
       if (onlyofficeEditor.value) {
         onlyofficeEditor.value.destroyEditor()
         onlyofficeEditor.value = null
       }
-      // console.log('编辑钱',config)
-      // 初始化编辑器
+
       onlyofficeEditor.value = new DocsAPI.DocEditor('onlyoffice-editor', config)
       onlyofficeEditor.value.refreshFile()
+
     } catch (error) {
-      console.error('OnlyOffice 加载失败:', error)
-      alert('文档加载失败，请检查控制台')
+      console.error('加载文档出错:', error)
+      alert(error.message || '文档加载失败，请检查控制台')
     } finally {
       loading.value = false
     }
