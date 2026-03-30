@@ -142,7 +142,7 @@
           ref="requireLabelDoM"
           :buyer="currentBuyer"
          :orderNumber="orderNumber"
-         :menuName="menuName"
+       :menuName="menuName?.[0] || 'default'"
          :reviewer ="currentReviewer"
          :items="items"
          :selectedRows="selectedRows"

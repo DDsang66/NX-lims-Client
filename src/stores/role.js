@@ -21,6 +21,7 @@ import Woolworth from "@/Views/Review/Woolworth.vue";
 import ExcelTry from "@/Views/ExcelTry.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
 import StandardConfig from "@/Views/Config/StandardConfig.vue";
+import StandardManagement from "@/Views/Config/StandardManagement.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
 
 const useRoleStore = defineStore('role', {
@@ -51,7 +52,8 @@ const useRoleStore = defineStore('role', {
         {path:'Review',name: 'Review',component: Review}
       ],
       Config:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig},
-        {path:'StandardConfig',name:'StandardConfig',component:StandardConfig},
+        { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
+        { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
         {path:'ParamConfig',name:'ParamConfig',component:ParamConfig}
       ]
     }))

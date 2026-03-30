@@ -4,10 +4,6 @@
       <div style="display: flex;align-items: center;width: 100%;height: 100%;">
         <img src="@/assets/img/NX-lims logo-b.png" alt="logo" style="object-fit: contain;max-height: 100%;">
         <div style="height: 100%;margin-left: auto;display: flex;align-items: center;">
-          <div @click="changeLanguage" style="height: 40%">
-            <img src="/src/assets/svg/中英切换_英.svg" style="margin:auto;height: 100%;width: auto" v-show="locale==='English'" alt="" />
-            <img src="/src/assets/svg/中英切换_中.svg" style="margin:auto;height: 100%;width: auto" v-show="locale==='Chinese'" alt="" />
-          </div>
           <span style="margin-left: 5px">{{userAuth.user}}</span>
           <el-popover placement="bottom"
                       :width="100"
@@ -31,7 +27,11 @@
               </span>
             </template>
           </el-popover>
-          <img src="/src/assets/svg/退出登录.svg" style="margin-left: 5px;height: 40%;width: auto" alt="" @click="logOut" />
+          <div @click="changeLanguage" style="height: 30%">
+            <img src="/src/assets/svg/中英切换_英.svg" style="margin:auto;height: 100%;width: auto" v-show="locale==='English'" alt="" />
+            <img src="/src/assets/svg/中英切换_中.svg" style="margin:auto;height: 100%;width: auto" v-show="locale==='Chinese'" alt="" />
+          </div>
+          <img src="/src/assets/svg/退出登录.svg" style="margin-left: 5px;height: 30%;width: auto" alt="" @click="logOut" />
         </div>
       </div>
     </el-header>
@@ -163,13 +163,13 @@
               <el-icon><Setting /></el-icon>
               <span>Lab Management</span>
             </template>
-            <el-menu-item index="/main/Review">
+            <el-menu-item index="/main/StandardManagement">
               <span>Standard Management</span>
             </el-menu-item>
-            <el-menu-item index="/main/ExcelTry">
+            <el-menu-item index="/main/ItemConfig">
               <span>Test Item Management</span>
             </el-menu-item>
-            <el-menu-item index="/main/ItemConfig">
+            <el-menu-item index="/main/BuyerManagement">
               <span>Buyer Management</span>
             </el-menu-item>
             <el-menu-item index="/main/StandardConfig">

@@ -161,7 +161,7 @@ const request = inject('request');
 const props = defineProps({
   buyer: String,
   orderNumber: String,
-  menuName: String,
+  menuName: Array,
   reviewer: String,
   items: Array,
   sampleSummary: Array,
@@ -478,7 +478,7 @@ const confirmAction = async () => {
     fiberCompositionSingle: fiberCompositionSingle.value,
     buyer: globalFunctions.cleanAndLowercase(props.buyer),
     reportNumber: props.orderNumber,
-    menuName: props.menuName,
+    menuName: props.menuName[0],
     reviewer: props.reviewer,
     items: (() => {
       let items = props.items
@@ -512,6 +512,7 @@ const confirmAction = async () => {
     additionalItems: selectedItems.value
   };
   try {
+    console.log(payload)
     const response = await request.post('/buyer/parameter', payload,);
     emit('api-response', response.data)
     emit('submit', payload)

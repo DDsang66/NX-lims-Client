@@ -157,7 +157,7 @@ const handleFieldChange = (fields) => {
         :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
         :buyer="currentBuyer"
         :orderNumber="orderNumber"
-        :menuName="menuName"
+       :menuName="menuName?.[0] || 'default'"
         :reviewer ="currentReviewer"
         :selectedRows="selectedRows"
         :additionalRequire="additionalRequire"
