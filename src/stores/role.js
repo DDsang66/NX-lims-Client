@@ -23,6 +23,7 @@ import ItemConfig from "@/Views/Config/ItemConfig.vue";
 import StandardConfig from "@/Views/Config/StandardConfig.vue";
 import StandardManagement from "@/Views/Config/StandardManagement.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
+import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -47,14 +48,15 @@ const useRoleStore = defineStore('role', {
       OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
       OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
       LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}],
-      Unpublished:[
+      Lab:[
         {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
         {path:'Review',name: 'Review',component: Review}
       ],
-      Config:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig},
+      LabManagement:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig},
         { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
         { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
-        {path:'ParamConfig',name:'ParamConfig',component:ParamConfig}
+        { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
+        { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
       ]
     }))
   }),
@@ -64,9 +66,9 @@ const useRoleStore = defineStore('role', {
         case 'Visitor':
           return ['FAQ','PersonalCenter'];
         case 'Leader':
-          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut','Lab Management','Lab'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'LabManagement','Lab'];
         case 'Admin':
-          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Unpublished', 'Config', 'Lab Management', 'Lab'];
+          return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'LabManagement', 'Lab'];
         case 'Phy-Supervisor':
           return ['OrderReporting', 'OrderSummary', 'OrderEntry', 'Review', 'LabOut', 'Lab'];
         case 'Wet-Supervisor':

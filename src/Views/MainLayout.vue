@@ -151,14 +151,14 @@
             <el-menu-item index="/main/StandardConfig">
               <span>Standard Overview</span>
             </el-menu-item>
-            <el-menu-item index="/main/ParamConfig">
+            <el-menu-item index="/main/OrderReporting">
               <span>Reporting List</span>
             </el-menu-item>
           </el-sub-menu>
 
 
 
-          <el-sub-menu index="5" v-if="hasBigPower('Lab Management')">
+          <el-sub-menu index="5" v-if="hasBigPower('LabManagement')">
             <template #title>
               <el-icon><Setting /></el-icon>
               <span>Lab Management</span>

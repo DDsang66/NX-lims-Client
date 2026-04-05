@@ -51,9 +51,11 @@
             <el-button @click="loadDocument" style="margin-left: 10px" :disabled="loading">
               {{ loading ? '加载中...' : '获取 Excel' }}
             </el-button>
-            <!--            <el-button @click="closeEditor">-->
-            <!--              关闭-->
-            <!--            </el-button>-->
+            <el-button @click="saveToSystem"
+                       type="success"
+                       :disabled="!isDocumentChanged">
+              保存到系统
+            </el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -172,10 +174,13 @@
 
 <script setup>
   import { computed, reactive, inject, ref, onBeforeUnmount, onMounted } from 'vue'
+  import { ElMessage } from 'element-plus' 
   import { Plus } from '@element-plus/icons-vue'
   import '@/utils/loadOnlyOffice.js'
 
   const userStore = inject('userAuthStore')
+  const isDocumentChanged = ref(false);
+  const currentDocumentKey = ref('');
   const loading = ref(false)
   const request = inject('request')
   var twoDigitYear = ref(new Date().getFullYear() % 100)
@@ -294,48 +299,25 @@
     }
   }
 
-  let config = {
-    style: { height: '100vh' },
-    document: {
-      // title:res.data.fileName ,
-      // title:FILE_NAME,
-      url: FILE_URL,
-      fileType: 'xlsx',
-      // key:'1'
-    },
-    documentType: 'cell', // Excel 必须是 'cell'
-    editorConfig: {
-      mode: 'edit', // 或 'edit'
-      lang: 'zh-CN',
-      user: { name: userStore.user }, // 必填！否则弹协作窗口
-      customization: {
-        chat: false,
-        comments: false,
-        feedback: false,
-        close: {
-          visible: true,
-          text: "Close file",
-        }
-      }
-    },
-    events: {
-      onRequestClose,
-    },
-    // 注意：没有 token 字段！因为 JWT 已关闭
-  }
 
-  // 公开的 Excel 文件
-  // const FILE_URL = 'https://test234234535.oss-cn-hangzhou.aliyuncs.com/pepco_sheet.xlsx'
-  const FILE_URL = 'http://localhost:5051/pepco_sheet.xlsx'
-  const FILE_NAME = 'pepco_sheet.xlsx'
 
   async function loadDocument() {
     if (loading.value) return
     loading.value = true
-    let res
+
     try {
-      // 发起请求
-      res = await request.get('/worksheet/excelurl', {
+      // ✅ 在这里生成 key 和 config，确保 reportNum 有值
+      const docKey = reportNum.value + '_' + Date.now()
+
+      const callbackUrl = `http://localhost:5051/api/worksheet/callback?reportNum=${reportNum.value}&key=${docKey}`;
+      console.log('=== Callback URL 配置 ===');
+      console.log('Callback URL:', callbackUrl);
+      console.log('Report Num:', reportNum.value);
+      console.log('Document Key:', docKey);
+
+
+
+      const res = await request.get('/worksheet/excelurl', {
         params: {
           repo: reportNum.value,
           group: group.value,
@@ -343,42 +325,110 @@
         }
       })
 
-      // --- 修改开始 ---
-      // 1. 安全性检查：确保 res 存在
-      if (!res || !res.data) {
-        throw new Error('返回数据格式不正确或为空')
+      if (!res?.data?.value) {
+        throw new Error('未获取到文件信息')
       }
 
-      // 2. 根据你提供的 JSON 结构，数据在 value 字段中
-      // 假设你的 request 封装直接返回了整个 JSON 对象
       const fileInfo = res.data.value
 
-      // 3. 检查 value 字段是否存在
-      if (!fileInfo) {
-        throw new Error('未获取到文件信息 (value)')
+      // ✅ 动态构建 config
+      const config = {
+        style: { height: '100vh' },
+        document: {
+          title: fileInfo.fileName,
+          url: fileInfo.downloadUrl,
+          fileType: 'xlsx',
+          key: docKey
+        },
+        documentType: 'cell',
+        editorConfig: {
+          mode: 'edit',
+          lang: 'en',
+          user: { name: userStore.user },
+          customization: {
+            chat: false,
+            comments: false,
+            feedback: false,
+            close: { visible: true, text: "Close file" },
+            forcesave: true,
+          }
+        },
+        callbackUrl: `http://localhost:5051/api/worksheet/save-from-url?reportNum=${reportNum.value}&key=${docKey}`,
+        events: {
+          onRequestClose,
+          onDocumentStateChange: function (event) {
+            isDocumentChanged.value = event.data
+            console.log('文档状态变化:', event.data)
+          },
+          onError: function (event) {
+            console.error('编辑器错误:', event)
+          },
+          onRequestSaveAs: async function (event) {
+            console.log('另存为事件触发，文件URL:', event.data.url);
+
+            try {
+              // 告诉后端去下载这个文件并保存
+              const response = await request.post('/worksheet/save-from-url', {
+                reportNum: reportNum.value,
+                fileUrl: event.data.url,
+                fileName: event.data.title,
+                group: group.value,
+                buyer: buyer.value,
+                key: currentDocumentKey.value
+              });
+
+              if (response.data.success) {
+                ElMessage.success('文件已保存到系统');
+                isDocumentChanged.value = false;
+              } else {
+                ElMessage.error('保存失败: ' + response.data.message);
+              }
+            } catch (error) {
+              console.error('保存失败:', error);
+              ElMessage.error('保存失败: ' + error.message);
+            }
+          },
+          // ✅ 添加警告事件，查看是否有回调问题
+          onWarning: function (event) {
+          }
+        },
       }
 
-      // 4. 赋值，使用可选链 ?. 防止字段缺失报错
-      config.document.title = fileInfo.fileName
-      config.document.url = fileInfo.downloadUrl
-      // --- 修改结束 ---
+      // 保存当前 key，供保存按钮使用
+      currentDocumentKey.value = docKey
 
-      config.document.key = Math.random().toString()
-
-      // 初始化 OnlyOffice 编辑器逻辑保持不变
+      // 初始化编辑器
       if (onlyofficeEditor.value) {
         onlyofficeEditor.value.destroyEditor()
         onlyofficeEditor.value = null
       }
 
       onlyofficeEditor.value = new DocsAPI.DocEditor('onlyoffice-editor', config)
-      onlyofficeEditor.value.refreshFile()
 
     } catch (error) {
-      console.error('加载文档出错:', error)
-      alert(error.message || '文档加载失败，请检查控制台')
+      alert(error.message || 'document load failed')
     } finally {
       loading.value = false
+    }
+  }
+
+  async function saveToSystem() {
+    if (!onlyofficeEditor.value) {
+      ElMessage.warning('请先加载文档');
+      return;
+    }
+
+    try {
+      ElMessage.info('正在准备保存...');
+      // ✅ 触发另存为，会打开对话框让用户选择保存位置
+      // 或者根据配置，可能直接触发 onRequestSaveAs
+      onlyofficeEditor.value.serviceCommand('saveAs', {
+        title: `${reportNum.value}.xlsx`,
+        fileType: 'xlsx'
+      });
+    } catch (error) {
+      console.error('保存失败:', error);
+      ElMessage.error('保存失败: ' + error.message);
     }
   }
 
