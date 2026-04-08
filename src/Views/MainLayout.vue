@@ -145,7 +145,7 @@
             <el-menu-item index="/main/ExcelTry">
               <span>Work Sheet Edit</span>
             </el-menu-item>
-            <el-menu-item index="/main/ItemConfig">
+            <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
             </el-menu-item>
             <el-menu-item index="/main/StandardConfig">

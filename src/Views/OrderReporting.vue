@@ -75,23 +75,32 @@
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
-                <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
                 <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
                 <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
-                <el-table-column prop="remark" label="Remark" min-width="200" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="remark" label="Remark" min-width="100" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="status" label="Status" width="100" :formatter="funcs.emptyDisplay"></el-table-column>
-                <el-table-column prop="delayType" label="Delay Type" :formatter="funcs.emptyDisplay" width="100"></el-table-column>
-                <el-table-column prop="delayReason" label="Delay Reason" :formatter="funcs.emptyDisplay" width="300"></el-table-column>
-                <el-table-column width="75" fixed="right" label="Delete">
+                <el-table-column label="Authentic" width="150">
                   <template #default="scope">
-                    <el-button type="danger"
-                               text
-                               @click="openDelete(scope.row)">
-                      ×
+                    <el-button
+                               type="primary"
+                               size="small"
+                               @click="handleAuthenticClick(props.row, scope.row)">
+                      数据验证
                     </el-button>
                   </template>
                 </el-table-column>
+                <el-table-column label="Report" width="150">
+                  <template #default="scope">
+                    <el-button
+                               type="primary"
+                               size="small"
+                               @click="handleCreateReport(props.row, scope.row)">
+                      生成报告
+                    </el-button>
+                  </template>
+                </el-table-column>
+
               </el-table>
             </div>
           </template>
@@ -644,6 +653,79 @@
   }
 
   /* edit--------------------------------------------------------------------------------------- */
+
+
+
+
+
+
+  /* 按钮功能：生成报告和数据验证 ------------------------------------------------------------------- */
+
+  // 处理生成报告点击事件
+  const handleCreateReport = async (parentRow, currentRow) => {
+    const reportNum = parentRow.reportNum || parentRow.reportNumber;
+    const group = currentRow.group;
+    if (!reportNum) {
+      ElMessage.error('Report Number is missing');
+      return;
+    }
+
+    try {
+      const res = await request.post('/reporting/report-create', {
+        reportNum: reportNum,
+        group: group
+      });
+
+      if (res.data.success) {
+        ElMessage.success('Report generated successfully');
+      } else {
+        ElMessage.error(res.data.message || 'Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      ElMessage.error('An error occurred while generating the report');
+    }
+  };
+
+  // 处理数据验证点击事件
+  const handleAuthenticClick = async (parentRow, currentRow) => {
+    const reportNum = parentRow.reportNum || parentRow.reportNumber;
+    const group = currentRow.group;
+
+    if (!reportNum) {
+      ElMessage.error('Report Number is missing');
+      return;
+    }
+
+    try {
+      const res = await request.get('/reporting/report-auth', {
+        params: {
+          reportNum: reportNum,
+          group: group
+        }
+      });
+
+      if (res.data.success) {
+        ElMessage.success('Data verified successfully');
+        // await search();
+      } else {
+        ElMessage.error(res.data.message || 'Data verification failed');
+      }
+    } catch (error) {
+      console.error('Error verifying data:', error);
+      ElMessage.error('An error occurred during data verification');
+    }
+  };
+
+
+
+
+
+
+
+
+
+
 
   /* delete--------------------------------------------------------------------------------------- */
   //点击删除按钮

@@ -24,44 +24,46 @@ import StandardConfig from "@/Views/Config/StandardConfig.vue";
 import StandardManagement from "@/Views/Config/StandardManagement.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
 import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
+import BuyerManual from "@/Views/BuyerManual.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
     role: localStorage.getItem('role') || 'Visitor',
-    routeMap:new Map(Object.entries({
-      Review:[{ path: 'Mango', name: 'Mango', component: Mango },
-        {path: 'OVS',name:'OVS',component:OVS},
-        { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
-        { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
-        { path: 'Jako', name: 'Jako', component: Jako },
-        {path: 'ReviewFinish',name:'ReviewFinish',component:ReviewFinish},
-        {path:'Primark',name: 'Primark', component: Primark},
-        {path:'Kik',name:'Kik',component:Kik},
-        {path:'Pep&co',name:'Pep&co',component:Pepco},
-        {path:'Next',name:'Next',component: Next},
-        {path:'LPP',name:'LPP',component:LPP},
-        {path:'LTAG',name:'LTAG',component:LTAG},
-        {path:'Focus',name:'Focus',component:Focus},
-        {path: 'Woolworth',name:'Woolworth',component:Woolworth},
+    routeMap: new Map(Object.entries({
+      Review: [{ path: 'Mango', name: 'Mango', component: Mango },
+      { path: 'OVS', name: 'OVS', component: OVS },
+      { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
+      { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
+      { path: 'Jako', name: 'Jako', component: Jako },
+      { path: 'ReviewFinish', name: 'ReviewFinish', component: ReviewFinish },
+      { path: 'Primark', name: 'Primark', component: Primark },
+      { path: 'Kik', name: 'Kik', component: Kik },
+      { path: 'Pep&co', name: 'Pep&co', component: Pepco },
+      { path: 'Next', name: 'Next', component: Next },
+      { path: 'LPP', name: 'LPP', component: LPP },
+      { path: 'LTAG', name: 'LTAG', component: LTAG },
+      { path: 'Focus', name: 'Focus', component: Focus },
+      { path: 'Woolworth', name: 'Woolworth', component: Woolworth },
       ],
-      OrderEntry:[{path:'OrderEntry',name:'OrderEntry',component:OrderEntry},],
-      OrderSummary:[{path:'OrderSummary',name:'OrderSummary',component:OrderSummary},],
-      OrderReporting:[{path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
-      LabOut:[{path:'LabOut',name:'LabOut',component:LabOut}],
-      Lab:[
-        {path:'ExcelTry',name:'ExcelTry',component:ExcelTry},
-        {path:'Review',name: 'Review',component: Review}
+      OrderEntry: [{ path: 'OrderEntry', name: 'OrderEntry', component: OrderEntry },],
+      OrderSummary: [{ path: 'OrderSummary', name: 'OrderSummary', component: OrderSummary },],
+      OrderReporting: [{ path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
+      LabOut: [{ path: 'LabOut', name: 'LabOut', component: LabOut }],
+      Lab: [
+        { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry },
+        { path: 'Review', name: 'Review', component: Review },
+        { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual }
       ],
-      LabManagement:[{path:'ItemConfig',name:'ItemConfig',component:ItemConfig},
-        { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
-        { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
-        { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
-        { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
+      LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
+      { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
+      { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
+      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
+      { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
       ]
     }))
   }),
   getters: {
-    getPower(){
+    getPower() {
       switch(this.role){
         case 'Visitor':
           return ['FAQ','PersonalCenter'];
