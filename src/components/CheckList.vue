@@ -48,7 +48,6 @@
 </template>
 <script setup>
 import {nextTick, ref, watch} from 'vue'
-  import ExtraForm from '@/components/Item Additional Required/ExtraForm.vue'
   defineEmits(['update:checked'])
   const props = defineProps({ title: String, list: { type: Array, default: () => [] } })
 

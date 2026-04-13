@@ -81,7 +81,8 @@
 
   // 定义 Props
   const props = defineProps({
-    rawData: { type: Array, default: () => [] }
+    rawData: { type: Array, default: () => [] },
+    fullRefresh: { type: Boolean, default: false }
   })
 
   // 定义 Emits
@@ -116,7 +117,11 @@
         
         // 核心逻辑：如果旧数据存在且有 samples，则使用旧数据的 samples；否则使用新数据的 samples
         // 同时也保留新数据的 parameters (因为这是后端回填的重点)
-        const preservedSamples = (oldRow && oldRow.samples) ? oldRow.samples : (item.samples || '')
+        // 关键修改：只有非全量刷新时才保留 samples
+        const preservedSamples = (!props.fullRefresh && oldRow && oldRow.samples)
+          ? oldRow.samples
+          : (item.samples || '')
+
 
         list.push({
           ...item,

@@ -237,7 +237,7 @@ const seamTypeOptions = (()=>{
   return options
 })()
 //原因
-const seamReasons = ['拼缝', '接缝长度不足','该接缝不存在','织物结构为针织']
+const seamReasons = ['拼缝', '接缝长度不足','该接缝不存在','织物结构为针织','存在氨纶']
 
 const {t} = useI18n()
 // const additionalRequireLabel=t('additionalRequire')

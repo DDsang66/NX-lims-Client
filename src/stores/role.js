@@ -19,6 +19,7 @@ import LTAG from "@/Views/Review/LTAG.vue";
 import Focus from "@/Views/Review/Focus.vue";
 import Woolworth from "@/Views/Review/Woolworth.vue";
 import ExcelTry from "@/Views/ExcelTry.vue";
+import FiberWorkSheet from "@/Views/FiberTeam/FiberWorkSheet.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
 import StandardConfig from "@/Views/Config/StandardConfig.vue";
 import StandardManagement from "@/Views/Config/StandardManagement.vue";
@@ -52,7 +53,8 @@ const useRoleStore = defineStore('role', {
       Lab: [
         { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry },
         { path: 'Review', name: 'Review', component: Review },
-        { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual }
+        { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual },
+        { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet }
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
       { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },

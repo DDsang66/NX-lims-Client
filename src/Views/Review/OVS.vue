@@ -23,7 +23,7 @@
     </div>
 
     <div class="col-xl-5">
-      <CheckList :rawData="rawData"
+      <CheckList :rawData="rawData":fullRefresh="isFullRefresh"
                  @update:selected="val => selectedRows = val" />
 
       <SubmitCheckList :buyer="currentBuyer"
@@ -104,18 +104,26 @@
   const additionalRequire = ref();
   const sampleDescription = ref();
 
-  // 处理 BuyerInfo 返回的数据
-  const onBuyerData = (response) => {                                     
+  const isFullRefresh = ref(false)
+
+  // 修改 onBuyerData，添加 fullRefresh 参数
+  const onBuyerData = (response) => {
     const list = response.data || []
 
-    // 直接存储原始数据，不再手动分类
+    // 标记为全量刷新
+    isFullRefresh.value = true
+
     rawData.value = list
 
-    // 生成 RequireLabel 需要的轻量级列表
     items.value = list.map(item => ({
       itemName: item.itemName,
       standards: item.standards ? item.standards.join(', ') : ''
     }))
+
+    // 重置标志位（下一个 tick）
+    setTimeout(() => {
+      isFullRefresh.value = false
+    }, 0)
   }
 
   // RequireLabel 的参数回填逻辑

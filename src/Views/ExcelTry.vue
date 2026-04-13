@@ -308,15 +308,6 @@
     try {
       // ✅ 在这里生成 key 和 config，确保 reportNum 有值
       const docKey = reportNum.value + '_' + Date.now()
-
-      const callbackUrl = `http://localhost:5051/api/worksheet/callback?reportNum=${reportNum.value}&key=${docKey}`;
-      console.log('=== Callback URL 配置 ===');
-      console.log('Callback URL:', callbackUrl);
-      console.log('Report Num:', reportNum.value);
-      console.log('Document Key:', docKey);
-
-
-
       const res = await request.get('/worksheet/excelurl', {
         params: {
           repo: reportNum.value,

@@ -145,6 +145,9 @@
             <el-menu-item index="/main/ExcelTry">
               <span>Work Sheet Edit</span>
             </el-menu-item>
+            <el-menu-item index="/main/FiberWorkSheet">
+              <span>Fiber Team Demo</span>
+            </el-menu-item>
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
             </el-menu-item>
