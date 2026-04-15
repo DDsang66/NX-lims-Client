@@ -32,7 +32,7 @@
     // 文档URL，用于OnlyOffice预览
     documentUrl: {
       type: String,
-      default: 'http://192.168.128.8:5051/api/fiber/get-docxUrl'
+      default: 'http://192.168.179.8:5051/api/fiberdocx/get-docxUrl'
     },
     // 文档标题
     documentTitle: {
