@@ -21,6 +21,79 @@
     <transition name="fade">
       <div v-show="isNoticeOpen" class="panel-body fiber-body">
         <div class="mainContainer">
+          <!-- Sample 输入框 -->
+          <div class="sample-input-area">
+            <label>Sample</label>
+            <el-input v-model="sampleInput" placeholder="" style="flex: 1" />
+          </div>
+
+          <!-- 拆分表格区域 -->
+          <div class="oneSampleComposition">
+            <!-- 标题行 -->
+            <div class="section-header-row">
+              <span class="section-title">Split</span>
+            </div>
+
+            <!-- 输入行 -->
+            <div class="input-row-container">
+              <div class="input-group">
+                <div class="input-item">
+                  <label>{{ $t('composition') }}<span class="text-danger">*</span></label>
+                  <el-select v-model="splitSection.inputRow.composition" placeholder="" filterable style="width: 200px">
+                    <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
+                  </el-select>
+                </div>
+                <div class="input-item">
+                  <label>Gradient GSM<span class="text-danger">*</span></label>
+                  <el-input type="number" placeholder="" v-model.number="splitSection.inputRow.gradientGsm" style="width: 150px;" />
+                </div>
+                <div class="input-item">
+                  <el-button @click="addSplitRow" type="primary">Add</el-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 表格 -->
+            <div class="table-wrapper custom-table">
+              <table class="custom-table-layout">
+                <thead>
+                  <tr>
+                    <th class="header-row-1"></th>
+                    <th class="header-row-1">Trial #1</th>
+                    <th class="header-row-1">Trial #2</th>
+                    <th class="header-row-1">Operation</th>
+                  </tr>
+                  <tr>
+                    <th class="header-row-2">Composition</th>
+                    <th class="header-row-2"></th>
+                    <th class="header-row-2"></th>
+                    <th class="header-row-2" style="text-align:center">Delete Row</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, rIndex) in splitSection.rows" :key="rIndex">
+                    <td class="cell-composition">
+                      <el-select v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
+                      </el-select>
+                    </td>
+                    <td class="cell-input">
+                      <el-input type="number" placeholder="Trial #1" v-model.number="row.trial1" />
+                    </td>
+                    <td class="cell-input">
+                      <el-input type="number" placeholder="Trial #2" v-model.number="row.trial2" />
+                    </td>
+                    <td class="cell-action">
+                      <el-button type="danger" link @click="removeSplitRow(rIndex)">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- 循环渲染多个 Section -->
           <div v-for="(section, sIndex) in localSections" :key="section.id" class="oneSampleComposition">
             <!-- Section 标题行 -->
@@ -99,12 +172,6 @@
                 </tbody>
               </table>
             </div>
-
-            <!-- 结果 -->
-            <div class="line-flex-container result-row">
-              <label>Composition > 50%</label>
-              <el-input type="text" :value="getMaxComposition(section.rows)" disabled style="flex:1" />
-            </div>
           </div>
         </div>
 
@@ -146,11 +213,21 @@
             </div>
           </div>
 
-          <!-- 第三行：1个输入框 -->
+          <!-- 第三行：2个输入框 -->
           <div class="row">
-            <div class="form-group col-xl-12">
+            <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Recommended Label</label>
               <el-input v-model="extraInputs.input6" placeholder="" />
+            </div>
+            <div class="form-group col-xl-6">
+              <label class="mb-2 d-block">Bottle Number</label>
+              <el-select v-model="extraInputs.bottleNumber" multiple placeholder="" style="width: 100%">
+                <el-option label="1" value="1"></el-option>
+                <el-option label="2" value="2"></el-option>
+                <el-option label="3" value="3"></el-option>
+                <el-option label="4" value="4"></el-option>
+                <el-option label="5" value="5"></el-option>
+              </el-select>
             </div>
           </div>
 
@@ -158,7 +235,16 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Result Remark</label>
-              <el-input v-model="extraInputs.input7" placeholder="" />
+              <el-popover placement="bottom" :width="200" trigger="click">
+                <template #reference>
+                  <el-input :model-value="resultRemarkDisplay" placeholder="点击选择" readonly style="width: 100%; cursor: pointer;" />
+                </template>
+                <el-checkbox-group v-model="extraInputs.resultRemarks">
+                  <el-checkbox v-for="item in resultRemarkOptions" :key="item" :value="item" style="display: block; margin: 8px 0;">
+                    {{ item }}
+                  </el-checkbox>
+                </el-checkbox-group>
+              </el-popover>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Label Remark</label>
@@ -197,7 +283,7 @@
 </template>
 
 <script setup>
-  import { ref, reactive, watch } from 'vue'
+  import { ref, reactive, watch, computed } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
 
   const props = defineProps({
@@ -215,20 +301,63 @@
 
   const isNoticeOpen = ref(true)
 
-  // 初始化 localSections
-  const localSections = ref(props.sections.length > 0 ? JSON.parse(JSON.stringify(props.sections)) : [{
-    id: Date.now(),
-    title: 'Dissolved #1',
-    rows: [],
+  // Result Remark 选项和显示
+  const resultRemarkOptions = ['123', '456', '789']
+  const resultRemarkDisplay = computed(() => {
+    return extraInputs.resultRemarks
+      .map((val, index) => `*${index + 1}:${val}`)
+      .join(', ')
+  })
+
+  // Sample 输入框
+  const sampleInput = ref('')
+
+  // 初始化 localSections（默认2个，第一个3条数据，第二个6条数据）
+  const localSections = ref(props.sections.length > 0 ? JSON.parse(JSON.stringify(props.sections)) : [
+    {
+      id: Date.now(),
+      title: 'Dissolved #1',
+      rows: [
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null }
+      ],
+      inputRow: { composition: '', gradientGsm: null },
+      headerInputs: { trial1: null, trial2: null }
+    },
+    {
+      id: Date.now() + 1,
+      title: 'Dissolved #2',
+      rows: [
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null },
+        { composition: '', trial1: null, trial2: null }
+      ],
+      inputRow: { composition: '', gradientGsm: null },
+      headerInputs: { trial1: null, trial2: null }
+    }
+  ])
+
+  // 拆分表格（单个，默认2行）
+  const splitSection = reactive({
+    rows: [
+      { composition: '', trial1: null, trial2: null },
+      { composition: '', trial1: null, trial2: null }
+    ],
     inputRow: { composition: '', gradientGsm: null },
     headerInputs: { trial1: null, trial2: null }
-  }])
+  })
 
   // 初始化独立的额外输入框数据
   const extraInputs = reactive({
     input1: '', input2: '', input3: '', input4: '', input5: '',
-    input6: '', input7: '', input8: '', input9: '', input10: '',
-    input11: '', input12: ''
+    input6: '', input8: '', input9: '', input10: '',
+    input11: '', input12: '',
+    resultRemarks: [],  // Result Remark 多选数组
+    bottleNumber: []    // Bottle Number 多选数组
   })
 
   // 监听外部变化
@@ -320,40 +449,56 @@
     inputRow.gradientGsm = null
   }
 
-  //计算MaxComposition
-  function getMaxComposition(rows){
-    if (!rows || rows.length === 0) return ''
-
-    let synthTotal = 0
-    let natTotal = 0
-    let totalRate = 0
-
-    rows.forEach(r => {
-      const rate1 = parseFloat(r.trial1) || 0
-      const rate2 = parseFloat(r.trial2) || 0
-      // 这里取平均值作为该成分的比例
-      const avgRate = (rate1 + rate2) / 2
-
-      totalRate += avgRate
-
-      if (isSynth(r.composition)) {
-        synthTotal += avgRate
-      } else if (isNatural(r.composition)) {
-        natTotal += avgRate
-      }
-    })
-
-    if (totalRate === 0) return ''
-
-    const synthPercent = (synthTotal / totalRate) * 100
-    const natPercent = (natTotal / totalRate) * 100
-
-    return synthPercent > 50 ? 'Synth' : natPercent > 50 ? 'Natural' : ''
-  }
-
   //删除行
   function removeRow(sectionIndex, rowIndex) {
     localSections.value[sectionIndex].rows.splice(rowIndex, 1);
+  }
+
+  /* ========== 拆分表格方法 ========== */
+
+  /* 添加拆分行 */
+  function addSplitRow() {
+    const inputRow = splitSection.inputRow
+    const composition = inputRow.composition.trim()
+    const gradientGsm = inputRow.gradientGsm
+
+    // 校验：必须选择成分
+    if (!composition) return alert('Please select a composition')
+
+    // 校验：必须输入 Gradient GSM 值
+    if (gradientGsm === null || gradientGsm === '') {
+      return alert('Please enter a Gradient GSM value')
+    }
+
+    // 查找是否已存在该成分
+    const existingRow = splitSection.rows.find(r => r.composition === composition)
+
+    if (existingRow) {
+      // 已存在该成分，检查 trial 值
+      if (existingRow.trial1 === null || existingRow.trial1 === '') {
+        existingRow.trial1 = gradientGsm
+      } else if (existingRow.trial2 === null || existingRow.trial2 === '') {
+        existingRow.trial2 = gradientGsm
+      } else {
+        return alert('This component already has two trial values. Please select a different composition.')
+      }
+    } else {
+      // 新成分，创建新行
+      splitSection.rows.push({
+        composition: composition,
+        trial1: gradientGsm,
+        trial2: null
+      })
+    }
+
+    // 重置输入行
+    inputRow.composition = ''
+    inputRow.gradientGsm = null
+  }
+
+  /* 删除拆分行 */
+  function removeSplitRow(rowIndex) {
+    splitSection.rows.splice(rowIndex, 1)
   }
 </script>
 
@@ -426,17 +571,36 @@
   .mainContainer {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
+  }
+
+  /* Sample 输入框样式 */
+  .sample-input-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+
+    label {
+      font-size: 14px;
+      color: #606266;
+      font-weight: 500;
+      white-space: nowrap;
+      min-width: 60px;
+    }
   }
 
   /* Section 内部样式 */
   .oneSampleComposition {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     border: 1px solid #dcdfe6;
     border-radius: 4px;
-    padding: 15px;
+    padding: 10px;
     background-color: #fff;
     position: relative;
   }
@@ -447,12 +611,12 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0;
-    padding-bottom: 10px;
+    padding-bottom: 6px;
     border-bottom: 1px dashed #ebeef5;
   }
 
   .section-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 300;
     color: #3364d5;
   }
@@ -464,23 +628,23 @@
 
   /* 新增：输入行容器样式 */
   .input-row-container {
-    margin-bottom: 10px;
-    
+    margin-bottom: 0;
+
     .input-group {
       display: flex;
       align-items: center;
       gap: 15px;
       background-color: #f9f9f9;
-      padding: 10px;
+      padding: 6px 10px;
       border-radius: 4px;
       border: 1px solid #ebeef5;
     }
-    
+
     .input-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       label {
         font-size: 14px;
         color: #606266;
@@ -495,16 +659,16 @@
     border: 1px solid #ebeef5;
     border-radius: 4px;
     overflow: hidden;
-    margin: 10px 0;
-    
+    margin: 4px 0;
+
     .custom-table-layout {
       width: 100%;
       border-collapse: collapse;
-      font-size: 14px;
-      
+      font-size: 13px;
+
       th, td {
         border: 1px solid #ebeef5;
-        padding: 8px 10px;
+        padding: 4px 6px;
         text-align: left;
         vertical-align: middle;
       }
@@ -515,8 +679,8 @@
         color: #606266;
         font-weight: bold;
         text-align: center;
-        height: 40px;
-        
+        height: 28px;
+
         &:first-child {
           width: 30%;
         }
@@ -530,8 +694,8 @@
         background-color: #fff;
         color: #303133;
         font-weight: normal;
-        height: 50px;
-        
+        height: 32px;
+
         .header-input {
           width: 90%;
         }
@@ -541,10 +705,10 @@
       .cell-composition {
         width: 30%;
       }
-      
+
       .cell-input {
         width: 23.33%;
-        
+
         :deep(.el-input__wrapper) {
           width: 90%;
         }
