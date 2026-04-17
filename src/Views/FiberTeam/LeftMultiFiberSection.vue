@@ -213,21 +213,11 @@
             </div>
           </div>
 
-          <!-- 第三行：2个输入框 -->
+          <!-- 第三行：1个输入框 -->
           <div class="row">
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-12">
               <label class="mb-2 d-block">Recommended Label</label>
               <el-input v-model="extraInputs.input6" placeholder="" />
-            </div>
-            <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Bottle Number</label>
-              <el-select v-model="extraInputs.bottleNumber" multiple placeholder="" style="width: 100%">
-                <el-option label="1" value="1"></el-option>
-                <el-option label="2" value="2"></el-option>
-                <el-option label="3" value="3"></el-option>
-                <el-option label="4" value="4"></el-option>
-                <el-option label="5" value="5"></el-option>
-              </el-select>
             </div>
           </div>
 
@@ -261,6 +251,24 @@
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Language Lable Remark</label>
               <el-input v-model="extraInputs.input10" placeholder="" />
+            </div>
+          </div>
+
+          <!-- 第六行：Bottle Number 和 Gram Weight -->
+          <div class="row">
+            <div class="form-group col-xl-6">
+              <label class="mb-2 d-block">Bottle Number</label>
+              <el-select v-model="extraInputs.bottleNumber" multiple placeholder="" style="width: 100%">
+                <el-option label="1" value="1"></el-option>
+                <el-option label="2" value="2"></el-option>
+                <el-option label="3" value="3"></el-option>
+                <el-option label="4" value="4"></el-option>
+                <el-option label="5" value="5"></el-option>
+              </el-select>
+            </div>
+            <div class="form-group col-xl-6">
+              <label class="mb-2 d-block">Gram Weight</label>
+              <el-input v-model="extraInputs.gramWeight" placeholder="" />
             </div>
           </div>
         </div>
@@ -357,7 +365,8 @@
     input6: '', input8: '', input9: '', input10: '',
     input11: '', input12: '',
     resultRemarks: [],  // Result Remark 多选数组
-    bottleNumber: []    // Bottle Number 多选数组
+    bottleNumber: [],   // Bottle Number 多选数组
+    gramWeight: ''      // Gram Weight
   })
 
   // 监听外部变化
