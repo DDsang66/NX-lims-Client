@@ -129,41 +129,37 @@
 <template>
   <div class="row">
     <div class="col-xl-7">
-<!--          <Feedback />-->
-      <BuyerInfo
-         :buyer="currentBuyer"
-         :reviewer="currentReviewer"
-         :menuName="menuOptions"
-         @api-response="onBuyerData"
-         @api-error="handleError"
-         @field-change="handleFieldChange"/>
+      <!--          <Feedback />-->
+      <BuyerInfo :buyer="currentBuyer"
+                 :reviewer="currentReviewer"
+                 :menuName="menuOptions"
+                 @api-response="onBuyerData"
+                 @api-error="handleError"
+                 @field-change="handleFieldChange" />
       <div style="border: 1px solid #cae2e8;">
-        <RequireLabel
-          ref="requireLabelDoM"
-          :buyer="currentBuyer"
-         :orderNumber="orderNumber"
-       :menuName="menuName?.[0] || 'default'"
-         :reviewer ="currentReviewer"
-         :items="items"
-         :selectedRows="selectedRows"
-         @api-response="onBuyerParamData"
-         @submit="onSubmitData"/>
+        <RequireLabel ref="requireLabelDoM"
+                      :buyer="currentBuyer"
+                      :orderNumber="orderNumber"
+                      :menuName="menuName"
+                      :reviewer="currentReviewer"
+                      :items="items"
+                      :selectedRows="selectedRows"
+                      @api-response="onBuyerParamData"
+                      @submit="onSubmitData" />
       </div>
     </div>
     <div class="col-xl-5">
-      <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle"/>
+      <CheckList title="Physics" :list="PhysicsList" @update:checked="onRowToggle" />
       <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle" />
-<!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
-      <SubmitCheckList
-        :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
-        :buyer="currentBuyer"
-       :orderNumber="orderNumber"
-       :menuName="menuName"
-       :reviewer ="currentReviewer"
-       :selectedRows="selectedRows"
-       :additionalRequire="additionalRequire"
-       :sampleDescription ="sampleDescription"
-                       />
+      <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
+      <SubmitCheckList :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
+                       :buyer="currentBuyer"
+                       :orderNumber="orderNumber"
+                       :menuName="menuName?.[0] || 'default'"
+                       :reviewer="currentReviewer"
+                       :selectedRows="selectedRows"
+                       :additionalRequire="additionalRequire"
+                       :sampleDescription="sampleDescription" />
     </div>
   </div>
 </template>
