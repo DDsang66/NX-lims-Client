@@ -26,12 +26,22 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Sample" width="180">
+        <!--<el-table-column label="Sample" width="180">
+    <template #default="{ row }">
+      <el-input v-model="row.samples"
+                placeholder="Confirm Your Sample"
+                clearable
+                @blur="handleSampleBlur(row)" />
+    </template>
+  </el-table-column>-->
+        <el-table-column label="Sample" width="340">
           <template #default="{ row }">
-            <el-input v-model="row.samples"
-                      placeholder="Confirm Your Sample"
-                      clearable
-                      @blur="handleSampleBlur(row)" />
+            <samples-select v-model="row.samples"
+                            style="width: 100%"
+                            size="default"
+                            :max-show-number="3"
+                            collapse-tags
+                            @change="handleSampleChange(row)" />
           </template>
         </el-table-column>
       </el-table>
@@ -62,12 +72,22 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Sample" width="180">
+        <!--<el-table-column label="Sample" width="180">
+    <template #default="{ row }">
+      <el-input v-model="row.samples"
+                placeholder="Confirm Your Sample"
+                clearable
+                @blur="handleSampleBlur(row)" />
+    </template>
+  </el-table-column>-->
+        <el-table-column label="Sample" width="340">
           <template #default="{ row }">
-            <el-input v-model="row.samples"
-                      placeholder="Confirm Your Sample"
-                      clearable
-                      @blur="handleSampleBlur(row)" />
+            <samples-select v-model="row.samples"
+                            style="width: 100%"
+                            size="default"
+                            :max-show-number="3"
+                            collapse-tags
+                            @change="handleSampleChange(row)" />
           </template>
         </el-table-column>
       </el-table>
@@ -78,6 +98,7 @@
 
 <script setup>
   import { ref, computed, watch } from 'vue'
+  import SamplesSelect from "@/components/self made UI/SamplesSelect.vue"
 
   // 定义 Props
   const props = defineProps({
@@ -118,10 +139,25 @@
         // 核心逻辑：如果旧数据存在且有 samples，则使用旧数据的 samples；否则使用新数据的 samples
         // 同时也保留新数据的 parameters (因为这是后端回填的重点)
         // 关键修改：只有非全量刷新时才保留 samples
-        const preservedSamples = (!props.fullRefresh && oldRow && oldRow.samples)
-          ? oldRow.samples
-          : (item.samples || '')
-
+        //const preservedSamples = (!props.fullRefresh && oldRow && oldRow.samples)
+        //  ? oldRow.samples
+        //  : (item.samples || '')
+        const preservedSamples = (() => {
+          // 优先保留旧数据的 samples（非全量刷新时）
+          if (!props.fullRefresh && oldRow && oldRow.samples) {
+            // 统一转为数组
+            return Array.isArray(oldRow.samples)
+              ? oldRow.samples
+              : String(oldRow.samples).split(',').map(s => s.trim()).filter(s => s)
+          }
+          // 新数据：兼容字符串或数组
+          if (item.samples) {
+            return Array.isArray(item.samples)
+              ? [...item.samples]
+              : String(item.samples).split(',').map(s => s.trim()).filter(s => s)
+          }
+          return []
+        })()
 
         list.push({
           ...item,
@@ -190,12 +226,19 @@ const wetData = computed(() => {
   }
 
   // --- 4. 交互逻辑 ---
-  const handleSampleBlur = (row) => {
-    if (row.samples) {
-      row.samples = row.samples.trim()
-    }
+  //const handleSampleBlur = (row) => {
+  //  if (row.samples) {
+  //    row.samples = row.samples.trim()
+  //  }
+  //}
+const handleSampleChange = (row) => {
+  if (row._originalItem) {
+    // 数组转逗号分隔字符串存回原始数据
+    row._originalItem.samples = Array.isArray(row.samples) 
+      ? row.samples.join(', ') 
+      : String(row.samples || '')
   }
-
+}
 // --- 5. 样式与格式化逻辑 ---
 const formatParams = (params) => {
   // 1. 如果为空，直接返回
@@ -211,7 +254,8 @@ const formatParams = (params) => {
     return params.map(item => {
       // 【修改开始】处理 sample 字符串，支持逗号分隔
       // 1. 确保是字符串
-      const sampleStr = String(item.sample || '')
+      /*      const sampleStr = String(item.sample || '')*/
+      const sampleStr = Array.isArray(item.sample) ? item.sample.join(',') : String(item.sample || '')
       // 2. 按英文半角逗号分割，并去除首尾空格
       const samples = sampleStr.split(',').map(s => s.trim()).filter(s => s)
       
@@ -247,13 +291,16 @@ const formatParams = (params) => {
 
 
  // 计算出所有填写了 Sample 的行
- const filledRows = computed(() => {
-  // 合并 physics 和 wet 的数据
-  const allData = [...physicsData.value, ...wetData.value]
-  // 过滤出 samples 不为空的行
-  return allData.filter(row => row.samples && row.samples.trim() !== '')
+ //const filledRows = computed(() => {
+ // // 合并 physics 和 wet 的数据
+ // const allData = [...physicsData.value, ...wetData.value]
+ // // 过滤出 samples 不为空的行
+ // return allData.filter(row => row.samples && row.samples.trim() !== '')
+ // })
+  const filledRows = computed(() => {
+    const allData = [...physicsData.value, ...wetData.value]
+    return allData.filter(row => row.samples && row.samples.length > 0)
   })
-
 // 监听 filledRows 的变化，实时通知父组件
  watch(filledRows, (newVal) => {
    emit('update:selected', newVal)

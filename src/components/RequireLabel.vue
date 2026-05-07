@@ -185,16 +185,22 @@ const additionalRequire = ref('');
 // const sampleDescription = ref('');
 const propertys = ref([])
 //接缝样品
-const seamSamples = computed(() => {
-  let seamSamplesSet = new Set()
-  props.selectedRows.forEach(row => {
-    if (row.itemName.includes('Seam'))
-      row.samples.split(',').forEach(sample => {
-        seamSamplesSet.add(sample)
-      })
+  const seamSamples = computed(() => {
+    let seamSamplesSet = new Set()
+    props.selectedRows.forEach(row => {
+      if (row.itemName.includes('Seam')) {
+        // 兼容数组和字符串
+        const samples = Array.isArray(row.samples)
+          ? row.samples
+          : (row.samples ? row.samples.split(',').map(s => s.trim()).filter(s => s) : [])
+
+        samples.forEach(sample => {
+          seamSamplesSet.add(sample)
+        })
+      }
+    })
+    return [...seamSamplesSet].sort()
   })
-  return [...seamSamplesSet].sort()
-})
 //接缝分组
 /*
 * samples
@@ -390,15 +396,18 @@ function oneGroupSamplesChange() {
 
 const confirmAction = async () => {
   //对于接缝参数，判断是否有shell或者lining
-  if(seamParameter.value){
-    //判断Shell或者Lining有没有
-    let hasSL=true
-    seamParameter.value.forEach(parameter=>{
-      if(!(parameter.sample.includes('Shell')||parameter.sample.includes('Lining'))&&!(parameter.type==='Shell'||parameter.type==='Lining'))
-        hasSL=false
-    })
-    if(!hasSL)
-      return alert('"Shell" or "Lining" is required.')
+  if (seamParameter.value) {
+    const isValid = seamParameter.value.every(parameter => {
+      // 1. 获取 sample 和 type，并处理可能的空值情况（可选链 ?.）
+      const sampleStr = (parameter.sample || '').toLowerCase();
+      const typeStr = (parameter.type || '').toLowerCase();
+
+      // 2. 判断是否包含 'shell' 或 'lining' (此时已经是小写比较)
+      const sampleHasSL = sampleStr.includes('shell') || sampleStr.includes('lining');
+      const typeIsSL = typeStr === 'shell' || typeStr === 'lining';
+
+      return sampleHasSL || typeIsSL;
+    });
   }
   // console.log(seamGroups.value)
   if (props.orderNumber.replace(' ', '').includes('..')) {

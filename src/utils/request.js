@@ -46,7 +46,7 @@ function createAxiosInstance(config){
   return instance
 }
 const api = createAxiosInstance(oldConfig)
-api.documentSrc="http://192.168.179.8:5130/web-apps/apps/api/documents/api.js"
+api.documentSrc="http://192.168.108.8:5130/web-apps/apps/api/documents/api.js"
 
 const newRequest=createAxiosInstance({baseURL:"http://localhost:5102"})
 

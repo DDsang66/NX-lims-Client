@@ -8,20 +8,36 @@
       ref="firstPopover"
     >
       <template #reference>
-        <div class="likeInput mySelect" :style="inputBoxStyle" >
+        <div class="likeInput mySelect" :style="inputBoxStyle">
           <div class="selectedTags">
-            <el-tag :size="size" v-for="(sample,index) in showSamples" :key="sample"
+            <el-tag :size="size"
+                    v-for="(sample,index) in showSamples"
+                    :key="sample"
                     closable
                     disable-transitions
-                    @close="removeSample(sample,index)" >{{sample}}</el-tag>
+                    :class="{ 'tag-selected': isTagSelected(sample) }"
+                    @click="handleTagClick(sample, $event)"
+                    @close="removeSample(sample,index)">
+              {{sample}}
+            </el-tag>
             <el-tag v-if="collapseTags&&(modelValue.length-maxShowNumber)>0">...{{modelValue.length-maxShowNumber}}</el-tag>
           </div>
+
+          <!-- 多选时显示复制按钮 -->
+          <el-icon v-if="selectedTagsForCopy.size > 0"
+                   @click="copySelectedTags"
+                   title="复制选中"
+                   style="margin-right: 5px; color: var(--el-color-primary);">
+            <DocumentCopy />
+          </el-icon>
+
           <el-select v-model="inputValue"
                      placeholder=""
                      filterable
                      allow-create
                      default-first-option
                      @change="inputChange"
+                     @paste="handlePaste"
                      ref="selectInputDom"
                      class="input-select">
           </el-select>
@@ -109,7 +125,7 @@ import {computed, onBeforeUnmount, onMounted, reactive, ref, watch} from "vue";
 import {ArrowLeft, ArrowLeftBold, ArrowRightBold, CircleClose, Grid} from "@element-plus/icons-vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import GlobalFunctions from "@/utils/globalFunctions.js";
-
+  import { ElMessage } from 'element-plus'
 const props = defineProps({
   modelValue:{
     type: Array,
@@ -200,7 +216,7 @@ const showSamples=computed(()=>{
   return props.collapseTags ? props.modelValue.slice(0,props.maxShowNumber) : props.modelValue
 })
 //后缀
-const suffixes=new Set(['main fabric','main fabric with print','shell','lining','other part','outer','body','top','bottow'])
+const suffixes=new Set(['Main fabric','Main fabric with print','Shell','Lining','Other part','Outer','Body','Top','Bottom'])
 
 //四种类对象列表
 const optionCategoryMap = {
@@ -318,36 +334,93 @@ function sampleSuffixesChange(grid){
   emit('change',props.modelValue)
 }
 //选择器输入框值改变
-function inputChange(value){
-  inputValue.value=''
-  if(value.includes('-')){
-    //判断未有
-    if(!props.modelValue.has(value)){
-      //-前
-      let beforeHyphen=value.split('-')[0]
-      //-后
-      let afterHyphen=value.split('-')[1]
-      //有前缀
-      if(suffixedValueMap.value.has(beforeHyphen)){
-        suffixedValueMap.value.get(beforeHyphen).add(afterHyphen)
-      }else{
-        suffixedValueMap.value.set(beforeHyphen,new Set([afterHyphen]))
+  function inputChange(value) {
+    inputValue.value = ''
+
+    // 先按逗号分割多个输入
+    const values = value.split(',').map(s => s.trim()).filter(s => s)
+
+    values.forEach(v => {
+      if (v.includes('-')) {
+        // 后缀类型：A-Lining
+        if (!props.modelValue.includes(v)) {
+          let beforeHyphen = v.split('-')[0]
+          let afterHyphen = v.split('-')[1]
+          if (suffixedValueMap.value.has(beforeHyphen)) {
+            suffixedValueMap.value.get(beforeHyphen).add(afterHyphen)
+          } else {
+            suffixedValueMap.value.set(beforeHyphen, new Set([afterHyphen]))
+          }
+          globalFunctions.sortInsertArray(props.modelValue, v)
+          refreshSuffixedGridsByMap()
+        }
+      } else {
+        // 普通类型：A, B, 001
+        if (!commonValueSet.value.has(v)) {
+          commonValueSet.value.add(v)
+          globalFunctions.sortInsertArray(props.modelValue, v)
+          isSelectedBySet()
+        }
       }
-      globalFunctions.sortInsertArray(props.modelValue,value)
-      //刷新格子
-      refreshSuffixedGridsByMap()
-      emit('change',props.modelValue)
-    }
-  }else{
-    if(!commonValueSet.value.has(value)){
-      commonValueSet.value.add(value)
-      globalFunctions.sortInsertArray(props.modelValue,value)
-      //刷新格子
-      isSelectedBySet()
-      emit('change',props.modelValue)
+    })
+
+    if (values.length > 0) {
+      emit('change', props.modelValue)
     }
   }
-}
+  // 选中的标签（用于复制）
+  const selectedTagsForCopy = ref(new Set())
+
+  // 判断是否选中
+  const isTagSelected = (sample) => selectedTagsForCopy.value.has(sample)
+
+  // 点击标签事件
+  function handleTagClick(sample, event) {
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (selectedTagsForCopy.value.has(sample)) {
+        selectedTagsForCopy.value.delete(sample)
+      } else {
+        selectedTagsForCopy.value.add(sample)
+      }
+    } else {
+      // 非 Ctrl 点击：单选模式（只选中当前，清除其他）
+      selectedTagsForCopy.value.clear()
+      selectedTagsForCopy.value.add(sample)
+    }
+  }
+
+  // 复制选中的标签
+  async function copySelectedTags() {
+    if (selectedTagsForCopy.value.size === 0) return
+    const text = [...selectedTagsForCopy.value].join(',')
+    console.log('复制内容:', text)
+    await copyToClipboard(text)
+    selectedTagsForCopy.value.clear() // 复制后清除选中
+  }
+
+  // 复制到剪贴板（已有则无需重复添加）
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text)
+      ElMessage.success(`已复制: ${text}`)
+    } catch (err) {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      ElMessage.success(`已复制: ${text}`)
+    }
+  }
+
+  // 清空选中（按 Escape）
+  function clearTagSelection() {
+    selectedTagsForCopy.value.clear()
+  }
+
 
 //根据set判断是否选中（无后缀）
 function isSelectedBySet(){
@@ -602,29 +675,27 @@ function exitSelect(){
 //按键事件
 function keyDownHandle(e){
   if(e.key==='Escape'){
-    //如果已经开始选
     if(selectStart){
       exitSelect()
     }
+    clearTagSelection()
+  }
+  // 新增：Ctrl+C 复制选中标签
+  if((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedTagsForCopy.value.size > 0){
+    e.preventDefault()
+    copySelectedTags()
   }
 }
 //鼠标按下监听器
-function docMouseDownClosePopover(e){
-  // console.log('start')
-  // if(secondPopover.value&&secondPopover.value.length>0){
-  //   // console.log('secondPopover',secondPopover.value)
-  //   console.log('activeSuffixedGridIndex',activeSuffixedGridIndex.value)
-  //   console.log('e.target',e.target)
-  //
-  //   console.log('contentRef',secondPopover.value[activeSuffixedGridIndex.value]?.popperRef?.contentRef)
-  // }
-
-  if(!root.value?.contains(e.target)&&!firstPopover.value?.popperRef?.contentRef?.contains(e.target)
-    //小弹窗
-    &&(!secondPopover.value||secondPopover.value.length===0||!secondPopover.value[activeSuffixedGridIndex.value].popperRef.contentRef.contains(e.target)))
-    visible.value=false
-  // console.log('end')
-}
+  function docMouseDownClosePopover(e) {
+    if (!root.value?.contains(e.target)
+      && !firstPopover.value?.popperRef?.contentRef?.contains(e.target)
+      && (!secondPopover.value
+        || secondPopover.value.length === 0
+        || activeSuffixedGridIndex.value < 0
+        || !secondPopover.value[activeSuffixedGridIndex.value]?.popperRef?.contentRef?.contains(e.target)))
+      visible.value = false
+  }
 
 //根据标签刷新
 function refreshBasedOnLabel(){
@@ -675,15 +746,16 @@ watch(visible,(newValue)=>{
   }
 
 })
-watch(()=>{ return props.modelValue},()=>{
-  refreshBasedOnLabel()
-  //重新定位
-  if(firstPopover.value){
-    // console.log('重新定位')
-    firstPopover.value.popperRef.popperInstanceRef.update();
-  }
-  // console.log('popover',firstPopover.value)
-},{deep:true})
+  watch(() => { return props.modelValue }, () => {
+    refreshBasedOnLabel()
+    //重新定位
+    try {
+      firstPopover.value?.popperRef?.popperInstanceRef?.update?.();
+    } catch (e) {
+      // 忽略定位更新错误
+    }
+  }, { deep: true })
+
 onMounted(()=>{
   //升序排序
   props.modelValue.sort();
@@ -692,6 +764,14 @@ onMounted(()=>{
 onBeforeUnmount(()=>{
 
 })
+  function handlePaste(e) {
+    // 获取粘贴内容
+    const pasteText = (e.clipboardData || window.clipboardData).getData('text')
+    e.preventDefault() // 阻止默认粘贴到输入框
+
+    // 直接解析并应用
+    inputChange(pasteText)
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -717,7 +797,15 @@ $grid-gap:5px;
   flex-wrap: wrap;
   padding: 4px 0;
 }
+  .copyable-tag {
+    cursor: pointer;
+    user-select: text;
+    transition: background-color 0.2s;
+  }
 
+  .copyable-tag:hover {
+    background-color: var(--el-color-primary-light-9);
+  }
 .suffixedOptionContainer{
   @include line-left-flex-container;
   flex-wrap: wrap;
@@ -783,4 +871,21 @@ $grid-gap:5px;
 :deep(.el-checkbox){
   margin-right: 5px;
 }
+
+
+  .tag-selected {
+    background-color: var(--el-color-primary) !important;
+    color: white !important;
+    border-color: var(--el-color-primary) !important;
+  }
+
+  .el-tag {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+  }
+
+  .el-tag:hover {
+    opacity: 0.8;
+  }
 </style>
