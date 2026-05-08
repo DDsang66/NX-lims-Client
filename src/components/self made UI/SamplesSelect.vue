@@ -792,11 +792,25 @@ $grid-gap:5px;
   background-color: white;
   @include line-left-flex-container;
 }
-.selectedTags{
-  @include line-left-flex-container;
-  flex-wrap: wrap;
-  padding: 4px 0;
-}
+  .selectedTags {
+    @include line-left-flex-container;
+    flex-wrap: wrap;
+    padding: 4px 0;
+    max-height: 100px; /* 限制最大高度 */
+    overflow-y: auto; /* 添加垂直滚动条 */
+    overflow-x: hidden; /* 隐藏水平滚动条 */
+  }
+  .selectedTags::-webkit-scrollbar {
+    width: 6px;
+  }
+  .selectedTags::-webkit-scrollbar-thumb {
+    background-color: #dcdfe6;
+    border-radius: 3px;
+  }
+
+  .selectedTags::-webkit-scrollbar-track {
+    background-color: #f5f7fa;
+  }
   .copyable-tag {
     cursor: pointer;
     user-select: text;
@@ -883,6 +897,10 @@ $grid-gap:5px;
     cursor: pointer;
     user-select: none;
     transition: all 0.2s;
+    max-width: 200px; /* 限制标签最大宽度 */
+    overflow: hidden; /* 隐藏溢出内容 */
+    text-overflow: ellipsis; /* 超出部分显示省略号 */
+    white-space: nowrap; /* 不换行 */
   }
 
   .el-tag:hover {
