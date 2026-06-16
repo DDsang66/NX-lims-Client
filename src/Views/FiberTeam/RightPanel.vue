@@ -32,7 +32,7 @@
     // 文档URL，用于OnlyOffice预览
     documentUrl: {
       type: String,
-      default: 'http://192.168.143.8:5051/api/fiberdocx/get-docxUrl'
+      default: 'http://10.229.129.140:5051/api/fiberdocx/get-docxUrl'
     },
     // 文档标题
     documentTitle: {
@@ -88,7 +88,7 @@
         mode: 'edit',
         lang: 'en',
         customization: {
-          uiTheme: 'theme-dark', 
+          uiTheme: 'theme-dark',
           chat: false,
           comments: false,
           feedback: false,
@@ -110,17 +110,17 @@
   }
 
   // 监听 documentUrl 变化，自动加载
-  watch(() => props.documentUrl, (newUrl) => {
+  watch(() => props.documentUrl, async (newUrl) => {
     if (newUrl) {
+      await nextTick()  // 等 v-if 渲染出容器 DOM
       initWordPreview()
     } else {
-      // URL 为空时销毁编辑器
       if (wordEditor.value) {
         wordEditor.value.destroyEditor()
         wordEditor.value = null
       }
     }
-  }/*, { immediate: true }*/)
+  })
 
   onMounted(async () => {
     try {

@@ -17,17 +17,21 @@
       <left-multi-fiber-section v-if="isMultiFiber"
                                 v-model:rows="rows"
                                 :allCompositions="allCompositions"
-                                @confirm="handleFiberConfirm" />
+                                @confirm="handleFiberConfirm"
+                                @save-draft="handleSaveDraft"
+                                @build-analysis="handleBuildAnalysis" />
 
       <left-single-fiber-section v-else
                                  v-model:rows="rows"
                                  :allCompositions="allCompositions"
-                                 @confirm="handleFiberConfirm" />
+                                 @confirm="handleFiberConfirm"
+                                 @save-draft="handleSaveDraft"
+                                 @build-analysis="handleBuildAnalysis" />
     </div>
 
     <!-- 右侧 60% -->
     <!-- 子组件3: Right Panel -->
-    <right-panel :form="form" />
+    <right-panel :form="form" :document-url="docUrl" />
   </div>
 </template>
 
@@ -41,6 +45,7 @@
 
   const emit = defineEmits(['confirm']);
   const request = inject('request');
+  const docUrl = ref('http://localhost:5051/api/fiberdocx/get-docxUrl')  // 初始加载模板文档
 
   // Report Number 分段数据
   const twoDigitYear = ref(new Date().getFullYear() % 100)
@@ -112,6 +117,80 @@
 
   const handleFiberConfirm = (data) => {
     emit('confirm', data)
+  }
+
+  // 构建 BuildAnalysisDto（全部 camelCase，匹配后端 System.Text.Json）
+  function buildDto(payload) {
+    const dto = {
+      reportNumber: form.value.reportNumber,
+      method: form.value.menuName || [],
+      componentType: form.value.additionItem === 'type1' ? 'Multi' : 'Single',
+      buyer: form.value.standard || '',
+      verifyResult: payload.extraInputs?.input1 || '',
+      finalResult: payload.extraInputs?.input2 || '',
+      durabilityLabel: payload.extraInputs?.input3 || '',
+      otherLabel: payload.extraInputs?.input4 || '',
+      comprehensive: payload.extraInputs?.input5 || '',
+      recommendedLabel: payload.extraInputs?.input6 ? [payload.extraInputs.input6] : [],
+      resultRemark: Array.isArray(payload.extraInputs?.resultRemarks) ? payload.extraInputs.resultRemarks.join(',') : (payload.extraInputs?.input7 || ''),
+      labelRemark: payload.extraInputs?.input8 || '',
+      judgmentLabelRemark: payload.extraInputs?.input9 || '',
+      languageLabelRemark: payload.extraInputs?.input10 || ''
+    }
+
+    if (form.value.additionItem === 'type1') {
+      // Multi
+      dto.multipleBuildAnalysis = {
+        fiberSplittingList: [],
+        fiberDissolvedList: [],
+        sample: payload.sampleInput || ''
+      }
+      if (payload.splitSection?.rows) {
+        dto.multipleBuildAnalysis.fiberSplittingList = [{
+          splittingRows: payload.splitSection.rows
+            .filter(r => r.composition)
+            .map(r => ({ fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0 }))
+        }]
+      }
+      if (payload.localSections?.length) {
+        dto.multipleBuildAnalysis.fiberDissolvedList = payload.localSections.map(sec => ({
+          originalGSMTrail1: Number(sec.headerInputs?.trial1) || 0,
+          originalGSMTrail2: Number(sec.headerInputs?.trial2) || 0,
+          dissolvedRows: (sec.rows || []).filter(r => r.composition).map(r => ({
+            fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0
+          }))
+        }))
+      }
+    } else {
+      // Single
+      dto.singleBuildAnalysis = {
+        singleFiberRows: ((payload.sections || []).flatMap(s => (s.rows || []).filter(r => r.composition).map(r => ({
+          sample: payload.sampleInput || r.location || '',
+          fiberName: r.composition,
+          gsmTrail1: Number(r.trial1) || 0
+        }))))
+      }
+    }
+
+    return dto
+  }
+
+  async function handleSaveDraft(payload) {
+    const dto = buildDto(payload)
+    const res = await request.post('/FiberAnalysis/worksheet', dto)
+    console.log('Save Draft:', res.data)
+  }
+
+  async function handleBuildAnalysis(payload) {
+    const dto = buildDto(payload)
+    console.log('Build DTO:', JSON.stringify(dto))
+    const res1 = await request.post('/FiberAnalysis/worksheet', dto)
+    console.log('Build Analysis:', res1.data)
+    if (res1.data?.isSuccess) {
+      // BuildAnalysis 已经在后端完成计算+生成Word，直接加载预览
+      const fileName = `${dto.reportNumber}_FiberAnalysis.docx`
+      docUrl.value = `http://localhost:5051/api/FiberAnalysis/${fileName}/download`
+    }
   }
 
   onMounted(() => {

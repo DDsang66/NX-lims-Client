@@ -18,6 +18,12 @@
     <transition name="fade">
       <div v-show="isNoticeOpen" class="panel-body fiber-body">
         <div class="mainContainer">
+          <!-- Sample 输入框 -->
+          <div class="sample-input-area">
+            <label>Sample</label>
+            <el-input v-model="sampleInput" placeholder="" style="flex: 1" />
+          </div>
+
           <!-- 循环渲染多个 Section -->
           <div v-for="(section, sIndex) in localSections" :key="section.id" class="oneSampleComposition">
             <!-- Section 标题行 -->
@@ -168,9 +174,9 @@
         <div class="extra-inputs-container">
           <div class="row">
             <div class="form-group col-xl-6">
-              <el-button @click="" type="success">Save a Draft</el-button>
-              <el-button @click="" type="primary">Build Analysis</el-button>
-              <el-button @click="" type="primary">Refresh</el-button>
+              <el-button @click="handleSaveDraft" type="success">Save a Draft</el-button>
+              <el-button @click="handleBuildAnalysis" type="primary">Build Analysis</el-button>
+              <el-button @click="handleRefresh" type="primary">Refresh</el-button>
             </div>
             <div class="form-group col-xl-6">
               <el-input v-model="extraInputs.input10" placeholder="Search Report No." />
@@ -200,9 +206,28 @@
     }
   })
 
-  const emit = defineEmits(['update:sections', 'confirm'])
+  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis'])
+
+  // 按钮事件：打包子组件数据 emit 到父组件
+  function buildPayload() {
+    return {
+      sections: JSON.parse(JSON.stringify(localSections.value)),
+      extraInputs: JSON.parse(JSON.stringify(extraInputs)),
+      sampleInput: sampleInput.value
+    }
+  }
+
+  function handleSaveDraft()  { emit('save-draft',      buildPayload()) }
+  function handleBuildAnalysis(){ emit('build-analysis', buildPayload()) }
+
+  function handleRefresh() {
+    Object.keys(extraInputs).forEach(k => extraInputs[k] = '')
+    localSections.value = []
+    sampleInput.value = ''
+  }
 
   const isNoticeOpen = ref(true)
+  const sampleInput = ref('')
 
   // 初始化 localSections
   const localSections = ref(props.sections.length > 0 ? JSON.parse(JSON.stringify(props.sections)) : [{

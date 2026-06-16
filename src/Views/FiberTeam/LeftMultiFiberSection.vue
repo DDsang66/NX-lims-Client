@@ -249,7 +249,7 @@
               <el-input v-model="extraInputs.input9" placeholder="" />
             </div>
             <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Language Lable Remark</label>
+              <label class="mb-2 d-block">Language Label Remark</label>
               <el-input v-model="extraInputs.input10" placeholder="" />
             </div>
           </div>
@@ -276,9 +276,9 @@
         <div class="extra-inputs-container">
           <div class="row">
             <div class="form-group col-xl-6">
-              <el-button @click="" type="success">Save a Draft</el-button>
-              <el-button @click="" type="primary">Build Analysis</el-button>
-              <el-button @click="" type="primary">Refresh</el-button>
+              <el-button @click="handleSaveDraft" type="success">Save a Draft</el-button>
+              <el-button @click="handleBuildAnalysis" type="primary">Build Analysis</el-button>
+              <el-button @click="handleRefresh" type="primary">Refresh</el-button>
             </div>
             <div class="form-group col-xl-6">
               <el-input v-model="extraInputs.input10" placeholder="Search Report No." />
@@ -305,9 +305,37 @@
     }
   })
 
-  const emit = defineEmits(['update:sections', 'confirm'])
+  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis'])
 
   const isNoticeOpen = ref(true)
+
+  // 按钮事件：打包子组件数据 emit 到父组件
+  function buildPayload() {
+    return {
+      splitSection: JSON.parse(JSON.stringify(splitSection)),
+      localSections: JSON.parse(JSON.stringify(localSections.value)),
+      extraInputs: JSON.parse(JSON.stringify(extraInputs)),
+      sampleInput: sampleInput.value
+    }
+  }
+
+  function handleSaveDraft()  { emit('save-draft',      buildPayload()) }
+  function handleBuildAnalysis(){ emit('build-analysis', buildPayload()) }
+
+  function handleRefresh() {
+    // 重置所有数据
+    Object.keys(extraInputs).forEach(k => {
+      if (Array.isArray(extraInputs[k])) extraInputs[k] = []
+      else extraInputs[k] = ''
+    })
+    splitSection.rows = [
+      { composition: '', trial1: null, trial2: null },
+      { composition: '', trial1: null, trial2: null }
+    ]
+    splitSection.inputRow = { composition: '', gradientGsm: null }
+    localSections.value = []
+    sampleInput.value = ''
+  }
 
   // Result Remark 选项和显示
   const resultRemarkOptions = ['123', '456', '789']
@@ -446,10 +474,10 @@
       }
     } else {
       // 新成分，创建新行，填入 Trial #1
-      currentSection.rows.push({ 
-        composition: composition, 
-        trial1: gradientGsm, 
-        trial2: null 
+      currentSection.rows.push({
+        composition: composition,
+        trial1: gradientGsm,
+        trial2: null
       })
     }
 
@@ -722,7 +750,7 @@
           width: 90%;
         }
       }
-      
+
       .cell-action {
         width: 23.33%;
         text-align: center;
@@ -736,7 +764,7 @@
     border-top: 1px solid #ebeef5;
     display: flex;
     align-items: center;
-    
+
 /*    label {
       min-width: 150px;
       font-size: 14px;
