@@ -18,12 +18,6 @@
     <transition name="fade">
       <div v-show="isNoticeOpen" class="panel-body fiber-body">
         <div class="mainContainer">
-          <!-- Sample 输入框 -->
-          <div class="sample-input-area">
-            <label>Sample</label>
-            <el-input v-model="sampleInput" placeholder="" style="flex: 1" />
-          </div>
-
           <!-- 循环渲染多个 Section -->
           <div v-for="(section, sIndex) in localSections" :key="section.id" class="oneSampleComposition">
             <!-- Section 标题行 -->
@@ -212,8 +206,7 @@
   function buildPayload() {
     return {
       sections: JSON.parse(JSON.stringify(localSections.value)),
-      extraInputs: JSON.parse(JSON.stringify(extraInputs)),
-      sampleInput: sampleInput.value
+      extraInputs: JSON.parse(JSON.stringify(extraInputs))
     }
   }
 
@@ -223,11 +216,9 @@
   function handleRefresh() {
     Object.keys(extraInputs).forEach(k => extraInputs[k] = '')
     localSections.value = []
-    sampleInput.value = ''
   }
 
   const isNoticeOpen = ref(true)
-  const sampleInput = ref('')
 
   // 初始化 localSections
   const localSections = ref(props.sections.length > 0 ? JSON.parse(JSON.stringify(props.sections)) : [{
