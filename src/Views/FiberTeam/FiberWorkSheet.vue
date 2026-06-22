@@ -132,7 +132,7 @@
       otherLabel: payload.extraInputs?.input4 || '',
       comprehensive: payload.extraInputs?.input5 || '',
       recommendedLabel: payload.extraInputs?.input6 ? [payload.extraInputs.input6] : [],
-      resultRemark: Array.isArray(payload.extraInputs?.resultRemarks) ? payload.extraInputs.resultRemarks.join(',') : (payload.extraInputs?.input7 || ''),
+      resultRemark: payload.extraInputs?.resultRemark || '',
       labelRemark: payload.extraInputs?.input8 || '',
       judgmentLabelRemark: payload.extraInputs?.input9 || '',
       languageLabelRemark: payload.extraInputs?.input10 || ''

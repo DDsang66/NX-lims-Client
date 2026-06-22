@@ -140,27 +140,35 @@
             </div>
           </div>
 
-          <!-- 第四行：2个输入框 -->
+          <!-- 第四行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label>Result Remark</label>
-              <el-input v-model="extraInputs.input7" placeholder="" />
+              <el-select v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
+                <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label>Label Remark</label>
-              <el-input v-model="extraInputs.input8" placeholder="" />
+              <el-select v-model="extraInputs.input8" placeholder="" style="width: 100%">
+                <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
           </div>
 
-          <!-- 第五行：2个输入框 -->
+          <!-- 第五行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label>Judgment Label Remark</label>
-              <el-input v-model="extraInputs.input9" placeholder="" />
+              <el-select v-model="extraInputs.input9" placeholder="" style="width: 100%">
+                <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label>Language Lable Remark</label>
-              <el-input v-model="extraInputs.input10" placeholder="" />
+              <el-select v-model="extraInputs.input10" placeholder="" style="width: 100%">
+                <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
           </div>
         </div>
@@ -173,7 +181,7 @@
               <el-button @click="handleRefresh" type="primary">Refresh</el-button>
             </div>
             <div class="form-group col-xl-6">
-              <el-input v-model="extraInputs.input10" placeholder="Search Report No." />
+              <el-input v-model="searchReportNo" placeholder="Search Report No." />
             </div>
           </div>
         </div>
@@ -186,8 +194,10 @@
 </template>
 
 <script setup>
-  import { ref, reactive, watch } from 'vue'
+  import { ref, reactive, watch, inject, onMounted } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
+
+  const request = inject('request');
 
   const props = defineProps({
     sections: {
@@ -216,6 +226,7 @@
   function handleRefresh() {
     Object.keys(extraInputs).forEach(k => extraInputs[k] = '')
     localSections.value = []
+    searchReportNo.value = ''
   }
 
   const isNoticeOpen = ref(true)
@@ -230,9 +241,12 @@
   }])
 
   // 初始化独立的额外输入框数据
+  const searchReportNo = ref('');
+
   const extraInputs = reactive({
     input1: '', input2: '', input3: '', input4: '', input5: '',
     input6: '', input7: '', input8: '', input9: '', input10: '',
+    resultRemark: '',
     input11: '', input12: ''
   })
 
@@ -248,6 +262,30 @@
     emit('update:sections', val)
     emit('confirm', val)
   }, { deep: true })
+
+  // 单选框选项
+  const judgmentLabelOptions = ref([]);
+  const languageLabelOptions = ref([]);
+  const resultRemarkOptions = ref([]);
+  const labelRemarkOptions = ref([]);
+
+  async function fetchLabelOptions() {
+    try {
+      const res = await request.get('/FiberAnalysis/label-options');
+      if (res.data?.success) {
+        judgmentLabelOptions.value = res.data.data.judgmentLabelOptions || [];
+        languageLabelOptions.value = res.data.data.languageLabelOptions || [];
+        resultRemarkOptions.value = res.data.data.resultRemarkOptions || [];
+        labelRemarkOptions.value = res.data.data.labelRemarkOptions || [];
+      }
+    } catch (e) {
+      console.error('获取标签选项失败:', e);
+    }
+  }
+
+  onMounted(() => {
+    fetchLabelOptions();
+  });
 
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
@@ -563,6 +601,14 @@
       color: #606266;
       font-weight: 500;
     }
+  }
+
+  .radio-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
   }
 
   .text-danger {

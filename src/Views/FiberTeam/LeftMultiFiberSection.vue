@@ -221,36 +221,35 @@
             </div>
           </div>
 
-          <!-- 第四行：2个输入框 -->
+          <!-- 第四行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Result Remark</label>
-              <el-popover placement="bottom" :width="200" trigger="click">
-                <template #reference>
-                  <el-input :model-value="resultRemarkDisplay" placeholder="点击选择" readonly style="width: 100%; cursor: pointer;" />
-                </template>
-                <el-checkbox-group v-model="extraInputs.resultRemarks">
-                  <el-checkbox v-for="item in resultRemarkOptions" :key="item" :value="item" style="display: block; margin: 8px 0;">
-                    {{ item }}
-                  </el-checkbox>
-                </el-checkbox-group>
-              </el-popover>
+              <el-select v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
+                <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Label Remark</label>
-              <el-input v-model="extraInputs.input8" placeholder="" />
+              <el-select v-model="extraInputs.input8" placeholder="" style="width: 100%">
+                <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
           </div>
 
-          <!-- 第五行：2个输入框 -->
+          <!-- 第五行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Judgment Label Remark</label>
-              <el-input v-model="extraInputs.input9" placeholder="" />
+              <el-select v-model="extraInputs.input9" placeholder="" style="width: 100%">
+                <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Language Label Remark</label>
-              <el-input v-model="extraInputs.input10" placeholder="" />
+              <el-select v-model="extraInputs.input10" placeholder="" style="width: 100%">
+                <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
+              </el-select>
             </div>
           </div>
 
@@ -281,7 +280,7 @@
               <el-button @click="handleRefresh" type="primary">Refresh</el-button>
             </div>
             <div class="form-group col-xl-6">
-              <el-input v-model="extraInputs.input10" placeholder="Search Report No." />
+              <el-input v-model="searchReportNo" placeholder="Search Report No." />
             </div>
             </div>
           </div>
@@ -291,8 +290,10 @@
 </template>
 
 <script setup>
-  import { ref, reactive, watch, computed } from 'vue'
+  import { ref, reactive, watch, computed, inject, onMounted } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
+
+  const request = inject('request');
 
   const props = defineProps({
     sections: {
@@ -324,6 +325,7 @@
 
   function handleRefresh() {
     // 重置所有数据
+    searchReportNo.value = ''
     Object.keys(extraInputs).forEach(k => {
       if (Array.isArray(extraInputs[k])) extraInputs[k] = []
       else extraInputs[k] = ''
@@ -337,13 +339,9 @@
     sampleInput.value = ''
   }
 
-  // Result Remark 选项和显示
-  const resultRemarkOptions = ['123', '456', '789']
-  const resultRemarkDisplay = computed(() => {
-    return extraInputs.resultRemarks
-      .map((val, index) => `*${index + 1}:${val}`)
-      .join(', ')
-  })
+  // 下拉选项 — ResultRemark 和 LabelRemark 共用同一组
+  const resultRemarkOptions = ref([]);
+  const labelRemarkOptions = ref([]);
 
   // Sample 输入框
   const sampleInput = ref('')
@@ -388,13 +386,16 @@
   })
 
   // 初始化独立的额外输入框数据
+  const searchReportNo = ref('');
+
   const extraInputs = reactive({
     input1: '', input2: '', input3: '', input4: '', input5: '',
     input6: '', input8: '', input9: '', input10: '',
     input11: '', input12: '',
-    resultRemarks: [],  // Result Remark 多选数组
-    bottleNumber: [],   // Bottle Number 多选数组
-    gramWeight: ''      // Gram Weight
+    resultRemark: '',    // Result Remark 单选
+    resultRemarks: [],   // Result Remark 多选数组 (legacy, keep)
+    bottleNumber: [],    // Bottle Number 多选数组
+    gramWeight: ''       // Gram Weight
   })
 
   // 监听外部变化
@@ -409,6 +410,28 @@
     emit('update:sections', val)
     emit('confirm', val)
   }, { deep: true })
+
+  // 单选框选项
+  const judgmentLabelOptions = ref([]);
+  const languageLabelOptions = ref([]);
+
+  async function fetchLabelOptions() {
+    try {
+      const res = await request.get('/FiberAnalysis/label-options');
+      if (res.data?.success) {
+        judgmentLabelOptions.value = res.data.data.judgmentLabelOptions || [];
+        languageLabelOptions.value = res.data.data.languageLabelOptions || [];
+        resultRemarkOptions.value = res.data.data.resultRemarkOptions || [];
+        labelRemarkOptions.value = res.data.data.labelRemarkOptions || [];
+      }
+    } catch (e) {
+      console.error('获取标签选项失败:', e);
+    }
+  }
+
+  onMounted(() => {
+    fetchLabelOptions();
+  });
 
   function toggleNotice() {
     isNoticeOpen.value = !isNoticeOpen.value;
@@ -771,6 +794,14 @@
       color: #606266;
       font-weight: 500;
     }*/
+  }
+
+  .radio-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
   }
 
   .text-danger {
