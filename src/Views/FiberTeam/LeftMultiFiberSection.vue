@@ -197,19 +197,33 @@
             </div>
           </div>
 
-          <!-- 第二行：3个输入框 -->
+          <!-- 第二行：3个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Durability Label</label>
-              <el-input v-model="extraInputs.input3" placeholder="" />
+              <el-select v-model="extraInputs.input3" placeholder="" style="width: 100%">
+                <el-option value="符合" label="符合"></el-option>
+                <el-option value="严重不符" label="严重不符"></el-option>
+                <el-option value="完全不符" label="完全不符"></el-option>
+                <el-option value="无耐久标" label="无耐久标"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Other Label</label>
-              <el-input v-model="extraInputs.input4" placeholder="" />
+              <el-select v-model="extraInputs.input4" placeholder="" style="width: 100%">
+                <el-option value="符合" label="符合"></el-option>
+                <el-option value="严重不符" label="严重不符"></el-option>
+                <el-option value="完全不符" label="完全不符"></el-option>
+              </el-select>
             </div>
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Comprehensive</label>
-              <el-input v-model="extraInputs.input5" placeholder="" />
+              <el-select v-model="extraInputs.input5" placeholder="" style="width: 100%">
+                <el-option value="符合" label="符合"></el-option>
+                <el-option value="严重不符" label="严重不符"></el-option>
+                <el-option value="完全不符" label="完全不符"></el-option>
+                <el-option value="其他" label="其他"></el-option>
+              </el-select>
             </div>
           </div>
 
@@ -217,7 +231,10 @@
           <div class="row">
             <div class="form-group col-xl-12">
               <label class="mb-2 d-block">Recommended Label</label>
-              <el-input v-model="extraInputs.input6" placeholder="" />
+              <el-select v-model="extraInputs.input6" placeholder="" style="width: 100%">
+                <el-option value="Yes" label="Yes"></el-option>
+                <el-option value="" label=""></el-option>
+              </el-select>
             </div>
           </div>
 

@@ -32,7 +32,7 @@
     // 文档URL，用于OnlyOffice预览
     documentUrl: {
       type: String,
-      default: 'http://10.229.129.140:5051/api/fiberdocx/get-docxUrl'
+      default: 'http://10.46.175.157:5051/api/fiberdocx/get-docxUrl'
     },
     // 文档标题
     documentTitle: {
@@ -55,19 +55,18 @@
   // 生成文档唯一key（用于缓存控制）
   function generateDocumentKey(url) {
     if (!url) return ''
-    return 'doc_' + btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
+    return 'doc_' + btoa(url).replace(/[^a-zA-Z0-9]/g, '')
   }
 
   // 初始化 Word 预览
   async function initWordPreview() {
     if (!props.documentUrl) return
 
-    // 如果已有实例，先销毁
     if (wordEditor.value) {
       wordEditor.value.destroyEditor()
       wordEditor.value = null
+      await new Promise(r => setTimeout(r, 300))
     }
-
 
     const docKey = generateDocumentKey(props.documentUrl)
 
@@ -112,13 +111,8 @@
   // 监听 documentUrl 变化，自动加载
   watch(() => props.documentUrl, async (newUrl) => {
     if (newUrl) {
-      await nextTick()  // 等 v-if 渲染出容器 DOM
+      await nextTick()
       initWordPreview()
-    } else {
-      if (wordEditor.value) {
-        wordEditor.value.destroyEditor()
-        wordEditor.value = null
-      }
     }
   })
 
