@@ -39,7 +39,7 @@
                 </div>
                 <div class="input-item">
                   <label>Gradient GSM<span class="text-danger">*</span></label>
-                  <el-input type="number" placeholder="" v-model.number="section.inputRow.gradientGsm" style="width: 150px;" />
+                  <el-input type="text" inputmode="decimal" placeholder="" v-model="section.inputRow.gradientGsm" style="width: 150px;" />
                 </div>
                 <div class="input-item">
                   <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
@@ -82,7 +82,7 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="number" placeholder="Trial #1" v-model.number="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -250,7 +250,11 @@
 
   function handleRefresh() {
     Object.keys(extraInputs).forEach(k => extraInputs[k] = '')
-    localSections.value = []
+    // 清空表格每行值，保留表格结构
+    localSections.value.forEach(sec => {
+      sec.inputRow = { composition: '', gradientGsm: null }
+      sec.rows.forEach(row => { row.location = ''; row.composition = ''; row.trial1 = null })
+    })
     searchReportNo.value = ''
   }
 

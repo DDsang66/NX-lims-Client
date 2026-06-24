@@ -45,7 +45,7 @@
                 </div>
                 <div class="input-item">
                   <label>Gradient GSM<span class="text-danger">*</span></label>
-                  <el-input type="number" placeholder="" v-model.number="splitSection.inputRow.gradientGsm" style="width: 150px;" />
+                  <el-input type="text" inputmode="decimal" placeholder="" v-model="splitSection.inputRow.gradientGsm" style="width: 150px;" />
                 </div>
                 <div class="input-item">
                   <el-button @click="addSplitRow" type="primary">Add</el-button>
@@ -78,10 +78,10 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="number" placeholder="Trial #1" v-model.number="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="number" placeholder="Trial #2" v-model.number="row.trial2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeSplitRow(rIndex)">
@@ -115,7 +115,7 @@
                 </div>
                 <div class="input-item">
                   <label>Gradient GSM<span class="text-danger">*</span></label>
-                  <el-input type="number" placeholder="" v-model.number="section.inputRow.gradientGsm" style="width: 150px;" />
+                  <el-input type="text" inputmode="decimal" placeholder="" v-model="section.inputRow.gradientGsm" style="width: 150px;" />
                 </div>
                 <div class="input-item">
                   <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
@@ -138,10 +138,10 @@
                   <tr>
                     <th class="header-row-2">Composition</th>
                     <th class="header-row-2">
-                      <el-input type="number" placeholder="data#1 before proccessing" v-model.number="section.headerInputs.trial1" class="header-input" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input" />
                     </th>
                     <th class="header-row-2">
-                      <el-input type="number" placeholder="data#2 before proccessing" v-model.number="section.headerInputs.trial2" class="header-input" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input" />
                     </th>
                     <th class="header-row-2" style="text-align:center">
                       <!-- 这里留空或者放置其他操作，如果需要的话 -->
@@ -158,10 +158,10 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="number" placeholder="Trial #1" v-model.number="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="number" placeholder="Trial #2" v-model.number="row.trial2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -335,7 +335,12 @@
       { composition: '', trial1: null, trial2: null }
     ]
     splitSection.inputRow = { composition: '', gradientGsm: null }
-    localSections.value = []
+    // 清空 Dissolved 表格每行值，保留表格结构
+    localSections.value.forEach(sec => {
+      sec.inputRow = { composition: '', gradientGsm: null }
+      sec.headerInputs = { trial1: null, trial2: null }
+      sec.rows.forEach(row => { row.composition = ''; row.trial1 = null; row.trial2 = null })
+    })
     sampleInput.value = ''
   }
 
