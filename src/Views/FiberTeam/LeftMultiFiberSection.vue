@@ -270,23 +270,6 @@
             </div>
           </div>
 
-          <!-- 第六行：Bottle Number 和 Gram Weight -->
-          <div class="row">
-            <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Bottle Number</label>
-              <el-select v-model="extraInputs.bottleNumber" multiple placeholder="" style="width: 100%">
-                <el-option label="1" value="1"></el-option>
-                <el-option label="2" value="2"></el-option>
-                <el-option label="3" value="3"></el-option>
-                <el-option label="4" value="4"></el-option>
-                <el-option label="5" value="5"></el-option>
-              </el-select>
-            </div>
-            <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Gram Weight</label>
-              <el-input v-model="extraInputs.gramWeight" placeholder="" />
-            </div>
-          </div>
         </div>
 
         <div class="extra-inputs-container">
