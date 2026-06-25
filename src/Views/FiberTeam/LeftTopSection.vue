@@ -36,7 +36,6 @@
           <div class="form-col">
             <el-form-item label="Component Type" class="custom-item">
               <el-select v-model="localForm.additionItem" style="width: 100%;">
-                <el-option value=""></el-option>
                 <el-option v-for="item in additionItems" :key="item.value" :value="item.value" :label="item.label"></el-option>
               </el-select>
             </el-form-item>
@@ -49,10 +48,9 @@
           <div class="form-col">
             <el-form-item label="Method" class="custom-item">
               <div class="input-group">
-                <el-select v-model="localForm.menuName" style="flex: 1; margin-right: 8px;" multiple collapse-tags @change="handleChange">
+                <el-select v-model="localForm.menuName" style="flex: 1; margin-right: 8px;" multiple collapse-tags>
                   <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label"></el-option>
                 </el-select>
-                <el-button @click="handleChange">Load Standard</el-button>
               </div>
             </el-form-item>
           </div>
@@ -103,7 +101,7 @@
     }
   })
 
-  const emit = defineEmits(['update:reportNums', 'update:form', 'submit-form'])
+  const emit = defineEmits(['update:reportNums', 'update:form'])
 
   const size = ref('default')
   const twoDigitYear = ref(new Date().getFullYear() % 100)
@@ -152,10 +150,7 @@
     // Placeholder for keydown logic
   }
 
-  const handleChange = () => {
-    emit('submit-form')
-  }
-</script>
+  </script>
 
 <style scoped lang="scss">
   .panel-section {

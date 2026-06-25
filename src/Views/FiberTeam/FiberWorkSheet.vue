@@ -7,8 +7,7 @@
                         v-model:form="form"
                         :additionItems="additionItems"
                         :menuName="menuName"
-                        :standards="standards"
-                        @submit-form="submitForm" />
+                        :standards="standards" />
 
       <!-- 分割虚线 -->
       <div class="dashed-line"></div>
@@ -61,7 +60,7 @@
   const form = ref({
     reportNumber: '',
     menuName: [],
-    additionItem: '',
+    additionItem: 'type1',  // 默认选中 Multi
     standard: ''
   })
 
@@ -114,10 +113,6 @@
   // 获取成分选项列表
   async function getCompositions() {
     allCompositions.value = (await request.get('/render/compositionsearch')).data.data
-  }
-
-  const submitForm = () => {
-    console.log('Load Menu:', form.value.menuName)
   }
 
   const handleFiberConfirm = (data) => {
@@ -192,9 +187,9 @@
     const res1 = await request.post('/FiberAnalysis/worksheet', dto)
     console.log('Build Analysis:', res1.data)
     if (res1.data?.isSuccess) {
-      // BuildAnalysis 已经在后端完成计算+生成Word，直接加载预览
-      const fileName = `${dto.reportNumber}_FiberAnalysis.docx`
-      docUrl.value = `http://localhost:5051/api/FiberAnalysis/${fileName}/download`
+      // 使用接口返回的 downloadUrl（含时间戳文件名，避免缓存和覆盖）
+      const origin = new URL(request.defaults.baseURL).origin
+      docUrl.value = `${origin}${res1.data.value.downloadUrl}`
     }
   }
 

@@ -28,23 +28,36 @@
               </el-button>
             </div>
 
-            <!-- 输入行 (Composition + Gradient GSM + Add Button) -->
-            <div class="input-row-container">
-              <div class="input-group">
-                <div class="input-item">
-                  <label>{{ $t('composition') }}<span class="text-danger">*</span></label>
-                  <el-select v-model="section.inputRow.composition" placeholder="" filterable style="width: 200px">
-                    <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
-                  </el-select>
-                </div>
-                <div class="input-item">
-                  <label>Gradient GSM<span class="text-danger">*</span></label>
-                  <el-input type="text" inputmode="decimal" placeholder="" v-model="section.inputRow.gradientGsm" style="width: 150px;" />
-                </div>
-                <div class="input-item">
-                  <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
-                </div>
-              </div>
+            <!-- 输入行（表格格式对齐下方数据列） -->
+            <div class="table-wrapper custom-table">
+              <table class="custom-table-layout">
+                <thead>
+                  <tr>
+                    <th class="header-row-2">Location<span class="text-danger">*</span></th>
+                    <th class="header-row-2">Composition<span class="text-danger">*</span></th>
+                    <th class="header-row-2">Gradient GSM</th>
+                    <th class="header-row-2" style="text-align:center">Add</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="cell-location">
+                      <el-input type="text" placeholder="Location" v-model="section.inputRow.location" />
+                    </td>
+                    <td class="cell-composition">
+                      <el-select v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
+                      </el-select>
+                    </td>
+                    <td class="cell-input">
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm" />
+                    </td>
+                    <td class="cell-action">
+                      <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <!-- 表格区域 -->
@@ -60,8 +73,8 @@
                   </tr>
                   <!-- 表头第二行 -->
                   <tr>
-                    <th class="header-row-2">Location</th>
-                    <th class="header-row-2">Composition</th>
+                    <th class="header-row-2">Location<span class="text-danger">*</span></th>
+                    <th class="header-row-2">Composition<span class="text-danger">*</span></th>
                     <th class="header-row-2" style="text-align:center">
                       Gradient GSM
                     </th>
@@ -252,7 +265,7 @@
     Object.keys(extraInputs).forEach(k => extraInputs[k] = '')
     // 清空表格每行值，保留表格结构
     localSections.value.forEach(sec => {
-      sec.inputRow = { composition: '', gradientGsm: null }
+      sec.inputRow = { location: '', composition: '', gradientGsm: null }
       sec.rows.forEach(row => { row.location = ''; row.composition = ''; row.trial1 = null })
     })
     searchReportNo.value = ''
@@ -265,7 +278,7 @@
     id: Date.now(),
     title: 'Dissolved #1',
     rows: [],
-    inputRow: { composition: '', gradientGsm: null },
+    inputRow: { location: '', composition: '', gradientGsm: null },
     headerInputs: { trial1: null }
   }])
 
@@ -340,39 +353,27 @@
   function addRow(sectionIndex) {
     const currentSection = localSections.value[sectionIndex]
     const inputRow = currentSection.inputRow
+    const location = inputRow.location.trim()
     const composition = inputRow.composition.trim()
-    const gradientGsm = inputRow.gradientGsm
+    const gsm = inputRow.gradientGsm
 
-    // 校验：必须选择成分
+    if (!location) return alert('Please enter a Location')
     if (!composition) return alert('Please select a composition')
 
-    // 校验：必须输入 Gradient GSM 值
-    if (gradientGsm === null || gradientGsm === '') {
-      return alert('Please enter a Gradient GSM value')
-    }
-
-    // 查找是否已存在该成分
     const existingRow = currentSection.rows.find(r => r.composition === composition)
 
     if (existingRow) {
-      // 已存在该成分，检查 trial 值
-      if (existingRow.trial1 === null || existingRow.trial1 === '') {
-        // Trial #1 为空，填入
-        existingRow.trial1 = gradientGsm
-      } else {
-        // Trial #1 已有值，提示错误
-        return alert('This component already has a trial value. Please select a different composition.')
-      }
+      existingRow.location = location
+      existingRow.trial1 = gsm
     } else {
-      // 新成分，创建新行，填入 Trial #1
-      currentSection.rows.push({ 
-        location: '',
-        composition: composition, 
-        trial1: gradientGsm
+      currentSection.rows.push({
+        location: location,
+        composition: composition,
+        trial1: gsm
       })
     }
 
-    // 重置输入行
+    inputRow.location = ''
     inputRow.composition = ''
     inputRow.gradientGsm = null
   }
@@ -487,10 +488,10 @@
   .oneSampleComposition {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* 减小了 Section 标题与表格之间的间距 */
+    gap: 0;
     border: 1px solid #dcdfe6;
     border-radius: 4px;
-    padding: 15px;
+    padding: 6px 10px;
     background-color: #fff;
     position: relative;
   }
@@ -501,8 +502,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #ebeef5;
+    padding-bottom: 0;
+    border-bottom: none;
   }
 
   .section-title {
@@ -549,7 +550,7 @@
     border: 1px solid #ebeef5;
     border-radius: 4px;
     overflow: hidden;
-    margin: 10px 0;
+    margin: 0;
     
     .custom-table-layout {
       width: 100%;
