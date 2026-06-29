@@ -154,7 +154,7 @@
             <el-menu-item index="/main/StandardConfig">
               <span>Standard Overview</span>
             </el-menu-item>
-            <el-menu-item index="/main/OrderReporting">
+            <el-menu-item index="/main/OrderOverview">
               <span>Reporting List</span>
             </el-menu-item>
           </el-sub-menu>

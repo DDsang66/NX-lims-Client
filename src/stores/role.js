@@ -26,6 +26,7 @@ import StandardManagement from "@/Views/Config/StandardManagement.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
 import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
 import BuyerManual from "@/Views/BuyerManual.vue";
+import OrderOverview from "@/Views/OrderOverview.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -54,7 +55,8 @@ const useRoleStore = defineStore('role', {
         { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry },
         { path: 'Review', name: 'Review', component: Review },
         { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual },
-        { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet }
+        { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet },
+        { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview }
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
       { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
