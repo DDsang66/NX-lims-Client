@@ -48,7 +48,7 @@
                 <tbody>
                   <tr>
                     <td class="cell-composition">
-                      <el-select v-model="splitSection.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="splitSection.inputRow.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -86,7 +86,7 @@
                 <tbody>
                   <tr v-for="(row, rIndex) in splitSection.rows" :key="rIndex">
                     <td class="cell-composition">
-                      <el-select v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -131,7 +131,7 @@
                 <tbody>
                   <tr>
                     <td class="cell-composition">
-                      <el-select v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -179,7 +179,7 @@
                 <tbody>
                   <tr v-for="(row, rIndex) in section.rows" :key="rIndex">
                     <td class="cell-composition">
-                      <el-select v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -207,7 +207,7 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Vertify Result</label>
-              <el-select v-model="extraInputs.input1" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input1" placeholder="" style="width: 100%">
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
                 <el-option label="Pending" value="Pending"></el-option>
@@ -215,7 +215,7 @@
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Final Result</label>
-              <el-select v-model="extraInputs.input2" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input2" placeholder="" style="width: 100%">
                 <el-option label="Approved" value="Approved"></el-option>
                 <el-option label="Rejected" value="Rejected"></el-option>
                 <el-option label="Review" value="Review"></el-option>
@@ -227,7 +227,7 @@
           <div class="row">
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Durability Label</label>
-              <el-select v-model="extraInputs.input3" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input3" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -236,7 +236,7 @@
             </div>
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Other Label</label>
-              <el-select v-model="extraInputs.input4" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input4" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -244,7 +244,7 @@
             </div>
             <div class="form-group col-xl-4">
               <label class="mb-2 d-block">Comprehensive</label>
-              <el-select v-model="extraInputs.input5" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input5" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -268,13 +268,13 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Result Remark</label>
-              <el-select v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
                 <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Label Remark</label>
-              <el-select v-model="extraInputs.input8" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
                 <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
@@ -284,13 +284,13 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Judgment Label Remark</label>
-              <el-select v-model="extraInputs.input9" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input9" placeholder="" style="width: 100%">
                 <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Language Label Remark</label>
-              <el-select v-model="extraInputs.input10" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input10" placeholder="" style="width: 100%">
                 <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>

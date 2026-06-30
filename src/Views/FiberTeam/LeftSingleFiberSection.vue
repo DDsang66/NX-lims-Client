@@ -45,7 +45,7 @@
                       <el-input type="text" placeholder="Location" v-model="section.inputRow.location" />
                     </td>
                     <td class="cell-composition">
-                      <el-select v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -90,7 +90,7 @@
                       <el-input type="text" placeholder="Location" v-model="row.location" />
                     </td>
                     <td class="cell-composition">
-                      <el-select v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
@@ -121,7 +121,7 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label>Vertify Result</label>
-              <el-select v-model="extraInputs.input1" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input1" placeholder="" style="width: 100%">
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
                 <el-option label="Pending" value="Pending"></el-option>
@@ -129,7 +129,7 @@
             </div>
             <div class="form-group col-xl-6">
               <label>Final Result</label>
-              <el-select v-model="extraInputs.input2" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input2" placeholder="" style="width: 100%">
                 <el-option label="Approved" value="Approved"></el-option>
                 <el-option label="Rejected" value="Rejected"></el-option>
                 <el-option label="Review" value="Review"></el-option>
@@ -141,7 +141,7 @@
           <div class="row">
             <div class="form-group col-xl-4">
               <label>Durability Label</label>
-              <el-select v-model="extraInputs.input3" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input3" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -150,7 +150,7 @@
             </div>
             <div class="form-group col-xl-4">
               <label>Other Label</label>
-              <el-select v-model="extraInputs.input4" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input4" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -158,7 +158,7 @@
             </div>
             <div class="form-group col-xl-4">
               <label>Comprehensive</label>
-              <el-select v-model="extraInputs.input5" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input5" placeholder="" style="width: 100%">
                 <el-option value="符合" label="符合"></el-option>
                 <el-option value="严重不符" label="严重不符"></el-option>
                 <el-option value="完全不符" label="完全不符"></el-option>
@@ -182,13 +182,13 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label>Result Remark</label>
-              <el-select v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
                 <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label>Label Remark</label>
-              <el-select v-model="extraInputs.input8" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
                 <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
@@ -198,13 +198,13 @@
           <div class="row">
             <div class="form-group col-xl-6">
               <label>Judgment Label Remark</label>
-              <el-select v-model="extraInputs.input9" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input9" placeholder="" style="width: 100%">
                 <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label>Language Lable Remark</label>
-              <el-select v-model="extraInputs.input10" placeholder="" style="width: 100%">
+              <el-select clearable v-model="extraInputs.input10" placeholder="" style="width: 100%">
                 <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
