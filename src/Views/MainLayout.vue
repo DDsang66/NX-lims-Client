@@ -157,6 +157,9 @@
             <el-menu-item index="/main/OrderOverview">
               <span>Reporting List</span>
             </el-menu-item>
+            <el-menu-item index="/main/WashLabel">
+              <span>Wash Label</span>
+            </el-menu-item>
           </el-sub-menu>
 
 
