@@ -42,15 +42,21 @@
                 <tbody>
                   <tr>
                     <td class="cell-location">
-                      <el-input type="text" placeholder="Location" v-model="section.inputRow.location" />
+                      <el-input type="text" placeholder="Location" v-model="section.inputRow.location"
+                @keydown.enter="handleTableKeydown($event, 'enter')"
+                @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-composition">
-                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%"
+                @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm"
+                @keydown.enter="handleTableKeydown($event, 'enter')"
+                @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
@@ -87,15 +93,21 @@
                 <tbody>
                   <tr v-for="(row, rIndex) in section.rows" :key="rIndex">
                     <td class="cell-location">
-                      <el-input type="text" placeholder="Location" v-model="row.location" />
+                      <el-input type="text" placeholder="Location" v-model="row.location"
+                @keydown.enter="handleTableKeydown($event, 'enter')"
+                @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-composition">
-                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%"
+                @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1"
+                @keydown.enter="handleTableKeydown($event, 'enter')"
+                @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -234,6 +246,7 @@
 <script setup>
   import { ref, reactive, watch, inject, onMounted } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
+  import { handleTableKeydown } from '@/utils/tableKeyboardNav.js'
 
   const request = inject('request');
 

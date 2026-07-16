@@ -48,15 +48,21 @@
                 <tbody>
                   <tr>
                     <td class="cell-composition">
-                      <el-select clearable v-model="splitSection.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="splitSection.inputRow.composition" placeholder="成分" filterable style="width: 100%"
+                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="splitSection.inputRow.gradientGsm1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="splitSection.inputRow.gradientGsm1"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="splitSection.inputRow.gradientGsm2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="splitSection.inputRow.gradientGsm2"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button @click="addSplitRow" type="primary">Add</el-button>
@@ -84,17 +90,24 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, rIndex) in splitSection.rows" :key="rIndex">
+                  <template v-for="(row, rIndex) in splitSection.rows" :key="rIndex">
+                  <tr>
                     <td class="cell-composition">
-                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%"
+                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeSplitRow(rIndex)">
@@ -102,6 +115,24 @@
                       </el-button>
                     </td>
                   </tr>
+                  <!-- cellulosic fibre 子行 (Split) -->
+                  <template v-if="row.composition === '*cellulosic fibre' || row.composition === '*Regenerated cellulose fibre'">
+                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'split-sub-'+rIndex+'-'+si"
+                        class="cellulosic-sub-row">
+                      <td class="cell-sub-composition">
+                        <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
+                          <el-option v-for="f in ['hemp','cotton','linen','ramie']" :key="f" :value="f" :label="f" />
+                        </el-select>
+                      </td>
+                      <td class="cell-sub-input" colspan="2" style="text-align:center">
+                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
+                          @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                          @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                      </td>
+                      <td class="cell-sub-action"></td>
+                    </tr>
+                  </template>
+                  </template>
                 </tbody>
               </table>
             </div>
@@ -131,15 +162,21 @@
                 <tbody>
                   <tr>
                     <td class="cell-composition">
-                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%"
+                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm1"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="section.inputRow.gradientGsm2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="section.inputRow.gradientGsm2"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
@@ -164,10 +201,14 @@
                   <tr>
                     <th class="header-row-2">Composition</th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </th>
                     <th class="header-row-2" style="text-align:center">
                       <!-- 这里留空或者放置其他操作，如果需要的话 -->
@@ -177,17 +218,24 @@
                 </thead>
                 <!-- 表格内容 -->
                 <tbody>
-                  <tr v-for="(row, rIndex) in section.rows" :key="rIndex">
+                  <template v-for="(row, rIndex) in section.rows" :key="rIndex">
+                  <tr>
                     <td class="cell-composition">
-                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%">
+                      <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%"
+                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
                         <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2"
+                  @keydown.enter="handleTableKeydown($event, 'enter')"
+                  @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -195,6 +243,24 @@
                       </el-button>
                     </td>
                   </tr>
+                  <!-- cellulosic fibre 子行 (Dissolved) -->
+                  <template v-if="row.composition === '*cellulosic fibre' || row.composition === '*Regenerated cellulose fibre'">
+                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'diss-sub-'+sIndex+'-'+rIndex+'-'+si"
+                        class="cellulosic-sub-row">
+                      <td class="cell-sub-composition">
+                        <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
+                          <el-option v-for="f in ['hemp','cotton','linen','ramie']" :key="f" :value="f" :label="f" />
+                        </el-select>
+                      </td>
+                      <td class="cell-sub-input" colspan="2" style="text-align:center">
+                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
+                          @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                          @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                      </td>
+                      <td class="cell-sub-action"></td>
+                    </tr>
+                  </template>
+                  </template>
                 </tbody>
               </table>
             </div>
@@ -318,8 +384,26 @@
 <script setup>
   import { ref, reactive, watch, computed, inject, onMounted } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
+  import { handleTableKeydown } from '@/utils/tableKeyboardNav.js'
 
   const request = inject('request');
+
+  // cellulosic fibre 子行默认 4 行空模板
+  function newCellulosicDefaults() {
+    return [
+      { fiberName: '', percentage: 0 },
+      { fiberName: '', percentage: 0 },
+      { fiberName: '', percentage: 0 },
+      { fiberName: '', percentage: 0 }
+    ];
+  }
+  // 惰性初始化 row 上的 cellulosicSubFibers（写入 row 保证双向绑定）
+  function ensureCellulosicSubFibers(row) {
+    if (!row.cellulosicSubFibers) {
+      row.cellulosicSubFibers = newCellulosicDefaults();
+    }
+    return row.cellulosicSubFibers;
+  }
 
   const props = defineProps({
     sections: {
@@ -519,7 +603,10 @@
       currentSection.rows.push({
         composition: composition,
         trial1: gsm1,
-        trial2: gsm2
+        trial2: gsm2,
+        cellulosicSubFibers: (composition === '*cellulosic fibre' || composition === '*Regenerated cellulose fibre')
+          ? newCellulosicDefaults().map(s => ({ ...s }))
+          : undefined
       })
     }
 
@@ -558,7 +645,10 @@
       splitSection.rows.push({
         composition: composition,
         trial1: gsm1,
-        trial2: gsm2
+        trial2: gsm2,
+        cellulosicSubFibers: (composition === '*cellulosic fibre' || composition === '*Regenerated cellulose fibre')
+          ? newCellulosicDefaults().map(s => ({ ...s }))
+          : undefined
       })
     }
 
@@ -790,6 +880,18 @@
       .cell-action {
         width: 23.33%;
         text-align: center;
+      }
+      .cell-sub-composition {
+        width: 30%;
+        padding: 2px 8px;
+        :deep(.el-input--small) { --el-input-height: 28px; }
+      }
+      .cell-sub-input {
+        width: 23.33%;
+        padding: 2px 8px;
+      }
+      .cell-sub-action {
+        width: 23.33%;
       }
     }
   }

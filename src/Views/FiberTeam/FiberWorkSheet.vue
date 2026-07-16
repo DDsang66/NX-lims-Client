@@ -7,13 +7,15 @@
                         v-model:form="form"
                         :additionItems="additionItems"
                         :menuName="menuName"
-                        :standards="standards" />
+                        :standards="standards"
+                        @refresh="handleRefresh" />
 
       <!-- 分割虚线 -->
       <div class="dashed-line"></div>
 
       <!-- 子组件2: 根据 additionItem 值动态显示 -->
       <left-multi-fiber-section v-if="isMultiFiber"
+                                :key="refreshKey"
                                 v-model:rows="rows"
                                 :allCompositions="allCompositions"
                                 @confirm="handleFiberConfirm"
@@ -21,6 +23,7 @@
                                 @build-analysis="handleBuildAnalysis" />
 
       <left-single-fiber-section v-else
+                                 :key="refreshKey"
                                  v-model:rows="rows"
                                  :allCompositions="allCompositions"
                                  @confirm="handleFiberConfirm"
@@ -45,6 +48,7 @@
   const emit = defineEmits(['confirm']);
   const request = inject('request');
   const docUrl = ref('http://localhost:5051/api/fiberdocx/get-docxUrl')  // 初始加载模板文档
+  const refreshKey = ref(0)
 
   // Report Number 分段数据
   const twoDigitYear = ref(new Date().getFullYear() % 100)
@@ -149,7 +153,11 @@
         dto.multipleBuildAnalysis.fiberSplittingList = [{
           splittingRows: payload.splitSection.rows
             .filter(r => r.composition)
-            .map(r => ({ fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0 }))
+            .map(r => ({ fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0,
+              cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
+                fiberName: s.fiberName, percentage: Number(s.percentage) || 0
+              }))
+            }))
         }]
       }
       if (payload.localSections?.length) {
@@ -157,7 +165,10 @@
           originalGSMTrail1: Number(sec.headerInputs?.trial1) || 0,
           originalGSMTrail2: Number(sec.headerInputs?.trial2) || 0,
           dissolvedRows: (sec.rows || []).filter(r => r.composition).map(r => ({
-            fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0
+            fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0,
+            cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
+              fiberName: s.fiberName, percentage: Number(s.percentage) || 0
+            }))
           }))
         }))
       }
@@ -174,6 +185,8 @@
 
     return dto
   }
+
+  function handleRefresh() { refreshKey.value++ }
 
   async function handleSaveDraft(payload) {
     const dto = buildDto(payload)

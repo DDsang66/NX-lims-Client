@@ -1,8 +1,9 @@
 <template>
   <section class="panel-section">
     <!-- 标题区 -->
-    <div class="panel-header">
+    <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between;">
       <label class="panel-title">{{ $t('Setting Form') }}</label>
+      <el-button type="primary" @click="$emit('refresh')">Refresh</el-button>
     </div>
 
     <!-- 表单区 -->
@@ -101,7 +102,7 @@
     }
   })
 
-  const emit = defineEmits(['update:reportNums', 'update:form'])
+  const emit = defineEmits(['update:reportNums', 'update:form', 'refresh'])
 
   const size = ref('default')
   const twoDigitYear = ref(new Date().getFullYear() % 100)
