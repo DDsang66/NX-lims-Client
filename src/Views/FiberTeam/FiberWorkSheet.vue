@@ -92,7 +92,18 @@
     { value: 'std2', label: 'Standard Method 2' }
   ])
 
-  const allCompositions = ref([]);
+  const baseCompositions = ref([]);
+  const allCompositions = computed(() => {
+    const list = [...baseCompositions.value];
+    const methods = form.value.menuName || [];
+    const hasFz = methods.some(m => m.startsWith('FZ/T'));
+    const hasAatcc = methods.some(m => m.startsWith('AATCC'));
+    if (hasFz && !list.includes('Bicomponent Fiber'))
+      list.unshift('Bicomponent Fiber');
+    if (hasAatcc && !list.includes('Biconstituent Fiber'))
+      list.unshift('Biconstituent Fiber');
+    return list;
+  });
   const rows = ref([]);
 
   // 计算属性：判断是否显示多纤维组件
@@ -116,11 +127,23 @@
 
   // 获取成分选项列表
   async function getCompositions() {
-    allCompositions.value = (await request.get('/render/compositionsearch')).data.data
+    baseCompositions.value = (await request.get('/render/compositionsearch')).data.data
   }
 
   const handleFiberConfirm = (data) => {
     emit('confirm', data)
+  }
+
+  // Bicomponent 父行 GSM 从子行相加
+  function resolveRowGsm(row) {
+    const subs = row.bicomponentSubFibers || [];
+    if (subs.length >= 2) {
+      return {
+        gsm1: Number(subs[0].gsmTrail1) || 0,
+        gsm2: Number(subs[0].gsmTrail2) || 0
+      };
+    }
+    return { gsm1: Number(row.trial1) || 0, gsm2: Number(row.trial2) || 0 };
   }
 
   // 构建 BuildAnalysisDto（全部 camelCase，匹配后端 System.Text.Json）
@@ -153,23 +176,40 @@
         dto.multipleBuildAnalysis.fiberSplittingList = [{
           splittingRows: payload.splitSection.rows
             .filter(r => r.composition)
-            .map(r => ({ fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0,
-              cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
-                fiberName: s.fiberName, percentage: Number(s.percentage) || 0
-              }))
-            }))
+            .map(r => {
+              const gsm = resolveRowGsm(r);
+              return {
+                fiberName: r.composition,
+                gsmTrail1: gsm.gsm1,
+                gsmTrail2: gsm.gsm2,
+                cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
+                  fiberName: s.fiberName, percentage: Number(s.percentage) || 0
+                })),
+                bicomponentSubFibers: (r.bicomponentSubFibers || []).filter(s => s.fiberName && (s.gsmTrail1 > 0 || s.gsmTrail2 > 0)).map(s => ({
+                  fiberName: s.fiberName, gsmTrail1: Number(s.gsmTrail1) || 0, gsmTrail2: Number(s.gsmTrail2) || 0
+                }))
+              };
+            })
         }]
       }
       if (payload.localSections?.length) {
         dto.multipleBuildAnalysis.fiberDissolvedList = payload.localSections.map(sec => ({
           originalGSMTrail1: Number(sec.headerInputs?.trial1) || 0,
           originalGSMTrail2: Number(sec.headerInputs?.trial2) || 0,
-          dissolvedRows: (sec.rows || []).filter(r => r.composition).map(r => ({
-            fiberName: r.composition, gsmTrail1: Number(r.trial1) || 0, gsmTrail2: Number(r.trial2) || 0,
-            cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
-              fiberName: s.fiberName, percentage: Number(s.percentage) || 0
-            }))
-          }))
+          dissolvedRows: (sec.rows || []).filter(r => r.composition).map(r => {
+            const gsm = resolveRowGsm(r);
+            return {
+              fiberName: r.composition,
+              gsmTrail1: gsm.gsm1,
+              gsmTrail2: gsm.gsm2,
+              cellulosicSubFibers: (r.cellulosicSubFibers || []).filter(s => s.fiberName && s.percentage > 0).map(s => ({
+                fiberName: s.fiberName, percentage: Number(s.percentage) || 0
+              })),
+              bicomponentSubFibers: (r.bicomponentSubFibers || []).filter(s => s.fiberName && (s.gsmTrail1 > 0 || s.gsmTrail2 > 0)).map(s => ({
+                fiberName: s.fiberName, gsmTrail1: Number(s.gsmTrail1) || 0, gsmTrail2: Number(s.gsmTrail2) || 0
+              }))
+            };
+          })
         }))
       }
     } else {

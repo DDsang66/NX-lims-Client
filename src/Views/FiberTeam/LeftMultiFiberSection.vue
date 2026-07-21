@@ -100,12 +100,12 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1"
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)"
                   @keydown.enter="handleTableKeydown($event, 'enter')"
                   @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2"
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)"
                   @keydown.enter="handleTableKeydown($event, 'enter')"
                   @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
@@ -117,7 +117,7 @@
                   </tr>
                   <!-- cellulosic fibre 子行 (Split) -->
                   <template v-if="row.composition === '*cellulosic fibre' || row.composition === '*Regenerated cellulose fibre'">
-                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'split-sub-'+rIndex+'-'+si"
+                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'split-cel-'+rIndex+'-'+si"
                         class="cellulosic-sub-row">
                       <td class="cell-sub-composition">
                         <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
@@ -128,6 +128,26 @@
                         <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
                           @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
                           @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                      </td>
+                      <td class="cell-sub-action"></td>
+                    </tr>
+                  </template>
+                  <!-- Bicomponent/Biconstituent 子行 (Split) -->
+                  <template v-if="row.composition === 'Bicomponent Fiber' || row.composition === 'Biconstituent Fiber'">
+                    <tr v-for="(sub, si) in ensureBicomponentSubFibers(row)" :key="'split-bic-'+rIndex+'-'+si"
+                        class="bicomponent-sub-row">
+                      <td class="cell-sub-composition">
+                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
+                        @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                        @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
+                          <el-option v-for="f in ['Polyester','Polyamide']" :key="f" :value="f" :label="f" />
+                        </el-select>
+                      </td>
+                      <td class="cell-sub-input" style="text-align:center">
+                        <el-input v-model="sub.gsmTrail1" placeholder="Trial#1" size="small" style="width: 80px" />
+                      </td>
+                      <td class="cell-sub-input" style="text-align:center">
+                        <el-input v-model="sub.gsmTrail2" placeholder="Trial#2" size="small" style="width: 80px" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -228,12 +248,12 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1"
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)"
                   @keydown.enter="handleTableKeydown($event, 'enter')"
                   @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2"
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)"
                   @keydown.enter="handleTableKeydown($event, 'enter')"
                   @keydown.tab="handleTableKeydown($event, 'tab')" />
                     </td>
@@ -245,7 +265,7 @@
                   </tr>
                   <!-- cellulosic fibre 子行 (Dissolved) -->
                   <template v-if="row.composition === '*cellulosic fibre' || row.composition === '*Regenerated cellulose fibre'">
-                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'diss-sub-'+sIndex+'-'+rIndex+'-'+si"
+                    <tr v-for="(sub, si) in ensureCellulosicSubFibers(row)" :key="'diss-cel-'+sIndex+'-'+rIndex+'-'+si"
                         class="cellulosic-sub-row">
                       <td class="cell-sub-composition">
                         <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
@@ -256,6 +276,26 @@
                         <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
                           @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
                           @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                      </td>
+                      <td class="cell-sub-action"></td>
+                    </tr>
+                  </template>
+                  <!-- Bicomponent/Biconstituent 子行 (Dissolved) -->
+                  <template v-if="row.composition === 'Bicomponent Fiber' || row.composition === 'Biconstituent Fiber'">
+                    <tr v-for="(sub, si) in ensureBicomponentSubFibers(row)" :key="'diss-bic-'+sIndex+'-'+rIndex+'-'+si"
+                        class="bicomponent-sub-row">
+                      <td class="cell-sub-composition">
+                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
+                        @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
+                        @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
+                          <el-option v-for="f in ['Polyester','Polyamide']" :key="f" :value="f" :label="f" />
+                        </el-select>
+                      </td>
+                      <td class="cell-sub-input" style="text-align:center">
+                        <el-input v-model="sub.gsmTrail1" placeholder="Trial#1" size="small" style="width: 80px" />
+                      </td>
+                      <td class="cell-sub-input" style="text-align:center">
+                        <el-input v-model="sub.gsmTrail2" placeholder="Trial#2" size="small" style="width: 80px" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -403,6 +443,24 @@
       row.cellulosicSubFibers = newCellulosicDefaults();
     }
     return row.cellulosicSubFibers;
+  }
+
+  function newBicomponentDefaults() {
+    return [
+      { fiberName: 'Polyamide',  gsmTrail1: 0, gsmTrail2: 0 },
+      { fiberName: 'Polyester', gsmTrail1: 0, gsmTrail2: 0 }
+    ];
+  }
+
+  function isBicomponentRow(row) {
+    return row.composition === 'Bicomponent Fiber' || row.composition === 'Biconstituent Fiber';
+  }
+
+  function ensureBicomponentSubFibers(row) {
+    if (!row.bicomponentSubFibers) {
+      row.bicomponentSubFibers = newBicomponentDefaults();
+    }
+    return row.bicomponentSubFibers;
   }
 
   const props = defineProps({
