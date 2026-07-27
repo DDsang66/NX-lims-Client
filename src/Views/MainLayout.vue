@@ -74,7 +74,7 @@
               <span>Order Summary</span>
             </el-menu-item>
             <el-menu-item index="/main/OrderEntry" v-if="hasPower('OrderEntry')">
-              <span>Order Lab In</span>
+              <span>Order Pick Up</span>
             </el-menu-item>
             <el-menu-item index="/main/ReviewFinish" v-if="hasPower('Review')">
               <span>Order Check Done</span>
@@ -192,8 +192,16 @@
           </el-menu-item>
         </el-menu>
       </el-aside>
-      <el-main style="height: 100%;padding: 0">
-        <router-view style="padding: 20px" />
+      <el-main style="height: 100%;padding: 0;display: flex;flex-direction: column;">
+        <!-- 浏览器风格横向标签页栏 — 与侧边栏同行 -->
+        <TabBar />
+        <div style="flex:1;min-height:0;overflow:auto;padding: 20px;">
+          <router-view v-slot="{ Component }">
+            <keep-alive :include="tabsStore.cachedViews" :max="20">
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
+        </div>
         <el-dialog title="修改密码"
                    v-model="showChangePassword"
                    width="30%">
@@ -223,6 +231,8 @@
 <script>
   import HomeImage from '@/components/Layout/HomeImage.vue'
   import Header from '@/components/Layout/Header.vue'
+  import TabBar from '@/components/Layout/TabBar.vue'
+  import { useTabsStore } from '@/stores/tabs'
 
   import '@/assets/css/plugins/bootstrap.min.css';
   import '@/assets/css/plugins//animate.min.css';
@@ -234,8 +244,9 @@
   import '@/assets/css/plugins/font-awesome.min.css';
   import '@/assets/css/style.css';
   import '@/assets/css/responsive.css';
-  import { inject, ref } from 'vue'
+  import { inject, ref, onMounted, watch } from 'vue'
   import router from "@/router/index.js";
+  import { useRoute } from 'vue-router'
   import { ArrowDown, ArrowUp, Lock, Fold, Expand, HomeFilled, Document, Edit, Files, Setting, User } from "@element-plus/icons-vue";
   import { useI18n } from "vue-i18n";
   import userAuthStore from "@/stores/auth.js";
@@ -254,7 +265,8 @@
       Edit,
       Files,
       Setting,
-      User
+      User,
+      TabBar
     },
     setup() {
       const { locale } = useI18n()
@@ -314,8 +326,31 @@
         form3.value.id = userAuth.id
         showChangePassword.value = true
       }
+      // ==================== 标签页系统 ====================
+      const tabsStore = useTabsStore()
+      const route = useRoute()
+
+      // 初始化 Home 标签页
+      onMounted(() => {
+        tabsStore.addTab({ path: '/main/Home', fullPath: '/main/Home', name: 'Home', meta: { affix: true } })
+        if (route.path !== '/main/Home') {
+          // 如果当前不在 Home，也添加当前页面
+          tabsStore.addTab(route)
+        }
+      })
+
+      // 监听路由 path 变化，自动添加标签页
+      // note: addTab 使用 fullPath 作为 tab id，因此同一页面不同参数会创建独立标签页
+      watch(
+        () => route.path,
+        () => {
+          tabsStore.addTab(route)
+        }
+      )
+
       const logOut = async () => {
         userAuth.clearTokens();
+        tabsStore.resetTabs();
         router.push('/Login');
       }
       const changeLanguage = () => {
@@ -337,7 +372,9 @@
         Lock,
         // [新增] 返回折叠相关的状态和方法
         isCollapse,
-        toggleSidebar
+        toggleSidebar,
+        // 标签页系统
+        tabsStore
       }
     }
   };

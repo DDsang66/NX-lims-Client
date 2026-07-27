@@ -13,7 +13,8 @@
         <div class="form-row">
           <!-- 左侧：Report Number -->
           <div class="form-col">
-            <el-form-item label="Report Number" class="custom-item">
+            <el-form-item class="custom-item">
+                <template #label>Report Number <span class="text-danger">*</span></template>
               <div class="input-group">
                 <el-input v-model="localReportNums.data1" style="width: 70px;" disabled></el-input>
                 <el-select v-model="localReportNums.data2" filterable style="width: 100px;">
@@ -35,7 +36,8 @@
 
           <!-- 右侧：Component Type -->
           <div class="form-col">
-            <el-form-item label="Component Type" class="custom-item">
+            <el-form-item class="custom-item">
+                <template #label>Component Type <span class="text-danger">*</span></template>
               <el-select v-model="localForm.additionItem" style="width: 100%;">
                 <el-option v-for="item in additionItems" :key="item.value" :value="item.value" :label="item.label"></el-option>
               </el-select>
@@ -47,7 +49,8 @@
         <div class="form-row">
           <!-- 左侧：Location -->
           <div class="form-col">
-            <el-form-item label="Method" class="custom-item">
+            <el-form-item class="custom-item">
+                <template #label>Method <span class="text-danger">*</span></template>
               <div class="input-group">
                 <el-select v-model="localForm.menuName" style="flex: 1; margin-right: 8px;" multiple collapse-tags>
                   <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label"></el-option>

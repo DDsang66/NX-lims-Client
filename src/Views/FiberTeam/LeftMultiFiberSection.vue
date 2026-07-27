@@ -23,7 +23,7 @@
         <div class="mainContainer">
           <!-- Sample 输入框 -->
           <div class="sample-input-area">
-            <label>Sample</label>
+            <label>Sample <span class="text-danger">*</span></label>
             <el-input v-model="sampleInput" placeholder="" style="flex: 1" />
           </div>
 
