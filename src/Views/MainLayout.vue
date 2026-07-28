@@ -146,7 +146,7 @@
               <span>Work Sheet Edit</span>
             </el-menu-item>
             <el-menu-item index="/main/FiberWorkSheet">
-              <span>Fiber Team Demo</span>
+              <span>Fiber Team</span>
             </el-menu-item>
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
@@ -171,6 +171,9 @@
             </template>
             <el-menu-item index="/main/StandardManagement">
               <span>Standard Management</span>
+            </el-menu-item>
+            <el-menu-item index="/main/StandardPage">
+              <span>Standard</span>
             </el-menu-item>
             <el-menu-item index="/main/ItemConfig">
               <span>Test Item Management</span>

@@ -90,6 +90,8 @@ export default {
   editStandardFamily: 'Edit Standard Family',
   addStandard: 'Add Standard',
   editStandard: 'Edit Standard',
+  pleaseSelect: 'Please Select',
+  confirmDelete: 'Are you sure to delete?',
   reportMessage:{
     fourth:{
       empty:'The fourth input box cannot be empty.',

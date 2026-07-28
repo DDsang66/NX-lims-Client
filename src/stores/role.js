@@ -23,6 +23,7 @@ import FiberWorkSheet from "@/Views/FiberTeam/FiberWorkSheet.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
 import StandardConfig from "@/Views/Config/StandardConfig.vue";
 import StandardManagement from "@/Views/Config/StandardManagement.vue";
+import StandardPage from "@/Views/Config/StandardPage.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
 import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
 import BuyerManual from "@/Views/BuyerManual.vue";
@@ -64,8 +65,9 @@ const useRoleStore = defineStore('role', {
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
       { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
       { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
-        { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
-        { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
+      { path: 'StandardPage', name: 'StandardPage', component: StandardPage },
+      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
+      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
       { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
       ]
     }))

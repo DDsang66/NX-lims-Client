@@ -89,6 +89,8 @@ export default {
   editStandardFamily: '编辑标准族',
   addStandard: '添加标准',
   editStandard: '编辑标准',
+  pleaseSelect: '请选择',
+  confirmDelete: '确定删除吗？',
   reportMessage:{
     fourth:{
       empty:'第四个输入框不能为空.',
