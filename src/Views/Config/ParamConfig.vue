@@ -8,24 +8,7 @@
             <el-button type="primary" style="margin-left: 10px" @click="searchList">{{$t("search")}}</el-button>
 <!--            <el-button type="primary" style="margin-left: 10px" @click="addOpen">{{$t("add")}}</el-button>-->
           </el-form-item>
-<!--          <el-form-item :label="$t('paramName')">-->
-<!--            <el-input style="width: 200px" v-model="form.paramName" placeholder=""></el-input>-->
-<!--          </el-form-item>-->
-<!--&lt;!&ndash;          <el-form-item :label="$t('allowedValue')">&ndash;&gt;-->
-<!--&lt;!&ndash;            <el-input style="width: 100px" v-model="form.allowedValue" placeholder=""></el-input>&ndash;&gt;-->
-<!--&lt;!&ndash;          </el-form-item>&ndash;&gt;-->
-<!--          <el-form-item :label="$t('type')" >-->
-<!--            <el-select  v-model="form.type" style="width: 150px" placeholder="">-->
-<!--              <el-option v-for="item in typeOptions" :key="item" :label="item" :value="item">-->
-<!--              </el-option>-->
-<!--            </el-select>-->
-<!--          </el-form-item>-->
-<!--          <el-form-item :label="$t('unit')">-->
-<!--            <el-select style="width: 100px" v-model="form.unit"  placeholder="">-->
-<!--              <el-option v-for="item in unitOptions" :key="item" :label="item" :value="item">-->
-<!--              </el-option>-->
-<!--            </el-select>-->
-<!--          </el-form-item>-->
+
         </el-form>
       </div>
       <div class="collapseContainer">

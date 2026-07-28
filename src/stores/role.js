@@ -28,6 +28,7 @@ import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
 import BuyerManual from "@/Views/BuyerManual.vue";
 import OrderOverview from "@/Views/OrderOverview.vue";
 import WashLabel from "@/Views/WashLabel/WashLabel.vue";
+import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -63,7 +64,8 @@ const useRoleStore = defineStore('role', {
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
       { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
       { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
-      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
+        { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
+        { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
       { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
       ]
     }))
