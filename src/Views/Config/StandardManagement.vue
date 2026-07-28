@@ -127,7 +127,7 @@ import { Delete, Edit, Plus, Search } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 // 模拟 API 请求注入
-const newRequest = inject("newRequest");
+const request = inject("request");
 
 // 状态数据
 const testGroupOptions = ref(["Physics", "Wet", "Fiber", "Flam"]);

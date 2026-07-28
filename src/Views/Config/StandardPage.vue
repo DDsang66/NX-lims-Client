@@ -119,7 +119,7 @@ import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { Delete, Edit } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
-const newRequest = inject("newRequest");
+const request = inject("request");
 
 // ==================== 状态数据 ====================
 const loading = ref(false);
@@ -199,7 +199,7 @@ function parseStandardId(id) {
 // ==================== API 方法 ====================
 function fetchAllStandards() {
   loading.value = true;
-  newRequest.get('/api/Standard/getall').then(res => {
+  request.get('/Standard/getall').then(res => {
     if (res.data.isSuccess) {
       tableData.value = (res.data.value || []).map(item => ({
         ...item
@@ -249,7 +249,7 @@ function editOpen(row) {
 
 function confirmStandard() {
   if (dialogTitle.value === 'addStandard') {
-    newRequest.post('/api/Standard/add', {
+    request.post('/Standard/add', {
       standardId: dialogForm.value.standardId,
       standardCode: dialogForm.value.standardCode,
       standardNameCn: dialogForm.value.standardCodeNameChn,
@@ -273,7 +273,7 @@ function confirmStandard() {
       }
     }).catch(() => ElMessage.error('Failed to add standard'));
   } else {
-    newRequest.put('/api/Standard/update', {
+    request.put('/Standard/update', {
       standardId: dialogForm.value.standardId,
       standardCode: dialogForm.value.standardCode,
       standardNameCn: dialogForm.value.standardCodeNameChn,
@@ -303,7 +303,7 @@ function confirmStandard() {
 }
 
 function deleteStandard(row) {
-  newRequest.delete(`/api/Standard/remove/${row.standardId}`).then(res => {
+  request.delete(`/Standard/remove/${row.standardId}`).then(res => {
     if (res.data.isSuccess) {
       ElMessage.success('Standard deleted');
       const idx = tableData.value.findIndex(item => item.standardId === row.standardId);
@@ -317,13 +317,13 @@ function deleteStandard(row) {
 // ==================== 初始化 ====================
 onMounted(() => {
   fetchAllStandards();
-  newRequest.get('/api/Enum/sites').then(res => {
+  request.get('/Enum/sites').then(res => {
     if (res.data) siteOptions.value = res.data;
   }).catch(() => {});
-  newRequest.get('/api/Enum/standard-items').then(res => {
+  request.get('/Enum/standard-items').then(res => {
     if (res.data) standardItemOptions.value = res.data;
   }).catch(() => {});
-  newRequest.get('/api/Enum/statuses').then(res => {
+  request.get('/Enum/statuses').then(res => {
     if (res.data) statusOptions.value = res.data;
   }).catch(() => {});
 });

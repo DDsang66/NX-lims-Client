@@ -131,7 +131,7 @@ import {inject, reactive, ref} from "vue";
 import {Delete, Edit} from "@element-plus/icons-vue";
 
 
-const newRequest=inject("newRequest")
+const request=inject("request")
 //标准组列表数据
 const standardFamilyList=ref([
   {
@@ -214,13 +214,13 @@ const dialogTitleStandardFamily=ref('')
 // method-------------------------------------------------------------------------------------------
 function confirmStandardFamily(){
   if(dialogTitleStandardFamily.value==='addStandardFamily')
-    newRequest.post('/config/standard-family-add',dialogFormStandardFamily.value).then(res=>{
+    request.post('/config/standard-family-add',dialogFormStandardFamily.value).then(res=>{
       if(res.data.success){
         dialogVisibleStandardFamily.value=false
       }
     })
   else if(dialogTitleStandardFamily.value==='editStandardFamily')
-    newRequest.post('/config/standard-family-update',dialogFormStandardFamily.value).then(res=>{
+    request.post('/config/standard-family-update',dialogFormStandardFamily.value).then(res=>{
       if(res.data.success){
         dialogVisibleStandardFamily.value=false
       }
@@ -237,11 +237,11 @@ function editOpenStandardFamily(row){
 }
 function confirmStandard(){
   if(dialogTitle.value==='addStandard')
-    newRequest.post('/config/standard-add',dialogForm.value).then(res=>{
+    request.post('/config/standard-add',dialogForm.value).then(res=>{
         dialogVisible.value=false
     })
   else if(dialogTitle.value==='editStandard')
-    newRequest.post('/config/standard-update',dialogForm.value).then(res=>{
+    request.post('/config/standard-update',dialogForm.value).then(res=>{
       if(res.data.success){
         dialogVisible.value=false
       }

@@ -177,7 +177,7 @@ const standardFamilyList=ref([
     ]
   }
 ])
-const newRequest=inject("newRequest")
+const request=inject("request")
 //单位分组
 const unitOptions=["cm","mm","min","min"]
 //类型分组
@@ -202,13 +202,13 @@ function getParams(formula){
 }
 function confirm(){
   if(dialogTitle.value==='add')
-    newRequest.post('/config/standard-add',dialogForm.value).then(res=>{
+    request.post('/config/standard-add',dialogForm.value).then(res=>{
       if(res.data.success){
         dialogVisible.value=false
       }
     })
   else if(dialogTitle.value==='edit')
-    newRequest.post('/config/standard-update',dialogForm.value).then(res=>{
+    request.post('/config/standard-update',dialogForm.value).then(res=>{
       if(res.data.success){
         dialogVisible.value=false
       }
