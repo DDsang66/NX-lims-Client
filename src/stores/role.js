@@ -21,11 +21,9 @@ import Woolworth from "@/Views/Review/Woolworth.vue";
 import ExcelTry from "@/Views/ExcelTry.vue";
 import FiberWorkSheet from "@/Views/FiberTeam/FiberWorkSheet.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
-import StandardConfig from "@/Views/Config/StandardConfig.vue";
-import StandardManagement from "@/Views/Config/StandardManagement.vue";
+import StandardFamily from "@/Views/Config/StandardFamily.vue";
 import StandardPage from "@/Views/Config/StandardPage.vue";
 import ParamConfig from "@/Views/Config/ParamConfig.vue";
-import BuyerManagement from "@/Views/Config/BuyerManagement.vue";
 import BuyerManual from "@/Views/BuyerManual.vue";
 import OrderOverview from "@/Views/OrderOverview.vue";
 import WashLabel from "@/Views/WashLabel/WashLabel.vue";
@@ -63,12 +61,10 @@ const useRoleStore = defineStore('role', {
         { path: 'WashLabel', name: 'WashLabel', component: WashLabel }
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
-      { path: 'StandardConfig', name: 'StandardConfig', component: StandardConfig },
-      { path: 'StandardManagement', name: 'StandardManagement', component: StandardManagement },
+      { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily },
       { path: 'StandardPage', name: 'StandardPage', component: StandardPage },
       { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
-      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
-      { path: 'BuyerManagement', name: 'BuyerManagement', component: BuyerManagement }
+      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig }
       ]
     }))
   }),

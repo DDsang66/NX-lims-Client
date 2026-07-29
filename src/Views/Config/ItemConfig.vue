@@ -10,18 +10,14 @@
           <el-form-item :label="$t('itemNameChn')">
             <el-input v-model="form.itemNameChn" placeholder="" clearable style="width: 200px"></el-input>
           </el-form-item>
-          <el-form-item :label="$t('standard')">
-            <el-select v-model="form.standard" placeholder="" filterable clearable style="width: 200px"></el-select>
-          </el-form-item>
           <el-form-item style="flex: 1; margin-right: 0; text-align: right;">
-            <el-button type="primary" @click="searchList">{{$t("search")}}</el-button>
             <el-button type="primary" @click="addOpen">{{$t("add")}}</el-button>
           </el-form-item>
         </el-form>
       </div>
 
       <!-- 表格区域 -->
-      <el-table :data="itemTableData" border class="removeTableGaps" style="width: 100%">
+      <el-table :data="filteredTableData" border class="removeTableGaps" style="width: 100%">
         <el-table-column :label="$t('ItemName-En')" prop="itemNameEn" width="200" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('ItemName-Chn')" prop="itemNameChn" width="200" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('Cited Standards')" prop="standard" min-width="210" show-overflow-tooltip></el-table-column>
@@ -107,7 +103,7 @@
 </template>
 
 <script setup>
-  import { reactive, ref } from "vue";
+  import { reactive, ref, computed } from "vue";
   import { Delete, Edit, Clock } from "@element-plus/icons-vue";
 
   // 对话框表单
@@ -122,8 +118,7 @@
   // 查询表单
   const form = reactive({
     itemNameEn: '',
-    itemNameChn: '',
-    standard: ''
+    itemNameChn: ''
   });
 
   // 表格数据
@@ -147,6 +142,13 @@
       modifyHistory: []
     }
   ]);
+
+  const filteredTableData = computed(() => {
+    return itemTableData.value.filter(item => {
+      return (!form.itemNameEn || (item.itemNameEn || '').toLowerCase().includes(form.itemNameEn.toLowerCase())) &&
+             (!form.itemNameChn || (item.itemNameChn || '').toLowerCase().includes(form.itemNameChn.toLowerCase()));
+    });
+  });
 
   // 对话框展示
   const dialogVisible = ref(false);
@@ -211,11 +213,6 @@
 
   function addCancel() {
     dialogVisible.value = false;
-  }
-
-  function searchList() {
-    console.log("Searching with:", form);
-    // 这里添加实际的搜索逻辑
   }
 
   function deleteRow(row) {

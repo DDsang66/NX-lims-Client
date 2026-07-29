@@ -151,9 +151,6 @@
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
             </el-menu-item>
-            <el-menu-item index="/main/StandardConfig">
-              <span>Standard Overview</span>
-            </el-menu-item>
             <el-menu-item index="/main/OrderOverview">
               <span>Reporting List</span>
             </el-menu-item>
@@ -169,20 +166,14 @@
               <el-icon><Setting /></el-icon>
               <span>Lab Management</span>
             </template>
-            <el-menu-item index="/main/StandardManagement">
-              <span>Standard Management</span>
+            <el-menu-item index="/main/StandardFamily">
+              <span>Standard Family</span>
             </el-menu-item>
             <el-menu-item index="/main/StandardPage">
-              <span>Standard</span>
+              <span>Standard Management</span>
             </el-menu-item>
             <el-menu-item index="/main/ItemConfig">
               <span>Test Item Management</span>
-            </el-menu-item>
-            <el-menu-item index="/main/BuyerManagement">
-              <span>Buyer Management</span>
-            </el-menu-item>
-            <el-menu-item index="/main/StandardConfig">
-              <span>Manual Management</span>
             </el-menu-item>
             <el-menu-item index="/main/ParamConfig">
               <span>Test Logic Config</span>
