@@ -77,11 +77,11 @@
   const menuName = ref([
     { value: 'Regulation (Eu) No. 1007/2011', label: 'Regulation (Eu) No. 1007/2011' },
     { value: 'AATCC TM20-2021',               label: 'AATCC TM20-2021' },
-    { value: 'AATCC TM20-2021  AATCC TM20A-2021e', label: 'AATCC TM20-2021  AATCC TM20A-2021e' },
+    { value: 'AATCC TM20-2021  AATCC TM20A-2025', label: 'AATCC TM20-2021  AATCC TM20A-2025' },
     { value: 'ISO1833',                       label: 'ISO1833' },
     { value: 'DIN EN ISO 1833',               label: 'DIN EN ISO 1833' },
     { value: 'FZ/T 01057.1-4–2007',           label: 'FZ/T 01057.1-4–2007' },
-    { value: 'AATCC TM20-2021 AATCC TM20A-2021e (Korea)', label: 'AATCC TM20-2021 AATCC TM20A-2021e (Korea)' },
+    { value: 'AATCC TM20-2021 AATCC TM20A-2025 (Korea)', label: 'AATCC TM20-2021 AATCC TM20A-2025 (Korea)' },
     { value: 'CAN/CGSB-4.2 No.14-2005',       label: 'CAN/CGSB-4.2 No.14-2005' },
     { value: 'CNS 2339-1:2013 CNS 2339-2:2013', label: 'CNS 2339-1:2013 CNS 2339-2:2013' },
     { value: 'JIS L1030-1:2012 JIS L1030-2:2012', label: 'JIS L1030-1:2012 JIS L1030-2:2012' }

@@ -5,7 +5,7 @@
       <div class="mainSelectContainer">
         <div>
           <el-text size="large">ReportNo.</el-text>
-          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+          <el-input placeholder="" v-model="searchParams.reportNumber" style="width: 150px;" />
           <el-button type="primary" @click="search">Search</el-button>
         </div>
         <div>
@@ -54,7 +54,7 @@
         </div>
         <div>
           <el-text>OrderEntry</el-text>
-          <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
+          <el-input v-model="searchParams.orderEntryPerson" style="width: 100px"></el-input>
         </div>
       </div>
       <el-table class="removeTableGaps"
@@ -65,7 +65,7 @@
         <el-table-column type="expand">
           <template #default="props">
             <div style="margin-left: 50px;">
-              <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
+              <el-table :data="props.row.lines" style="width: 100%" ref="innerTableRef" border>
                 <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
                 <el-table-column label="Lab-In" width="100">
                   <template #default="scope">
@@ -74,7 +74,7 @@
                 </el-table-column>
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
-                <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="sampleCount" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
                 <el-table-column prop="labOut" label="Lab-Out" width="100" :formatter="funcs.strTimeColumnFormatter" />
@@ -105,9 +105,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-        <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
         <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
           <template #default="scope">
@@ -126,9 +126,9 @@
                 border
                 style="width:100%;" height="600px"
                 v-if="searchParams.group!=='All'">
-        <!--订单id埋点，scope.row.recordId读取-->
-        <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-        <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <!--订单id埋点，scope.row.lineId读取-->
+        <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" label="Lab-In">
@@ -138,7 +138,7 @@
         </el-table-column>
         <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
         <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />
         <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
         <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
@@ -177,7 +177,7 @@
         <el-descriptions :column="2" border>
           <!-- 订单id-->
           <el-descriptions-item label="RecordId.">
-            <el-input v-model="reportGroupDelete.recordId" readonly />
+            <el-input v-model="reportGroupDelete.lineId" readonly />
           </el-descriptions-item>
           <!--申请人，应该直接取store中的User-->
           <el-descriptions-item label="Applicant">
@@ -483,7 +483,7 @@
 
   var editDialogOpen = ref(false)
   //删除
-  const reportGroupDelete = ref<{ recordId: string }>({ recordId: '' })  /* 当前行数据（来自 scope.row） */
+  const reportGroupDelete = ref<{ lineId: string }>({ lineId: '' })  /* 当前行数据（来自 scope.row） */
   const reason = ref('')  /* 删除理由 */
   var deleteDialogOpen = ref(false)
   //表格数据
@@ -491,15 +491,15 @@
   const reportGroupList = ref([])
   const funcs = inject('funcs')
   const searchParams = reactive({
-    recordId: "",
-    reportNum: "",
+    lineId: "",
+    reportNumber: "",
     timeType: "month",
     timeRange: '',
     group: groups[0],
     status: "All",
     timeOpt: "default",
     express: "All",
-    orderEntry: "",
+    orderEntryPerson: "",
   })
   var reportGroupEdit = ref({
     group: searchParams.group,
@@ -543,7 +543,7 @@
   function openEdit(row) {
     if (searchParams.group === 'All') {
       reportEdit.value = JSON.parse(JSON.stringify(row))
-      let datas = reportEdit.value.reportNum.split('.')
+      let datas = reportEdit.value.reportNumber.split('.')
       reportEdit.value.data1 = datas[0] + '.'
       reportEdit.value.data2 = datas[1] + '.'
       reportEdit.value.data3 = datas[2] + '.'
@@ -552,7 +552,7 @@
     }
     else {
       reportGroupEdit.value = JSON.parse(JSON.stringify(row))
-      let datas = reportGroupEdit.value.reportNum.split('.')
+      let datas = reportGroupEdit.value.reportNumber.split('.')
       reportGroupEdit.value.data1 = datas[0] + '.'
       reportGroupEdit.value.data2 = datas[1] + '.'
       reportGroupEdit.value.data3 = datas[2] + '.'
@@ -611,7 +611,7 @@
           }
         }
       }
-      reportEdit.value.reportNum = reportEdit.value.data1 + reportEdit.value.data2 + reportEdit.value.data3 + reportEdit.value.data4 + reportEdit.value.data5
+      reportEdit.value.reportNumber = reportEdit.value.data1 + reportEdit.value.data2 + reportEdit.value.data3 + reportEdit.value.data4 + reportEdit.value.data5
     } else {
       const v = reportGroupEdit.value;
       if (!v.dueDate) {
@@ -627,7 +627,7 @@
       if (v.labIn && !(new Date(v.labIn) <= adjustedDueDate)) {
         return alert('Lab-In must be on or before the due date.');
       }
-      reportGroupEdit.value.reportNum = reportGroupEdit.value.data1 + reportGroupEdit.value.data2 + reportGroupEdit.value.data3 + reportGroupEdit.value.data4 + reportGroupEdit.value.data5
+      reportGroupEdit.value.reportNumber = reportGroupEdit.value.data1 + reportGroupEdit.value.data2 + reportGroupEdit.value.data3 + reportGroupEdit.value.data4 + reportGroupEdit.value.data5
     }
     if (searchParams.group === 'All') {
       if (reportEdit.value.groups.length !== new Set(reportEdit.value.groups.map(g => g.group)).size) {
@@ -729,7 +729,7 @@
 
   /* delete--------------------------------------------------------------------------------------- */
   //点击删除按钮
-  function openDelete(row: { recordId: string }) {
+  function openDelete(row: { lineId: string }) {
     reportGroupDelete.value = row
     reason.value = ''
     deleteDialogOpen.value = true
@@ -746,7 +746,7 @@
       return
     }
     const dto = {
-      items: [{ recordId: reportGroupDelete.value.recordId, reason: reason.value }],
+      items: [{ lineId: reportGroupDelete.value.lineId, reason: reason.value }],
       userId: authStore.id
     }
     console.log(dto)

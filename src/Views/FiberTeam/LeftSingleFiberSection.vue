@@ -119,11 +119,6 @@
               </table>
             </div>
 
-            <!-- 结果 -->
-            <div class="line-flex-container result-row">
-              <label>Composition > 50%</label>
-              <el-input type="text" :value="getMaxComposition(section.rows)" disabled style="flex:1" />
-            </div>
           </div>
         </div>
 
@@ -373,7 +368,7 @@
     if (!location) return alert('Please enter a Location')
     if (!composition) return alert('Please select a composition')
 
-    const existingRow = currentSection.rows.find(r => r.composition === composition)
+    const existingRow = currentSection.rows.find(r => r.composition === composition && r.location === location)
 
     if (existingRow) {
       existingRow.location = location
@@ -385,38 +380,6 @@
         trial1: gsm
       })
     }
-
-    inputRow.location = ''
-    inputRow.composition = ''
-    inputRow.gradientGsm = null
-  }
-
-  //计算MaxComposition
-  function getMaxComposition(rows){
-    if (!rows || rows.length === 0) return ''
-
-    let synthTotal = 0
-    let natTotal = 0
-    let totalRate = 0
-
-    rows.forEach(r => {
-      const rate1 = parseFloat(r.trial1) || 0
-      // 只使用 Trial #1 的值
-      totalRate += rate1
-
-      if (isSynth(r.composition)) {
-        synthTotal += rate1
-      } else if (isNatural(r.composition)) {
-        natTotal += rate1
-      }
-    })
-
-    if (totalRate === 0) return ''
-
-    const synthPercent = (synthTotal / totalRate) * 100
-    const natPercent = (natTotal / totalRate) * 100
-
-    return synthPercent > 50 ? 'Synth' : natPercent > 50 ? 'Natural' : ''
   }
 
   //删除行

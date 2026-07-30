@@ -26,7 +26,7 @@
             <el-date-picker v-model="inputRow.dueDate" type="date" placeholder=""  :size="size"></el-date-picker>
           </el-form-item>
           <el-form-item label="CS">
-            <el-select  v-model="inputRow.cs" filterable placeholder="" :size="size" style="width: 150px">
+            <el-select  v-model="inputRow.customerServiceId" filterable placeholder="" :size="size" style="width: 150px">
               <el-option v-for="cs in CSList" :key="cs.id" :value="cs.id" :label="cs.customerService1"></el-option>
             </el-select>
           </el-form-item>
@@ -71,9 +71,9 @@
       </div>
 
       <el-table border :data="rows" class="removeTableGaps removeTableBorder">
-        <el-table-column prop="reportNum" label="ReportNo." width="150">
+        <el-table-column prop="reportNumber" label="ReportNo." width="150">
         </el-table-column>
-        <el-table-column prop="group" label="Group" width="100">
+        <el-table-column prop="testGroup" label="Group" width="100">
         </el-table-column>
         <el-table-column label="Due-Date" width="250">
           <template #default="scope">
@@ -114,8 +114,8 @@
       <el-table-column type="expand">
         <template #default="props">
           <div style="margin-left: 50px">
-            <el-table :data="props.row.groups" style="width: 100%" border>
-              <el-table-column label="Group" prop="group" width="100"/>
+            <el-table :data="props.row.lines" style="width: 100%" border>
+              <el-table-column label="Group" prop="testGroup" width="100"/>
               <el-table-column label="Lab-In" width="150">
                 <template #default="scope">
                   {{formatTime(new Date(scope.row.labIn))}}
@@ -129,7 +129,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo." />
+      <el-table-column prop="reportNumber" label="ReportNo." />
       <el-table-column prop="orderEntry" label="OrderEntry" />
       <el-table-column prop="cs" label="CS" />
       <el-table-column prop="testGroups" label="Groups" >
@@ -178,12 +178,12 @@ var timer=null;
 var firstTimeout=null;
 /* 输入行 */
 const inputRow = reactive({
-  reportNum:'',
-  orderEntry:'',
+  reportNumber:'',
+  orderEntryPerson:'',
   express:'',
   dueDate:'',
-  cs:'',
-  group:'',
+  customerServiceId:'',
+  testGroup:'',
   labIn:new Date(),
 })
 //CS列表
@@ -272,19 +272,19 @@ const formatTime = (date) => {
 function addRow() {
   // console.log("dueDate:"+inputRow.dueDate)
   // console.log(inputRow.labIn)
-  inputRow.reportNum=reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5
+  inputRow.reportNumber=reportNums.data1+reportNums.data2+reportNums.data3+reportNums.data4+reportNums.data5
   inputRow.labIn=new Date()
   //备份初始状态
   let originalRows=[...rows]
   // console.log(inputRow.labIn)
   if(originalRows.length>0){
     let thisReportNum=originalRows[0].reportNum
-    if(inputRow.reportNum!==thisReportNum){
+    if(inputRow.reportNumber!==thisReportNum){
       return alert('Only one order can be submitted at a time.So all report numbers need to be the same.')
     }
   }
   //判断inputRow的任何部分为空
-  if(!inputRow.reportNum||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
+  if(!inputRow.reportNumber||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
     alert('Please fill in all fields.')
   }else{
     //存储重复数据
@@ -300,7 +300,7 @@ function addRow() {
         duplicateRows.push(group)
     }
     if(duplicateRows.length>0){
-      alert('The report with reportNumber '+inputRow.reportNum+' and Group '+duplicateRows.join(',')+' already exists, adding failed.')
+      alert('The report with reportNumber '+inputRow.reportNumber+' and Group '+duplicateRows.join(',')+' already exists, adding failed.')
       rows.length=0
       rows.push(...originalRows)
     }
@@ -317,7 +317,7 @@ function addRow() {
 
 function isRowsContain(rows, row1) {
   for (const row of rows) {
-    if(row.reportNum===row1.reportNum&&row.group===row1.group)
+    if(row.reportNumber===row1.reportNum&&row.testGroup===row1.group)
       return true
   }
   return false
@@ -416,7 +416,7 @@ onMounted(() => {
     timer = setInterval(()=>inputRow.labIn=new Date(), 60000)
   }, delay)
   //获取user并赋值给orderEntry
-  inputRow.orderEntry=authStore.user
+  inputRow.orderEntryPerson=authStore.user
   //获取CSList
   getCSList()
   //获取

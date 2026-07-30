@@ -28,6 +28,7 @@ import BuyerManual from "@/Views/BuyerManual.vue";
 import OrderOverview from "@/Views/OrderOverview.vue";
 import WashLabel from "@/Views/WashLabel/WashLabel.vue";
 import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
+import RuleConfig from "@/Views/Config/RuleConfig.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -64,7 +65,8 @@ const useRoleStore = defineStore('role', {
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily },
       { path: 'StandardPage', name: 'StandardPage', component: StandardPage },
       { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
-      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig }
+      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
+      { path: 'RuleConfig', name: 'RuleConfig', component: RuleConfig }
       ]
     }))
   }),

@@ -181,6 +181,9 @@
             <el-menu-item index="/main/FormulaConfig">
               <span>Formula Config</span>
             </el-menu-item>
+            <el-menu-item index="/main/RuleConfig">
+              <span>Rule Config</span>
+            </el-menu-item>
           </el-sub-menu>
           <!-- Personal Center -->
           <el-menu-item index="/main/Profile">
