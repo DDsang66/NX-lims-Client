@@ -37,8 +37,8 @@
       <el-table-column type="expand">
         <template #default="props">
           <div style="margin-left: 50px;">
-            <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" prop="group" :formatter="funcs.emptyDisplay" />
+            <el-table :data="props.row.lines" style="width: 100%" ref="innerTableRef" border>
+              <el-table-column label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
               <el-table-column label="Lab-In">
                 <template #default="scope">
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -46,7 +46,7 @@
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />-->
+              <el-table-column prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />-->
               <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <!--<el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
@@ -74,9 +74,9 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
       <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
       <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
         <template #default="scope">
@@ -91,9 +91,9 @@
               style="width:100%;" height="600px"
               v-if="searchParams.group!=='All'">-->
       <!--订单id埋点，scope.row.recordId读取-->
-      <!--<el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+      <!--<el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+      <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" label="Lab-In">
         <template #default="scope">
@@ -102,7 +102,7 @@
       </el-table-column>
       <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />-->
+      <el-table-column width="100" prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />-->
       <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <!--<el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
@@ -207,7 +207,7 @@ async function reviewFinish(row) {
 }
 function getExpresses(row) {
   let expresses = new Set()
-  for (const group of row.groups) {
+  for (const group of row.lines) {
     expresses.add(group.express)
   }
 
@@ -299,8 +299,8 @@ onMounted(() => {
       <el-table-column type="expand">
         <template #default="props">
           <div style="margin-left: 50px;">
-            <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-              <el-table-column label="Group" prop="group" :formatter="funcs.emptyDisplay" />
+            <el-table :data="props.row.lines" style="width: 100%" ref="innerTableRef" border>
+              <el-table-column label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
               <el-table-column label="Lab-In">
                 <template #default="scope">
                   {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -308,7 +308,7 @@ onMounted(() => {
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
               <el-table-column prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-              <el-table-column prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+              <el-table-column prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />
               <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
               <el-table-column prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
               <el-table-column prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
@@ -352,9 +352,9 @@ onMounted(() => {
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+      <el-table-column prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
       <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
       <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
         <template #default="scope">
@@ -370,9 +370,9 @@ onMounted(() => {
               style="width:100%;" height="600px"
               v-if="searchParams.group!=='All'">
       <!--订单id埋点，scope.row.recordId读取-->
-      <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-      <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+      <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+      <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
       <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" label="Lab-In">
         <template #default="scope">
@@ -381,7 +381,7 @@ onMounted(() => {
       </el-table-column>
       <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
       <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-      <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+      <el-table-column width="100" prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />
       <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
       <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
       <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />
@@ -503,7 +503,7 @@ async function reviewFinish(row) {
 }
 function getExpresses(row) {
   let expresses = new Set()
-  for (const group of row.groups) {
+  for (const group of row.lines) {
     expresses.add(group.express)
   }
 

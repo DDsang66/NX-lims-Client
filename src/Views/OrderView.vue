@@ -74,7 +74,7 @@
                 </el-table-column>
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
-                <el-table-column prop="testSampleNum" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="sampleCount" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
                 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
                 <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="reviewFinish" label="Review-Finished" width="100" :formatter="funcs.strTimeColumnFormatter"></el-table-column>
@@ -96,7 +96,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
         <el-table-column prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
         <el-table-column prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
@@ -118,9 +118,9 @@
                 style="width:100%;" height="600px"
                 v-if="searchParams.group!=='All'">
         <!--订单id埋点，scope.row.recordId读取-->
-        <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-        <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" label="Lab-In">
           <template #default="scope">
@@ -129,7 +129,7 @@
         </el-table-column>
         <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
         <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="testSampleNum" label="No. of Sample" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />
         <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
         <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" prop="reviewFinish" label="Review-Finished" :formatter="funcs.strTimeColumnFormatter" />

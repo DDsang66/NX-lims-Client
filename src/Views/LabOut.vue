@@ -37,8 +37,8 @@
         <el-table-column type="expand">
           <template #default="props">
             <div style="margin-left: 50px;">
-              <el-table :data="props.row.groups" style="width: 100%" ref="innerTableRef" border>
-                <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+              <el-table :data="props.row.lines" style="width: 100%" ref="innerTableRef" border>
+                <el-table-column label="Group" fixed prop="testGroup" width="80" :formatter="funcs.emptyDisplay" />
                 <el-table-column label="Lab-In" width="100">
                   <template #default="scope">
                     {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -46,7 +46,7 @@
                 </el-table-column>
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
-                <el-table-column prop="testSampleNum" label="No. of Sample" width="90" >
+                <el-table-column prop="sampleCount" label="No. of Sample" width="90" >
                   <template #default="scope">
                     <el-input v-model="scope.row.testSampleNum"></el-input>
                   </template>
@@ -87,9 +87,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-        <el-table-column prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column prop="testGroups" label="Groups" :formatter="funcs.emptyDisplay" />
         <el-table-column label="Expresses" :formatter="funcs.emptyDisplay">
           <template #default="scope">
@@ -104,9 +104,9 @@
                 style="width:100%;" height="600px"
                 v-if="searchParams.group!=='All'">
         <!--订单id埋点，scope.row.recordId读取-->
-        <el-table-column fixed width="160" prop="reportNum" label="ReportNo." :formatter="funcs.emptyDisplay" />
-        <el-table-column width="140" prop="orderEntry" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
+        <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" label="Lab-In">
           <template #default="scope">
@@ -287,7 +287,7 @@ async function delayConfirm() {
 }
 function getExpresses(row) {
   let expresses = new Set()
-  for (const group of row.groups) {
+  for (const group of row.lines) {
     expresses.add(group.express)
   }
 

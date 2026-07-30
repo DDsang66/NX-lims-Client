@@ -130,8 +130,8 @@
         </template>
       </el-table-column>
       <el-table-column prop="reportNumber" label="ReportNo." />
-      <el-table-column prop="orderEntry" label="OrderEntry" />
-      <el-table-column prop="cs" label="CS" />
+      <el-table-column prop="orderEntryPerson" label="OrderEntry" />
+      <el-table-column prop="customerServiceName" label="CS" />
       <el-table-column prop="testGroups" label="Groups" >
       </el-table-column>
     </el-table>

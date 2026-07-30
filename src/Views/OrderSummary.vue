@@ -120,7 +120,7 @@
         <!--订单id埋点，scope.row.lineId读取-->
         <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
         <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" label="Lab-In">
           <template #default="scope">

@@ -66,7 +66,7 @@
           <template #default="props">
             <div style="margin-left: 50px;">
               <el-table :data="props.row.lines" style="width: 100%" ref="innerTableRef" border>
-                <el-table-column label="Group" fixed prop="group" width="80" :formatter="funcs.emptyDisplay" />
+                <el-table-column label="Group" fixed prop="testGroup" width="80" :formatter="funcs.emptyDisplay" />
                 <el-table-column label="Lab-In" width="100">
                   <template #default="scope">
                     {{scope.row.labIn ? formatTime(new Date(scope.row.labIn)):'-'}}
@@ -129,7 +129,7 @@
         <!--订单id埋点，scope.row.lineId读取-->
         <el-table-column fixed width="160" prop="reportNumber" label="ReportNo." :formatter="funcs.emptyDisplay" />
         <el-table-column width="140" prop="orderEntryPerson" label="Order-Entry" :formatter="funcs.emptyDisplay" />
-        <el-table-column width="100" prop="cs" label="CS" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="100" prop="customerServiceName" label="CS" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="Group" prop="testGroup" :formatter="funcs.emptyDisplay" />
         <el-table-column width="150" label="Lab-In">
           <template #default="scope">
@@ -529,7 +529,7 @@
 
   function getExpresses(row) {
     let expresses = new Set()
-    for (const group of row.groups) {
+    for (const group of row.lines) {
       expresses.add(group.express)
     }
 
