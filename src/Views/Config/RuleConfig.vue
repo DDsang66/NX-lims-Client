@@ -19,6 +19,20 @@
       </div>
 
       <el-table :data="pagedData" border class="removeTableGaps" style="width: 100%" v-loading="loading">
+        <el-table-column type="expand">
+          <template #default="{ row }">
+            <div style="margin-left: 30px; padding: 10px 0;">
+              <div style="margin-bottom: 8px;">
+                <b>Param Structure ID:</b> {{ row.paramStructureId || '-' }}
+              </div>
+              <el-table :data="matchRows(row)" border size="small" style="width: 100%">
+                <el-table-column prop="type" label="Type" width="120"></el-table-column>
+                <el-table-column prop="field" label="Field" width="200"></el-table-column>
+                <el-table-column prop="value" label="Value" min-width="200" show-overflow-tooltip></el-table-column>
+              </el-table>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="id" label="Rule ID" width="200" show-overflow-tooltip></el-table-column>
         <el-table-column prop="formulaId" label="Formula ID" width="180" show-overflow-tooltip></el-table-column>
         <el-table-column prop="paramName" label="Param Name" width="150"></el-table-column>
@@ -30,11 +44,23 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Condition Pattern" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">{{ conditionPattern(row) }}</template>
-        </el-table-column>
         <el-table-column prop="resultValue" label="Result Value" width="120"></el-table-column>
         <el-table-column prop="resultNotes" label="Result Notes" min-width="200" show-overflow-tooltip></el-table-column>
+        <el-table-column label="Operation" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" :icon="Edit" circle size="small" @click="editOpen(row)"></el-button>
+            <el-tooltip :content="row.isActive ? 'Deactivate' : 'Activate'" placement="top">
+              <el-button :type="row.isActive ? 'danger' : 'success'" circle size="small"
+                         style="margin-left: 4px"
+                         @click="row.isActive ? deactiveRule(row) : activeRule(row)">
+                <el-icon size="14">
+                  <CircleCheck v-if="!row.isActive" />
+                  <VideoPause v-else />
+                </el-icon>
+              </el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
       </el-table>
 
       <div style="display: flex; justify-content: center; margin-top: 16px;">
@@ -49,10 +75,10 @@
       </div>
     </div>
 
-    <el-dialog title="Add Rule" v-model="dialogVisible" width="550px">
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="70%">
       <el-form :model="dialogForm" label-width="150px">
         <el-form-item label="Rule ID">
-          <el-input v-model="dialogForm.id" placeholder=""></el-input>
+          <el-input v-model="dialogForm.id" placeholder="" :disabled="dialogTitle === 'Edit Rule'"></el-input>
         </el-form-item>
         <el-form-item label="Formula ID">
           <el-input v-model="dialogForm.formulaId" placeholder=""></el-input>
@@ -96,7 +122,8 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, ref } from "vue";
+import { computed, inject, onMounted, ref, watch } from "vue";
+import { Edit, CircleCheck, VideoPause } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 const request = inject("request");
@@ -123,6 +150,7 @@ const pagedData = computed(() => {
 });
 
 const dialogVisible = ref(false);
+const dialogTitle = ref('Add Rule');
 const inputMode = ref('text');
 const dialogForm = ref({
   id: '',
@@ -136,7 +164,15 @@ const dialogForm = ref({
   ruleText: ''
 });
 
+const jsonTemplate = JSON.stringify({ equalMatches: [], comparisonMatches: [], inMatches: [], compositeMatches: [] }, null, 2);
+watch(inputMode, (mode) => {
+  if (mode === 'json' && !dialogForm.value.matchesJson) {
+    dialogForm.value.matchesJson = jsonTemplate;
+  }
+});
+
 function addOpen() {
+  dialogTitle.value = 'Add Rule';
   dialogForm.value = {
     id: '',
     formulaId: '',
@@ -149,6 +185,29 @@ function addOpen() {
     ruleText: ''
   };
   inputMode.value = 'text';
+  dialogForm.value.matchesJson = '';
+  dialogVisible.value = true;
+}
+
+function editOpen(row) {
+  dialogTitle.value = 'Edit Rule';
+  inputMode.value = 'json';
+  dialogForm.value = {
+    id: row.id,
+    formulaId: row.formulaId || '',
+    paramStructureId: row.paramStructureId || '',
+    paramName: row.paramName || '',
+    paramResult: row.resultValue != null ? String(row.resultValue) : '',
+    priority: row.priority || 1,
+    stopOnMatch: row.stopOnMatch !== false,
+    matchesJson: JSON.stringify({
+      equalMatches: row.equalMatches || [],
+      comparisonMatches: row.comparisonMatches || [],
+      inMatches: row.inMatches || [],
+      compositeMatches: row.compositeMatches || []
+    }, null, 2),
+    ruleText: ''
+  };
   dialogVisible.value = true;
 }
 
@@ -181,6 +240,11 @@ function confirmAdd() {
   if (dialogForm.value.matchesJson.trim()) {
     try {
       const parsed = JSON.parse(dialogForm.value.matchesJson);
+
+      // 校验 JSON 结构
+      const err = validateMatches(parsed);
+      if (err) { ElMessage.error(err); submitLoading.value = false; return; }
+
       matches = {
         equalMatches: parsed.equalMatches || [],
         comparisonMatches: parsed.comparisonMatches || [],
@@ -194,25 +258,92 @@ function confirmAdd() {
     }
   }
 
-  request.post('/ParamRules/add-json', {
-    id: dialogForm.value.id,
-    formulaId: dialogForm.value.formulaId,
-    paramStructureId: dialogForm.value.paramStructureId,
-    paramName: dialogForm.value.paramName,
-    paramResult: dialogForm.value.paramResult,
-    priority: dialogForm.value.priority,
-    stopOnMatch: dialogForm.value.stopOnMatch,
-    ...matches
-  }).then(res => {
+  const isEdit = dialogTitle.value === 'Edit Rule';
+  const url = isEdit ? '/ParamRules/update-json' : '/ParamRules/add-json';
+  const body = isEdit
+    ? {
+        id: dialogForm.value.id,
+        formulaId: dialogForm.value.formulaId,
+        paramName: dialogForm.value.paramName,
+        priority: dialogForm.value.priority,
+        isActive: dialogForm.value.stopOnMatch,
+        resultValue: dialogForm.value.paramResult || undefined,
+        resultNotes: undefined,
+        ...matches
+      }
+    : {
+        id: dialogForm.value.id,
+        formulaId: dialogForm.value.formulaId,
+        paramStructureId: dialogForm.value.paramStructureId,
+        paramName: dialogForm.value.paramName,
+        paramResult: dialogForm.value.paramResult,
+        priority: dialogForm.value.priority,
+        stopOnMatch: dialogForm.value.stopOnMatch,
+        ...matches
+      };
+  const method = isEdit ? request.put : request.post;
+
+  method(url, body).then(res => {
     if (res.data.isSuccess) {
-      ElMessage.success('Rule added');
+      ElMessage.success(isEdit ? 'Rule updated' : 'Rule added');
       dialogVisible.value = false;
       fetchAll();
     } else {
-      ElMessage.error(res.data.error || 'Failed to add rule');
+      ElMessage.error(res.data.error || 'Failed');
     }
-  }).catch(() => ElMessage.error('Failed to add rule'))
+  }).catch(() => ElMessage.error('Failed'))
     .finally(() => submitLoading.value = false);
+}
+
+function deactiveRule(row) {
+  request.put(`/ParamRules/deactive/${row.id}`).then(res => {
+    if (res.data.isSuccess) {
+      row.isActive = false;
+      ElMessage.success('Deactivated');
+    } else {
+      ElMessage.error(res.data.error || 'Failed');
+    }
+  }).catch(() => ElMessage.error('Failed'));
+}
+
+function activeRule(row) {
+  request.put(`/ParamRules/active/${row.id}`).then(res => {
+    if (res.data.isSuccess) {
+      row.isActive = true;
+      ElMessage.success('Activated');
+    } else {
+      ElMessage.error(res.data.error || 'Failed');
+    }
+  }).catch(() => ElMessage.error('Failed'));
+}
+
+const VALID_OPERATORS = ['Equal', 'NotEqual', 'GreaterThan', 'GreaterThanOrEqual', 'LessThan', 'LessThanOrEqual'];
+const VALID_LOGICS = ['And', 'Or', 'Not'];
+
+function validateMatches(parsed) {
+  if (!parsed || typeof parsed !== 'object') return 'Matches must be a JSON object';
+  const allowedRoot = ['equalMatches', 'comparisonMatches', 'inMatches', 'compositeMatches'];
+  for (const key of Object.keys(parsed)) {
+    if (!allowedRoot.includes(key)) return `Invalid top-level key: "${key}". Allowed: ${allowedRoot.join(', ')}`;
+  }
+  for (const m of parsed.equalMatches || []) {
+    for (const k of Object.keys(m)) { if (!['field', 'value'].includes(k)) return `Invalid key "${k}" in equalMatches. Allowed: field, value`; }
+  }
+  for (const m of parsed.comparisonMatches || []) {
+    for (const k of Object.keys(m)) { if (!['fieldPath', 'operator', 'expectedValue'].includes(k)) return `Invalid key "${k}" in comparisonMatches`; }
+    if (m.operator && !VALID_OPERATORS.includes(m.operator)) return `Invalid operator "${m.operator}" in comparisonMatches. Allowed: ${VALID_OPERATORS.join(', ')}`;
+  }
+  for (const m of parsed.inMatches || []) {
+    for (const k of Object.keys(m)) { if (!['field', 'values'].includes(k)) return `Invalid key "${k}" in inMatches. Allowed: field, values`; }
+  }
+  for (const m of parsed.compositeMatches || []) {
+    if (m.logic && !VALID_LOGICS.includes(m.logic)) return `Invalid logic "${m.logic}" in compositeMatches. Allowed: ${VALID_LOGICS.join(', ')}`;
+    for (const k of Object.keys(m)) { if (!['logic', 'fieldNames', 'subConditions'].includes(k)) return `Invalid key "${k}" in compositeMatches. Allowed: logic, fieldNames, subConditions`; }
+    for (const s of m.subConditions || []) {
+      for (const k of Object.keys(s)) { if (!['fieldPath', 'operator', 'expectedValue'].includes(k)) return `Invalid key "${k}" in compositeMatches[].subConditions`; }
+    }
+  }
+  return null; // 校验通过
 }
 
 function fetchAll() {
@@ -225,22 +356,22 @@ function fetchAll() {
   }).finally(() => loading.value = false);
 }
 
-function conditionPattern(row) {
-  const parts = [];
+function matchRows(row) {
+  const rows = [];
   for (const m of row.equalMatches || []) {
-    parts.push(`${m.field}=${m.value}`);
+    rows.push({ type: 'Equal', field: m.field, value: m.value });
   }
   for (const m of row.comparisonMatches || []) {
-    parts.push(`${m.fieldPath} ${m.operator} ${m.expectedValue}`);
+    rows.push({ type: 'Comparison', field: m.fieldPath, value: `${m.operator} ${m.expectedValue}` });
   }
   for (const m of row.inMatches || []) {
-    const vals = (m.values || []).join(',');
-    parts.push(`${m.field} IN [${vals}]`);
+    rows.push({ type: 'In', field: m.field, value: (m.values || []).join(', ') });
   }
   for (const m of row.compositeMatches || []) {
-    parts.push(`(${m.logic}: ${(m.fieldNames || []).join(',')})`);
+    const sub = (m.subConditions || []).map(s => `${s.fieldPath} ${s.operator} ${s.expectedValue}`).join('; ');
+    rows.push({ type: 'Composite', field: (m.fieldNames || []).join(', '), value: `${m.logic}: ${sub}` });
   }
-  return parts.join(' ; ') || '-';
+  return rows;
 }
 
 onMounted(() => fetchAll());
