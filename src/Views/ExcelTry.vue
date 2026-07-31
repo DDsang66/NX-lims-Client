@@ -368,7 +368,7 @@
                 key: currentDocumentKey.value
               });
 
-              if (response.data.success) {
+              if (response.data.isSuccess) {
                 ElMessage.success('文件已保存到系统');
                 isDocumentChanged.value = false;
               } else {

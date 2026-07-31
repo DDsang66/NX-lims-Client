@@ -46,9 +46,7 @@ function createAxiosInstance(config){
   return instance
 }
 const api = createAxiosInstance(oldConfig)
-api.documentSrc="http://localhost/web-apps/apps/api/documents/api.js"
-
-const newRequest=createAxiosInstance({baseURL:"http://localhost:5102"})
+api.documentSrc = "http://localhost:5130/web-apps/apps/api/documents/api.js"
 
 //错误处理的方法
 const errorHandle = (status, info) => {
@@ -76,6 +74,5 @@ const errorHandle = (status, info) => {
       break;
   }
 }
-export {newRequest};
 export default api;
 
