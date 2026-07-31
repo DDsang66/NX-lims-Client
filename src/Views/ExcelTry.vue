@@ -176,7 +176,7 @@
   import { computed, reactive, inject, ref, onBeforeUnmount, onMounted } from 'vue'
   import { ElMessage } from 'element-plus' 
   import { Plus } from '@element-plus/icons-vue'
-  import '@/utils/loadOnlyOffice.js'
+  import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
 
   const userStore = inject('userAuthStore')
   const isDocumentChanged = ref(false);
@@ -302,6 +302,8 @@
 
 
   async function loadDocument() {
+    // 确保 OnlyOffice SDK 已加载，避免 DocsAPI is not defined
+    await loadOnlyOfficeScript();
     if (loading.value) return
     loading.value = true
 
