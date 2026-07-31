@@ -74,6 +74,7 @@
                 </el-table-column>
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="rfidCode" label="RFID" width="180" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="sampleCount" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
                 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
                 <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />

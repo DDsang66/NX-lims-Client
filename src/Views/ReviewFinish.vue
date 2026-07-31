@@ -5,7 +5,7 @@
       <div class="mainSelectContainer">
         <div>
           <el-text size="large">ReportNo.</el-text>
-          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+          <el-input placeholder="" v-model="searchParams.reportNumber" style="width: 150px;" />
           <el-button type="primary" @click="search">Search</el-button>
         </div>
         <div>
@@ -148,15 +148,15 @@ const request = inject('request')
 const authStore = inject('userAuthStore')
 
 const searchParams = reactive({
-  recordId: "",
-  reportNum: "",
+  lineId: "",
+  reportNumber: "",
   timeType: "month",
   timeRange: '',
   group: 'All',
   status: "In Lab",
   timeOpt: "default",
   express: "All",
-  orderEntry: "",
+  orderEntryPerson: "",
 })
 const groups = ref(['All','Physics','Wet','Fiber','Flam'])
 //表格数据
@@ -226,7 +226,7 @@ function searchGroupChange() {
   search()
 }
 function expandChange(row, expandedRows){
-  expandRowKeys.value=expandedRows.map(item=>item.reportNum)
+  expandRowKeys.value=expandedRows.map(item=>item.reportNumber)
 }
 
 onMounted(() => {
@@ -265,7 +265,7 @@ onMounted(() => {
       <div class="mainSelectContainer">
         <div>
           <el-text size="large">ReportNo.</el-text>
-          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+          <el-input placeholder="" v-model="searchParams.reportNumber" style="width: 150px;" />
           <el-button type="primary" @click="search">Search</el-button>
         </div>
         <div>
@@ -444,15 +444,15 @@ const request = inject('request')
 const authStore = inject('userAuthStore')
 
 const searchParams = reactive({
-  recordId: "",
-  reportNum: "",
+  lineId: "",
+  reportNumber: "",
   timeType: "month",
   timeRange: '',
   group: 'All',
   status: "In Lab",
   timeOpt: "default",
   express: "All",
-  orderEntry: "",
+  orderEntryPerson: "",
 })
 const groups = ref(['All','Physics','Wet','Fiber','Flam'])
 //表格数据
@@ -522,7 +522,7 @@ function searchGroupChange() {
   search()
 }
 function expandChange(row, expandedRows){
-  expandRowKeys.value=expandedRows.map(item=>item.reportNum)
+  expandRowKeys.value=expandedRows.map(item=>item.reportNumber)
 }
 
 onMounted(() => {

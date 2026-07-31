@@ -6,7 +6,7 @@
         <div class="mainSelectContainer">
           <div>
             <el-text size="large">ReportNo.</el-text>
-            <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+            <el-input placeholder="" v-model="searchParams.reportNumber" style="width: 150px;" />
             <el-button type="primary" @click="search">Search</el-button>
           </div>
           <div>
@@ -31,7 +31,7 @@
                 border
                 style="width:100%;" height="75%"
                 v-if="searchParams.group==='All'"
-                row-key="reportNum"
+                row-key="reportNumber"
                 :expand-row-keys="expandRowKeys"
                 @expand-change="handleExpandChange">
         <el-table-column type="expand">
@@ -48,7 +48,7 @@
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="sampleCount" label="No. of Sample" width="90" >
                   <template #default="scope">
-                    <el-input v-model="scope.row.testSampleNum"></el-input>
+                    <el-input v-model="scope.row.sampleCount"></el-input>
                   </template>
                 </el-table-column>
                 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
@@ -117,7 +117,7 @@
         <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" label="No. of Sample" >
           <template #default="scope">
-            <el-input v-model="scope.row.testSampleNum"></el-input>
+            <el-input v-model="scope.row.sampleCount"></el-input>
           </template>
         </el-table-column>
         <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
@@ -164,7 +164,7 @@
     </div>
     <el-dialog v-model="delayDialogVisible"  width="50%">
       <el-form inline label-width="auto" style="width: 100%;font-weight: 600">
-        <el-form-item label="ReportNo.:">{{delayForm.reportNum}}</el-form-item>
+        <el-form-item label="ReportNo.:">{{delayForm.reportNumber}}</el-form-item>
         <el-form-item label="Group:">{{delayForm.group}}</el-form-item>
       </el-form>
       <el-form label-width="auto" style="width: 100%">
@@ -194,15 +194,15 @@ const request = inject('request')
 
 
 const searchParams = reactive({
-  recordId: "",
-  reportNum: "",
+  lineId: "",
+  reportNumber: "",
   timeType: "month",
   timeRange: '',
   group: 'All',
   status: "Review Finished",
   timeOpt: "default",
   express: "All",
-  orderEntry: "",
+  orderEntryPerson: "",
 })
 const groups = ref(['All','Physics','Wet','Fiber','Flam'])
 //表格数据
@@ -221,8 +221,8 @@ const delayDialogVisible = ref(false)
 const delayForm = ref({
   delayType: '',
   delayReason: '',
-  reportNum: '',
-  group: '',
+  reportNumber: '',
+  testGroup: '',
 })
 
 function handleCurrentChange() {
@@ -232,13 +232,13 @@ function handleSizeChange() {
   search()
 }
 function handleExpandChange(row, expandedRows){
-  expandRowKeys.value=expandedRows.map(item=>item.reportNum)
+  expandRowKeys.value=expandedRows.map(item=>item.reportNumber)
 }
 function openDelay(row,propsRow){
   delayDialogVisible.value = true
   delayForm.value=row
-  delayForm.value.reportNum = propsRow.reportNum || row.reportNum
-  delayForm.value.group = row.group
+  delayForm.value.reportNumber = propsRow.reportNumber || row.reportNumber
+  delayForm.value.testGroup = row.testGroup
 }
 
 async function search() {
@@ -255,12 +255,12 @@ async function search() {
   }
 }
 async function labOut(row) {
-  // console.log(row.testSampleNum)
-  if(!(Number(row.testSampleNum)>=0&&Number.isInteger(Number(row.testSampleNum))))
+  // console.log(row.sampleCount)
+  if(!(Number(row.sampleCount)>=0&&Number.isInteger(Number(row.sampleCount))))
     return alert('Please input a positive number of samples.')
   row.reviewFinishTime=row.reviewFinish
   row.testEngineer=row.testEngineer ||''
-  row.testGroup=row.group || searchParams.group
+  row.testGroup=row.testGroup || searchParams.group
   row.reportDueDate=row.dueDate
   row.orderInTime=row.labIn
   row.labOutTime=new Date()

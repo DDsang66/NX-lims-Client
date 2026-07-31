@@ -5,7 +5,7 @@
       <div class="mainSelectContainer">
         <div>
           <el-text size="large">ReportNo.</el-text>
-          <el-input placeholder="" v-model="searchParams.reportNum" style="width: 150px;" />
+          <el-input placeholder="" v-model="searchParams.reportNumber" style="width: 150px;" />
           <el-button type="primary" @click="search">Search</el-button>
         </div>
         <div>
@@ -54,7 +54,7 @@
         </div>
         <div>
           <el-text>OrderEntry</el-text>
-          <el-input v-model="searchParams.orderEntry" style="width: 100px"></el-input>
+          <el-input v-model="searchParams.orderEntryPerson" style="width: 100px"></el-input>
         </div>
       </div>
       <el-table class="removeTableGaps"
@@ -74,6 +74,7 @@
                 </el-table-column>
                 <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="funcs.strDateColumnFormatter" />
                 <el-table-column prop="express" label="Express" width="90" :formatter="funcs.emptyDisplay" />
+                <el-table-column prop="rfidCode" label="RFID" width="180" :formatter="funcs.emptyDisplay" />
                 <el-table-column prop="sampleCount" label="No. of Sample" width="90" :formatter="funcs.emptyDisplay" />
                 <!--              <el-table-column prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
                 <el-table-column prop="reviewer" label="Reviewer" width="150" :formatter="funcs.emptyDisplay" />
@@ -129,6 +130,7 @@
         </el-table-column>
         <el-table-column width="100" prop="dueDate" label="Due-Date" :formatter="funcs.strDateColumnFormatter" />
         <el-table-column width="100" prop="express" label="Express" :formatter="funcs.emptyDisplay" />
+        <el-table-column width="180" prop="rfidCode" label="RFID" :formatter="funcs.emptyDisplay" />
         <el-table-column width="100" prop="sampleCount" label="No. of Sample" :formatter="funcs.emptyDisplay" />
         <!--      <el-table-column width="100" prop="testItemNum" label="TestItemNum" :formatter="funcs.emptyDisplay" />-->
         <el-table-column width="120" prop="reviewer" label="Reviewer" :formatter="funcs.emptyDisplay" />
@@ -164,13 +166,13 @@
         <el-descriptions :column="2" border>
           <!-- Report 基本信息 -->
           <el-descriptions-item label="Report No.">
-            {{reportEdit.reportNum}}
+            {{reportEdit.reportNumber}}
           </el-descriptions-item>
           <el-descriptions-item label="Order Entry">
-            {{reportEdit.orderEntry}}
+            {{reportEdit.orderEntryPerson}}
           </el-descriptions-item>
           <el-descriptions-item label="CS">
-            {{reportEdit.cs}}
+            {{reportEdit.customerServiceName}}
           </el-descriptions-item>
           <el-descriptions-item label="Test Groups">
             {{reportEdit.testGroups}}
@@ -227,17 +229,17 @@
 
           <!-- ReportNo. -->
           <el-descriptions-item label="ReportNo.">
-            {{reportGroupEdit.reportNum}}
+            {{reportGroupEdit.reportNumber}}
           </el-descriptions-item>
 
           <!-- OrderEntry -->
           <el-descriptions-item label="OrderEntry">
-            {{reportGroupEdit.orderEntry}}
+            {{reportGroupEdit.orderEntryPerson}}
           </el-descriptions-item>
 
           <!-- CS -->
           <el-descriptions-item label="CS">
-            {{reportGroupEdit.cs}}
+            {{reportGroupEdit.customerServiceName}}
           </el-descriptions-item>
 
           <!-- Group -->
@@ -311,7 +313,7 @@ const groups = roleStore.getGroups
 const authStore = inject('userAuthStore')
 //编辑
 var reportEdit = ref({
-  reportNum: '',
+  reportNumber: '',
   data1: '',
   data2: '',
   data3: '',
@@ -324,7 +326,7 @@ const userList = ref([])
 var editDialogOpen = ref(false)
 var allOpen=ref(false)
 //删除
-const reportGroupDelete = ref<{ recordId: string }>({ recordId: '' })  /* 当前行数据（来自 scope.row） */
+const reportGroupDelete = ref<{ lineId: string }>({ lineId: '' })  /* 当前行数据（来自 scope.row） */
 const reason = ref('')  /* 删除理由 */
 var deleteDialogOpen = ref(false)
 //表格数据
@@ -332,15 +334,15 @@ const reportList = ref([])
 const reportGroupList = ref([])
 const funcs = inject('funcs')
 const searchParams = reactive({
-  recordId: "",
-  reportNum: "",
+  lineId: "",
+  reportNumber: "",
   timeType: "month",
   timeRange: '',
   group: groups[0],
   status: "All",
   timeOpt: "default",
   express: "All",
-  orderEntry: "",
+  orderEntryPerson: "",
 })
 var reportGroupEdit = ref({
   group: searchParams.group,
@@ -447,7 +449,7 @@ async function editDialogConfirm2(){
         }
       }
     }
-    reportEdit.value.reportNum=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
+    reportEdit.value.reportNumber=reportEdit.value.data1+reportEdit.value.data2+reportEdit.value.data3+reportEdit.value.data4+reportEdit.value.data5
   }else{
     const v = reportGroupEdit.value;
     if (!v.dueDate) {
@@ -463,7 +465,7 @@ async function editDialogConfirm2(){
     if (v.labIn && !(new Date(v.labIn) <= adjustedDueDate)) {
       return alert('Lab-In must be on or before the due date.');
     }
-    reportGroupEdit.value.reportNum=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
+    reportGroupEdit.value.reportNumber=reportGroupEdit.value.data1+reportGroupEdit.value.data2+reportGroupEdit.value.data3+reportGroupEdit.value.data4+reportGroupEdit.value.data5
   }
   if (searchParams.group === 'All') {
     if(reportEdit.value.groups.length!==new Set(reportEdit.value.groups.map(g => g.group)).size){
@@ -491,7 +493,7 @@ async function editDialogConfirm2(){
 
 /* delete--------------------------------------------------------------------------------------- */
 //点击删除按钮
-function openDelete(row: { recordId: string }) {
+function openDelete(row: { lineId: string }) {
   reportGroupDelete.value = row
   reason.value = ''
   deleteDialogOpen.value = true
@@ -508,7 +510,7 @@ async function deleteDialogConfirm() {
     return
   }
   const dto = {
-    items: [{ recordId: reportGroupDelete.value.recordId, reason: reason.value }],
+    items: [{ lineId: reportGroupDelete.value.lineId, reason: reason.value }],
     userId: authStore.id
   }
   console.log(dto)

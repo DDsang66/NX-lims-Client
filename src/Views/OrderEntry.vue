@@ -90,6 +90,15 @@
             </el-select>
           </template>
         </el-table-column>
+        <!-- RFID 扫码列 — Express 后、Remark 前 -->
+        <el-table-column label="RFID" width="200">
+          <template #default="scope">
+            <div style="display: flex; gap: 4px">
+              <el-input v-model="scope.row.rfidCode" placeholder="" size="small" style="flex:1" />
+              <el-button size="small" @click="scanRfid(scope.$index)">Scan</el-button>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="Remark">
           <template #default="scope">
             <el-input v-model="scope.row.remark" style="width: 100%" :size="size"></el-input>
@@ -123,6 +132,7 @@
               </el-table-column>
               <el-table-column prop="dueDate" label="Due-Date" width="100" :formatter="globalFunctions.strDateColumnFormatter"/>
               <el-table-column prop="express" label="Express" width="90"/>
+              <el-table-column prop="rfidCode" label="RFID" width="180"/>
               <el-table-column prop="remark" label="Remark" />
               <el-table-column prop="status" label="Status" width="100"></el-table-column>
             </el-table>
@@ -278,19 +288,19 @@ function addRow() {
   let originalRows=[...rows]
   // console.log(inputRow.labIn)
   if(originalRows.length>0){
-    let thisReportNum=originalRows[0].reportNum
+    let thisReportNum=originalRows[0].reportNumber
     if(inputRow.reportNumber!==thisReportNum){
       return alert('Only one order can be submitted at a time.So all report numbers need to be the same.')
     }
   }
   //判断inputRow的任何部分为空
-  if(!inputRow.reportNumber||!inputRow.express||!inputRow.dueDate||!inputRow.cs||!groups.value){
+  if(!inputRow.reportNumber||!inputRow.express||!inputRow.dueDate||!inputRow.customerServiceId||!groups.value){
     alert('Please fill in all fields.')
   }else{
     //存储重复数据
     let duplicateRows=[]
     for (const group of groups.value) {
-      let rowAdd={...inputRow, group: group}
+      let rowAdd={...inputRow, testGroup: group, rfidCode: ''}
       //判断重复
       if(!isRowsContain(rows, rowAdd)){
         rows.push(rowAdd)
@@ -317,7 +327,7 @@ function addRow() {
 
 function isRowsContain(rows, row1) {
   for (const row of rows) {
-    if(row.reportNumber===row1.reportNum&&row.testGroup===row1.group)
+    if(row.reportNumber===row1.reportNumber&&row.testGroup===row1.testGroup)
       return true
   }
   return false
@@ -325,6 +335,15 @@ function isRowsContain(rows, row1) {
 //删除行
 function removeRow(idx) {
   rows.splice(idx, 1);
+}
+//RFID 扫码
+async function scanRfid(idx) {
+  const res = await request.get('/rfid/scan')
+  if (res.data.success) {
+    rows[idx].rfidCode = res.data.data
+  } else {
+    alert('No tag detected')
+  }
 }
 //进单提交
 async function Confirm() {
