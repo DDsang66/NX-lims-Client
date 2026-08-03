@@ -32,12 +32,12 @@ const routes = [
     name: 'MainLayout',
     component: MainLayout,
     children: [
-      { path: 'ChatBox', name: 'ChatBox', component: ChatBox },
-      {path:'Home',name:'Home',component:Home},
-      {path:'Profile',name:'Profile',component:Profile},
-      {path:'FAQ',name:'FAQ',component:FAQ},
-      {path:'InstructionManual',name:'InstructionManual',component:InstructionManual},
-      {path:'OrderView',name:'OrderView',component:OrderView}
+      { path: 'ChatBox', name: 'ChatBox', component: ChatBox, meta: { title: 'AI Helper' } },
+      {path:'Home',name:'Home',component:Home,meta:{title:'Home'}},
+      {path:'Profile',name:'Profile',component:Profile,meta:{title:'Personal Center'}},
+      {path:'FAQ',name:'FAQ',component:FAQ,meta:{title:'FAQ'}},
+      {path:'InstructionManual',name:'InstructionManual',component:InstructionManual,meta:{title:'Instruction Manual'}},
+      {path:'OrderView',name:'OrderView',component:OrderView,meta:{title:'Order Overview'}}
     ]
   },
 ];

@@ -30,45 +30,47 @@ import WashLabel from "@/Views/WashLabel/WashLabel.vue";
 import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
 import RuleConfig from "@/Views/Config/RuleConfig.vue";
 import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
+import MenuManagement from "@/Views/Config/MenuManagement.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
     role: localStorage.getItem('role') || 'Visitor',
     routeMap: new Map(Object.entries({
-      Review: [{ path: 'Mango', name: 'Mango', component: Mango },
-      { path: 'OVS', name: 'OVS', component: OVS },
-      { path: 'Tchibo', name: 'Tchibo', component: Tchibo },
-      { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine },
-      { path: 'Jako', name: 'Jako', component: Jako },
-      { path: 'ReviewFinish', name: 'ReviewFinish', component: ReviewFinish },
-      { path: 'Primark', name: 'Primark', component: Primark },
-      { path: 'Kik', name: 'Kik', component: Kik },
-      { path: 'Pep&co', name: 'Pep&co', component: Pepco },
-      { path: 'Next', name: 'Next', component: Next },
-      { path: 'LPP', name: 'LPP', component: LPP },
-      { path: 'LTAG', name: 'LTAG', component: LTAG },
-      { path: 'Focus', name: 'Focus', component: Focus },
-      { path: 'Woolworth', name: 'Woolworth', component: Woolworth },
+      Review: [{ path: 'Mango', name: 'Mango', component: Mango, meta: { title: 'MANGO' } },
+      { path: 'OVS', name: 'OVS', component: OVS, meta: { title: 'OVS' } },
+      { path: 'Tchibo', name: 'Tchibo', component: Tchibo, meta: { title: 'Tchibo' } },
+      { path: 'Crazyline', name: 'CrazyLine', component: CrazyLine, meta: { title: 'Crazy Line' } },
+      { path: 'Jako', name: 'Jako', component: Jako, meta: { title: 'JAKO' } },
+      { path: 'ReviewFinish', name: 'ReviewFinish', component: ReviewFinish, meta: { title: 'Order Check Done' } },
+      { path: 'Primark', name: 'Primark', component: Primark, meta: { title: 'Primark' } },
+      { path: 'Kik', name: 'Kik', component: Kik, meta: { title: 'KiK' } },
+      { path: 'Pep&co', name: 'Pep&co', component: Pepco, meta: { title: 'Pepco' } },
+      { path: 'Next', name: 'Next', component: Next, meta: { title: 'NEXT' } },
+      { path: 'LPP', name: 'LPP', component: LPP, meta: { title: 'LPP' } },
+      { path: 'LTAG', name: 'LTAG', component: LTAG, meta: { title: 'LTAG' } },
+      { path: 'Focus', name: 'Focus', component: Focus, meta: { title: 'Focus' } },
+      { path: 'Woolworth', name: 'Woolworth', component: Woolworth, meta: { title: 'Woolworth' } },
       ],
-      OrderEntry: [{ path: 'OrderEntry', name: 'OrderEntry', component: OrderEntry },],
-      OrderSummary: [{ path: 'OrderSummary', name: 'OrderSummary', component: OrderSummary },],
-      OrderReporting: [{ path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting },],
-      LabOut: [{ path: 'LabOut', name: 'LabOut', component: LabOut }],
+      OrderEntry: [{ path: 'OrderEntry', name: 'OrderEntry', component: OrderEntry, meta: { title: 'Order Pick Up' } },],
+      OrderSummary: [{ path: 'OrderSummary', name: 'OrderSummary', component: OrderSummary, meta: { title: 'Order Summary' } },],
+      OrderReporting: [{ path: 'OrderReporting', name: 'OrderReporting', component: OrderReporting, meta: { title: 'Order Reporting' } },],
+      LabOut: [{ path: 'LabOut', name: 'LabOut', component: LabOut, meta: { title: 'Order Lab Out' } }],
       Lab: [
-        { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry },
-        { path: 'Review', name: 'Review', component: Review },
-        { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual },
-        { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet },
-        { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview },
-        { path: 'WashLabel', name: 'WashLabel', component: WashLabel },
-        { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight }
+        { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry, meta: { title: 'Work Sheet Edit' } },
+        { path: 'Review', name: 'Review', component: Review, meta: { title: 'Laboratory Schedule' } },
+        { path: "BuyerManual", name: "BuyerManual", component: BuyerManual, meta: { title: 'Buyer Manual' } },
+        { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet, meta: { title: 'Fiber Team' } },
+        { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview, meta: { title: 'Reporting List' } },
+        { path: 'WashLabel', name: 'WashLabel', component: WashLabel, meta: { title: 'Wash Label' } },
+        { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight, meta: { title: 'Physical Weight' } }
       ],
-      LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
-      { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily },
-      { path: 'StandardPage', name: 'StandardPage', component: StandardPage },
-      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig },
-      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig },
-      { path: 'RuleConfig', name: 'RuleConfig', component: RuleConfig }
+      LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
+      { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },
+      { path: 'StandardPage', name: 'StandardPage', component: StandardPage, meta: { title: 'Standard Management' } },
+      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig, meta: { title: 'Test Logic Config' } },
+      { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig, meta: { title: 'Formula Config' } },
+      { path: 'RuleConfig', name: 'RuleConfig', component: RuleConfig, meta: { title: 'Rule Config' } },
+      { path: 'MenuManagement', name: 'MenuManagement', component: MenuManagement, meta: { title: 'Menu Management' } }
       ]
     }))
   }),

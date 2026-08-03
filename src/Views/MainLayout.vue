@@ -178,6 +178,9 @@
             <el-menu-item index="/main/ItemConfig">
               <span>Test Item Management</span>
             </el-menu-item>
+            <el-menu-item index="/main/MenuManagement">
+              <span>Menu Management</span>
+            </el-menu-item>
             <el-menu-item index="/main/ParamConfig">
               <span>Test Logic Config</span>
             </el-menu-item>

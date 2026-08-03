@@ -54,6 +54,8 @@ export default {
   items: 'Items',
   standardCode: 'Standard Code',
   menuName: 'MenuName',
+  addMenu: 'Add Menu',
+  editItem: 'Edit Item',
   samplePlease:'Please select samples for the corresponding projects.',
   index: 'Index',
   testItem: 'Test Item',

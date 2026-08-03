@@ -253,7 +253,7 @@ import {computed, onBeforeUnmount, onMounted, reactive, ref, watch} from "vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import {data} from "@visactor/vtable";
 import {Search} from "@element-plus/icons-vue";
-import axios from "axios";
+import request from "@/utils/request.js";
 import {useI18n} from "vue-i18n";
 
 const { t } = useI18n()
@@ -456,13 +456,13 @@ let rules2=computed(()=>{
 /*function------------------------------------------------------------------------------------------*/
 //获取买家选项
 async function getBuyerOptions(){
-  let options=await axios.get('http://localhost:5102/query/buyer')
-  // console.log('buyerList',options.data.buyerList)
-  buyerOptions.value=options.data.buyerList.map(buyer=>{
+  let options=await request.get('/buyer/buyer-list')
+  // console.log('buyerList',options.data.value)
+  if(!options.data.isSuccess) return
+  buyerOptions.value=options.data.value.map(buyer=>{
     buyer.name=buyer.buyerName
     return buyer
   })
-  // console.log('buyerOptions',buyerOptions.value)
 }
 //项目模糊查询
 // function itemFuzzyQuery(){

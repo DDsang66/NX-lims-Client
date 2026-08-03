@@ -1,36 +1,37 @@
 <template>
   <div ref="allDom" class="reviewContainer">
-    <h3>{{ step1Dom?.buyerName ? step1Dom.buyerName : 'BuyerName' }}</h3>
-    <div class="reviewSteps">
-      <el-steps :active="3" align-center style="flex:1">
-        <el-step v-for="step in steps" class="myStep" :key="step.index" :status="step.status" :title="$t(step.title)" @click="toCertainStep(step.index)"/>
-      </el-steps>
-      <el-button v-if="thisStepIndex!==steps.length" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
-      <el-button v-else @click="printReport" class="header-button">{{$t('print')}}</el-button>
+    <!--    标题行：买家名 + Print 按钮-->
+    <div class="headerRow">
+      <h3>{{ step1Dom?.buyerName ? step1Dom.buyerName : 'BuyerName' }}</h3>
+      <el-button @click="printReport" class="header-button">{{$t('print')}}</el-button>
     </div>
 
-<!--    第一步-->
-    <Step1 ref="step1Dom" v-show="thisStepIndex===1" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
+    <!--    悬浮的左侧步骤栏：位置固定始终可见，紧凑排列，点击滚动到对应模块中心-->
+    <div class="stepPanel" :style="stepPanelStyle">
+      <div v-for="step in steps" :key="step.index" class="stepItem" @click="jumpToModule(step.index)">
+        <div class="stepCircle" :class="{'is-active': step.index===activeStepIndex, 'is-success': step.status==='success'}">
+          {{ step.index }}
+        </div>
+        <span class="stepLabel">{{ $t(step.title) }}</span>
+      </div>
+    </div>
 
-<!--    第二步-->
-<!--    通过v-if控制，第一步成功之后再创建-->
-    <Step2 :step1Dom="step1Dom" :buyerNameDto="buyerNameDto" v-if="steps[0].status==='success'" v-show="thisStepIndex===2" />
-<!--    第三步-->
-    <step3 :step1Dom="step1Dom" v-if="steps[1].status==='success'" v-show="thisStepIndex===3"/>
+    <!--    三个模块同时显示-->
+    <div v-for="step in steps" :key="step.index" class="moduleBlock" ref="moduleBlocks">
+      <Step1 v-if="step.index===1" :ref="setStep1Dom" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
+      <Step2 v-else-if="step.index===2" :step1Dom="step1Dom" :buyerNameDto="buyerNameDto"/>
+      <Step3 v-else-if="step.index===3" :step1Dom="step1Dom"/>
+    </div>
 
   </div>
 </template>
 
 <script setup>
-import {inject, onBeforeUnmount, onMounted, reactive, ref} from 'vue'
+import {onBeforeUnmount, onMounted, reactive, ref} from 'vue'
 import Step1 from "@/components/review/Step1.vue";
 import Step2 from "@/components/review/Step2.vue";
-import globalFunctions from "@/utils/globalFunctions.js";
 import Step3 from "@/components/review/Step3.vue";
 
-const request=inject('request')
-//活跃的步骤
-const thisStepIndex = ref(1)
 //步骤信息
 const steps=reactive([
   {
@@ -50,45 +51,79 @@ const steps=reactive([
   }
 ])
 
-//整个组件
+//整个组件（滚动容器，Step1 通过 props.allDom 自动滚动，必须保持）
 const allDom=ref(null)
 const size = 'default'
-// //套餐信息
-// const menus=ref([])
 //dto买家名
 const buyerNameDto = ref('')
 const step1Dom=ref(null)
+// v-for 内用函数 ref 固定引用 Step1 组件实例（字符串 ref 在 v-for 内会收集成数组）
+function setStep1Dom(el){
+  if(el) step1Dom.value=el
+}
+//三个模块区块的 DOM（v-for 内字符串 ref 收集为数组，顺序同 steps）
+const moduleBlocks=ref([])
+//scroll-spy：当前最接近视口中央的步骤
+const activeStepIndex=ref(1)
+//悬浮步骤栏的定位（fixed，锚定内容区左侧中部，始终不变）
+const stepPanelStyle=reactive({left: '5px', top: '50%'})
+function positionStepPanel(){
+  const container=allDom.value
+  if(!container) return
+  const rect=container.getBoundingClientRect()
+  stepPanelStyle.left = rect.left + 5 + 'px'
+  stepPanelStyle.top = rect.top + rect.height / 2 + 'px'
+}
 /*function------------------------------------------------------------------------------------------*/
 //打印单子
 function printReport(){
-  steps[thisStepIndex.value - 1].status='success'
+  steps.forEach(step => step.status='success')
 }
-// //上一步
-// function toLastStep() {
-//   if (thisStepIndex.value > 1)
-//     thisStepIndex.value--
-// }
-//下一步
-async function toNextStep() {
-  // 第一步
-  if(thisStepIndex.value===1){
-    let result=await step1Dom.value.allCheck()
-    if(!result) return
+//点击步骤圆框 → 滚动 allDom 使对应模块垂直居中（只滚容器，不滚窗口）
+function jumpToModule(index){
+  const container=allDom.value
+  const block=moduleBlocks.value[index - 1]
+  if(!container || !block) return
+  const containerRect=container.getBoundingClientRect()
+  const blockRect=block.getBoundingClientRect()
+  const delta=(blockRect.top - containerRect.top) - (container.clientHeight - block.offsetHeight) / 2
+  container.scrollTo({top: container.scrollTop + delta, behavior: 'smooth'})
+}
+//scroll-spy：高亮最接近视口中央的模块
+function updateActiveStep(){
+  const container=allDom.value
+  if(!container) return
+  const containerRect=container.getBoundingClientRect()
+  const viewportCenter=containerRect.top + container.clientHeight / 2
+  let nearest=1
+  let minDist=Infinity
+  moduleBlocks.value.forEach((block, i) => {
+    if(!block) return
+    const rect=block.getBoundingClientRect()
+    const dist=Math.abs((rect.top + rect.height / 2) - viewportCenter)
+    if(dist < minDist){
+      minDist=dist
+      nearest=i + 1
+    }
+  })
+  activeStepIndex.value=nearest
+}
+
+let resizeObserver=null
+onMounted(() => {
+  allDom.value?.addEventListener('scroll', updateActiveStep)
+  positionStepPanel()
+  //容器尺寸变化时重新锚定悬浮栏位置
+  if(typeof ResizeObserver!=='undefined' && allDom.value){
+    resizeObserver=new ResizeObserver(positionStepPanel)
+    resizeObserver.observe(allDom.value)
   }
-  steps[thisStepIndex.value - 1].status='success'
-  thisStepIndex.value++
-}
-//步骤跳转
-function toCertainStep(index){
-  //向后，仅允许下一步
-  if(thisStepIndex.value<index){
-    //下一步
-    if(thisStepIndex.value===index-1)
-      toNextStep()
-  }else
-  //向前，随便
-  thisStepIndex.value=index
-}
+  updateActiveStep()
+})
+onBeforeUnmount(() => {
+  allDom.value?.removeEventListener('scroll', updateActiveStep)
+  resizeObserver?.disconnect()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -97,23 +132,72 @@ function toCertainStep(index){
   width: 100%;
   overflow:auto;
 }
-.step-title {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.reviewSteps{
-  @include line-left-flex-container;
-  width: 90%;
-  margin:0 auto 10px;
+/*标题行：买家名靠左，Print 靠右*/
+.headerRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px 10px;
 }
 .header-button{
   width: 75px;
   margin-right: 5px;
 }
-.myStep:hover{
-  background-color: rgba(233, 238, 246, 0.2);
+/*模块区块：纵向排列，不再留左侧槽位*/
+.moduleBlock{
+  margin-bottom: 10px;
+}
+/*悬浮步骤栏：fixed 锚定内容区左侧中部，位置始终不变*/
+.stepPanel{
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--el-border-color);
+  border-radius: 12px;
   box-shadow: var(--el-box-shadow-light);
+  padding: 12px 10px;
+}
+/*步骤项：紧凑排列*/
+.stepItem{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
+  user-select: none;
+}
+.stepCircle{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .2s;
+}
+.stepCircle.is-active{
+  background: var(--el-color-primary);
+  color: #fff;
+}
+.stepCircle.is-success{
+  border-color: var(--el-color-success);
+  color: var(--el-color-success);
+}
+.stepLabel{
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
 }
 </style>

@@ -110,9 +110,9 @@ const props = defineProps({
     default: 'default'
   },
 });
-const menus=computed(()=>props.step1Dom.menus)
+const menus=computed(()=>props.step1Dom?.menus ?? [])
 //活跃标签页
-const activeTabName=ref(menus.value[0].name)
+const activeTabName=ref(menus.value.length>0 ? menus.value[0].name : 'default')
 //item模糊查询参数
 const itemFuzzyQueryParameters=reactive({
   itemName: '',

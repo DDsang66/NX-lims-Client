@@ -116,7 +116,7 @@ const careLabelData=ref({
 //根据menus获取所有smaple
 let allSample=computed(()=>{
   let samples=new Set()
-  props.step1Dom.menus.forEach(menu=>{
+  props.step1Dom?.menus?.forEach(menu=>{
     //分组
     if(menu.groups){
       menu.groups.forEach(group=>{
@@ -149,7 +149,7 @@ const fiberCompositionSingle=ref([])
 //接缝样品
 const seamSamples = computed(() => {
   let seamSamplesSet = new Set()
-  props.step1Dom.menus.forEach(menu=>{
+  props.step1Dom?.menus?.forEach(menu=>{
     //如果有groups
     if(menu.groups){
       menu.groups.forEach(group=>{
@@ -212,6 +212,12 @@ const handleRowsSingle = (fiberCom) => {
 .paramsContainer > div {
   padding: 5px;
 }
+/*与Step1/Step3一致的外框*/
+.thisBlock {
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  padding: 10px;
+}
 .blockTitle{
   font-size: 26px;
   font-weight: bold;
@@ -236,16 +242,14 @@ const handleRowsSingle = (fiberCom) => {
   border-radius: 10px;
   padding: 10px 15px;
   background-color: rgb(247, 248, 252);
-  width: 90%;
-  margin: 0 auto;
+  width: 100%;
 }
 .oneLinePiece{
   @include line-stretch-flex-container;
   gap:10px;
   border: var(--border-first-level);
   border-radius: 10px;
-  width: 90%;
-  margin: 0 auto;
+  width: 100%;
 }
 .pieceContent{
   background-color: white;

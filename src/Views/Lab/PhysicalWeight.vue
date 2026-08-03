@@ -267,8 +267,9 @@ function doPrint() { window.print() }
 
 async function doSave() {
   if (!rows.length) return
+  if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(单号)'); return }
   try {
-    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, sampleId: r.sid, testPoint: r.point, weight: r.w, area: r.a, gPerSqm: r.gsm, ozPerSqyd: r.oz, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: null })) })
+    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, testPoint: r.point, weight: r.w, area: r.a, gPerSqm: r.gsm, ozPerSqyd: r.oz, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
     ElMessage[res.data.success ? 'success' : 'error'](res.data.message || '保存失败')
   } catch (e) { ElMessage.error('网络错误: ' + e.message) }
 }
