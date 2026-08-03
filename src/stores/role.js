@@ -29,6 +29,7 @@ import OrderOverview from "@/Views/OrderOverview.vue";
 import WashLabel from "@/Views/WashLabel/WashLabel.vue";
 import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
 import RuleConfig from "@/Views/Config/RuleConfig.vue";
+import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -59,7 +60,8 @@ const useRoleStore = defineStore('role', {
         { path: "BuyerManual", name: "BBuyerManual", component: BuyerManual },
         { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet },
         { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview },
-        { path: 'WashLabel', name: 'WashLabel', component: WashLabel }
+        { path: 'WashLabel', name: 'WashLabel', component: WashLabel },
+        { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight }
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily },
