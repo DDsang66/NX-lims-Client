@@ -54,6 +54,7 @@ export default {
   standardCode: '标准编号',
   menuName: '套餐名称',
   addMenu: '添加套餐',
+  deleteMenu: '删除套餐',
   editItem: '编辑项目',
   samplePlease:'请为相应的项目选择样品。',
   index: '序号',

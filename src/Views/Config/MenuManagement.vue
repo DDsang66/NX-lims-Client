@@ -12,7 +12,7 @@
           <el-table-column prop="standardCodeNameChn" label="Name Chn" min-width="140" show-overflow-tooltip></el-table-column>
           <el-table-column label="" width="55" fixed="right">
             <template #default="scope">
-              <el-button type="primary" size="small" circle @click="addStandardToMenu(scope.row)">+</el-button>
+              <el-button type="primary" size="small" circle @click="addStandardToSelectedItem(scope.row)">+</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -23,6 +23,7 @@
         <div class="boxTitle">Item</div>
         <el-input v-model="itemSearch" placeholder="Search item" clearable></el-input>
         <el-table :data="filteredItems" border class="removeTableGaps" height="300" style="width: 100%">
+          <el-table-column prop="id" label="Item ID" width="110" show-overflow-tooltip></el-table-column>
           <el-table-column prop="nameEn" label="Name En" min-width="140" show-overflow-tooltip></el-table-column>
           <el-table-column prop="nameChn" label="Name Chn" min-width="140" show-overflow-tooltip></el-table-column>
           <el-table-column prop="group" label="Group" width="90" show-overflow-tooltip></el-table-column>
@@ -44,30 +45,58 @@
           <el-option v-for="b in buyerOptions" :key="b.code" :value="b.code" :label="b.name"></el-option>
         </el-select>
         <el-button type="primary" @click="addMenuOpen">{{ $t('addMenu') }}</el-button>
+        <el-button type="danger" :disabled="!currentMenuId" @click="realDeleteMenu">{{ $t('deleteMenu') }}</el-button>
       </div>
 
-      <!-- 横向导航：已有 menu -->
+      <!-- 横向导航：已有 menu（原生拖拽排序，纯前端不持久化） -->
       <div class="menuNav">
         <template v-if="currentMenus.length > 0">
-          <el-tag
-            v-for="m in currentMenus"
+          <div
+            v-for="(m, i) in currentMenus"
             :key="m.menuId"
-            class="menuNavTag"
-            :class="{ active: m.menuId === currentMenuId }"
-            @click="currentMenuId = m.menuId"
-          >{{ m.menuName }}</el-tag>
+            class="menuNavItem"
+            draggable="true"
+            @dragstart="onDragStart(i)"
+            @dragover.prevent="onDragOver(i)"
+            @dragend="onDragEnd"
+          >
+            <el-tag
+              class="menuNavTag"
+              :class="{ active: m.menuId === currentMenuId }"
+              @click="currentMenuId = m.menuId"
+              closable
+              @close="hideMenuFromView(m)"
+            >{{ m.menuName }}</el-tag>
+          </div>
         </template>
         <span v-else class="emptyHint">No menu yet, click "Add Menu" to create one.</span>
       </div>
 
       <!-- 当前 menu 的 items -->
-      <el-table :data="currentMenuItems" border class="removeTableGaps" style="width: 100%">
-        <el-table-column label="Index" width="60">
+      <el-table
+        :data="currentMenuItems"
+        border class="removeTableGaps" style="width: 100%"
+        @row-click="onItemRowClick"
+        :row-class-name="rowClassName"
+      >
+        <!-- 展开列（Index 左边）：子行展示该 item 已有的 standards -->
+        <el-table-column type="expand">
+          <template #default="scope">
+            <div class="itemStandards">
+              <template v-if="(scope.row.standardIds || []).length > 0">
+                <span class="stdLabel">Standards:</span>
+                <el-tag v-for="s in scope.row.standardIds" :key="s" class="stdTag">{{ s }}</el-tag>
+              </template>
+              <span v-else class="emptyHint">No standard yet, select the item and add from the Standard box above.</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="Index" width="80">
           <template #default="scope">{{ scope.$index + 1 }}</template>
         </el-table-column>
-        <el-table-column label="Item Name" min-width="140" show-overflow-tooltip>
-          <template #default="scope">{{ testItemNameOf(scope.row) }}</template>
-        </el-table-column>
+        <el-table-column prop="testItemId" label="Item ID" width="110" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="buyerOwnName" label="Buyer Own Name" min-width="140" show-overflow-tooltip></el-table-column>
         <el-table-column label="Standard Code" min-width="140" show-overflow-tooltip>
           <template #default="scope">{{ (scope.row.standardIds || []).join(', ') }}</template>
         </el-table-column>
@@ -112,7 +141,7 @@
           <el-input v-model="editForm.standardIdsText" placeholder="多个标准用逗号分隔"></el-input>
         </el-form-item>
         <el-form-item label="Requirement">
-          <el-input v-model="editForm.requirement"></el-input>
+          <el-input v-model="editForm.requirement" placeholder='格式: "字段名" 运算符 "值"，如 "Temperature" > "100"'></el-input>
         </el-form-item>
         <el-form-item label="Group">
           <el-input v-model="editForm.buyerModifiedGroup"></el-input>
@@ -129,7 +158,7 @@
 <script setup>
 import { computed, inject, onMounted, reactive, ref } from "vue";
 import { Delete, Edit } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 const request = inject("request");
 
@@ -167,17 +196,10 @@ const currentMenus = computed(() => menus.value);
 const currentMenuItems = computed(() =>
   menus.value.find(m => m.menuId === currentMenuId.value)?.menuItems || []);
 
-// 从已加载 items 中按 testItemId 查名称
-function testItemNameOf(row) {
-  const id = row?.testItemId;
-  if (!id) return '';
-  const it = items.value.find(i => i.id === id);
-  return it ? (it.nameEn || it.nameChn || id) : id;
-}
-
 function onBuyerChange() {
   menus.value = [];
   currentMenuId.value = '';
+  selectedItemId.value = '';
   loadMenusByBuyer(selectedBuyer.value);
 }
 
@@ -185,20 +207,55 @@ function onBuyerChange() {
 function loadMenusByBuyer(buyerId) {
   if (!buyerId) return;
   request.get(`/Menu/get-by-buyerId/${buyerId}`).then(res => {
-    menus.value = res.data.isSuccess ? (res.data.value || []) : [];
-    currentMenuId.value = menus.value[0]?.menuId || '';
+    const list = res.data.isSuccess ? (res.data.value || []) : [];
+    menus.value = list;
+    // 保持当前选中的 menu；若已不存在则跳到第一个
+    if (!list.some(m => m.menuId === currentMenuId.value)) {
+      currentMenuId.value = list[0]?.menuId || '';
+    }
   }).catch(() => {
     menus.value = [];
     currentMenuId.value = '';
   });
 }
 
-// 点击上半 Standard/Item 的 + 按钮 → 调后端加入当前 menu
-function addStandardToMenu(row) {
-  addItem({ testItemId: null, standardIds: [row.standardId], requirement: '', buyerModifiedGroup: '' });
+// 当前选中的 menu item id（点击下方表格行高亮选中）
+const selectedItemId = ref('');
+function onItemRowClick(row) {
+  selectedItemId.value = row.id;
 }
+// 行高亮 class
+function rowClassName({ row }) {
+  return row.id === selectedItemId.value ? 'selected-item-row' : '';
+}
+
+// Item 框的 + → 加 item 到当前 menu
 function addItemToMenu(row) {
   addItem({ testItemId: row.id, standardIds: [], requirement: '', buyerModifiedGroup: row.group });
+}
+// Standard 框的 + → 给当前选中的 item 添加该 standard（不再创建独立 item）
+function addStandardToSelectedItem(row) {
+  if (!currentMenuId.value) { ElMessage.warning('请先选择/创建套餐'); return; }
+  if (!selectedItemId.value) { ElMessage.warning('请先在下方面板选中一个 item'); return; }
+  const item = currentMenuItems.value.find(x => x.id === selectedItemId.value);
+  if (!item) { ElMessage.warning('选中的 item 不存在'); return; }
+  const stdId = row.standardId;
+  if ((item.standardIds || []).includes(stdId)) { ElMessage.warning('该 standard 已存在'); return; }
+  // 更新该 item 的 standardIds → PUT update
+  request.put(`/Menu/update/${currentMenuId.value}/item`, {
+    menuId: currentMenuId.value,
+    menuItem: {
+      id: item.id,
+      testItemId: item.testItemId || null,
+      standardIds: [...(item.standardIds || []), stdId],
+      requirement: item.requirement || '',
+      buyerModifiedGroup: item.buyerModifiedGroup || '',
+      buyerOwnName: item.buyerOwnName || ''
+    }
+  }).then(res => {
+    if (res.data.isSuccess) { ElMessage.success('已添加 standard'); loadMenusByBuyer(selectedBuyer.value); }
+    else ElMessage.error(res.data.error || '添加失败');
+  }).catch(() => ElMessage.error('网络错误'));
 }
 function addItem(payload) {
   if (!currentMenuId.value) { ElMessage.warning('请先选择/创建套餐'); return; }
@@ -265,6 +322,48 @@ function deleteItem(row) {
       if (res.data.isSuccess) { ElMessage.success('已删除'); loadMenusByBuyer(selectedBuyer.value); }
       else ElMessage.error(res.data.error || '删除失败');
     }).catch(() => ElMessage.error('网络错误'));
+}
+
+// ==================== 原生拖拽排序 ====================
+let dragIndex = null;   // 正在拖拽的 menu 下标
+function onDragStart(i) {
+  dragIndex = i;
+}
+function onDragOver(i) {
+  if (dragIndex === null || dragIndex === i) return;
+  // 交换位置（纯前端，刷新恢复原顺序）
+  const arr = menus.value;
+  const [moved] = arr.splice(dragIndex, 1);
+  arr.splice(i, 0, moved);
+  dragIndex = i;
+}
+function onDragEnd() {
+  dragIndex = null;
+}
+
+// ×：只从当前页面视图移除（不改数据库，切换买家会重新出现）
+function hideMenuFromView(m) {
+  const idx = menus.value.findIndex(x => x.menuId === m.menuId);
+  if (idx > -1) menus.value.splice(idx, 1);
+  if (currentMenuId.value === m.menuId) currentMenuId.value = menus.value[0]?.menuId || '';
+}
+
+// 真正删除当前选中的套餐（连同其 item，调后端）
+function realDeleteMenu() {
+  const m = menus.value.find(x => x.menuId === currentMenuId.value);
+  if (!m) return;
+  ElMessageBox.confirm(`确定永久删除套餐「${m.menuName}」吗？此操作不可恢复。`, '删除套餐', { type: 'warning' })
+    .then(() => {
+      request.delete(`/Menu/delete/${m.menuId}`)
+        .then(res => {
+          if (res.data.isSuccess) {
+            ElMessage.success('已删除');
+            currentMenuId.value = '';
+            loadMenusByBuyer(selectedBuyer.value);
+          } else ElMessage.error(res.data.error || '删除失败');
+        }).catch(() => ElMessage.error('网络错误'));
+    })
+    .catch(() => {});   // 用户取消，不处理
 }
 
 // ==================== 初始化 ====================
@@ -341,14 +440,33 @@ onMounted(() => {
   min-height: 34px;
 }
 
+/* 每个 menu 项的外层：保持横向排列、可换行 */
+.menuNavItem {
+  display: inline-flex;
+  align-items: center;
+}
+
 .menuNavTag {
-  cursor: pointer;
+  cursor: grab;
+}
+
+.menuNavTag:active {
+  cursor: grabbing;
 }
 
 .menuNavTag.active {
   background: var(--el-color-primary);
   color: #fff;
   border-color: var(--el-color-primary);
+}
+
+/* 选中态下关闭图标 × 也设为白色，保证可见 */
+.menuNavTag.active :deep(.el-tag__close) {
+  color: #fff;
+}
+
+.menuNavTag.active :deep(.el-tag__close:hover) {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .emptyHint {
@@ -358,5 +476,27 @@ onMounted(() => {
 
 .removeTableGaps :deep(table) {
   margin-bottom: 0 !important;
+}
+
+/* 展开子行：展示 item 的 standards */
+.itemStandards {
+  padding: 8px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.stdLabel {
+  font-weight: bold;
+}
+
+.stdTag {
+  margin-right: 4px;
+}
+
+/* 点击选中的 item 行高亮 */
+:deep(.selected-item-row) {
+  background: var(--el-color-primary-light-9);
 }
 </style>

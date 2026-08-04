@@ -55,6 +55,7 @@ export default {
   standardCode: 'Standard Code',
   menuName: 'MenuName',
   addMenu: 'Add Menu',
+  deleteMenu: 'Delete Menu',
   editItem: 'Edit Item',
   samplePlease:'Please select samples for the corresponding projects.',
   index: 'Index',

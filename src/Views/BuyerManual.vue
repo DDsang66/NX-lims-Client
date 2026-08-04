@@ -12,9 +12,9 @@
                        clearable
                        style="width: 200px">
               <el-option v-for="item in buyerList"
-                         :key="item.value"
-                         :label="item.label"
-                         :value="item.value" />
+                         :key="item.code"
+                         :label="item.name"
+                         :value="item.code" />
             </el-select>
           </el-form-item>
 
@@ -24,67 +24,44 @@
               Confirm
             </el-button>
           </el-form-item>
-
-          <el-form-item :label="$t('itemNameEn')" class="search-item">
-            <el-input v-model="form.itemNameEn"
-                      placeholder=""
-                      clearable
-                      style="width: 200px" />
-          </el-form-item>
-
-          <el-form-item :label="$t('itemNameChn')" class="search-item">
-            <el-input v-model="form.itemNameChn"
-                      placeholder=""
-                      clearable
-                      style="width: 200px" />
-          </el-form-item>
-
-          <el-form-item :label="$t('standard')" class="search-item">
-            <el-select v-model="form.standard"
-                       placeholder=""
-                       filterable
-                       clearable
-                       style="width: 200px" />
-          </el-form-item>
-
-          <el-form-item class="action-buttons">
-            <el-button type="primary" @click="searchList">
-              {{ $t("search") }}
-            </el-button>
-            <el-button type="primary" @click="addOpen">
-              {{ $t("add") }}
-            </el-button>
-          </el-form-item>
         </el-form>
       </div>
 
       <!-- 表格区域 -->
       <div class="table-card">
-        <el-table :data="itemTableData"
+        <!-- 横向导航：套餐标签 -->
+        <div class="menuNav">
+          <el-tag
+            v-for="m in menus"
+            :key="m.menuId"
+            class="menuNavTag"
+            :class="{ active: m.menuId === currentMenuId }"
+            @click="currentMenuId = m.menuId"
+          >{{ m.menuName }}</el-tag>
+          <span v-if="menus.length === 0" class="emptyHint">请先在顶部选择买家</span>
+        </div>
+
+        <!-- 只读菜单项表 -->
+        <el-table :data="currentMenuItems"
                   border
+                  class="removeTableGaps"
                   style="width: 100%">
-          <el-table-column :label="$t('ItemName-En')" prop="itemNameEn" width="200" show-overflow-tooltip />
-          <el-table-column :label="$t('Modify-Name')" prop="itemNameChn" width="200" show-overflow-tooltip />
-          <el-table-column :label="$t('Cited Standards')" prop="standard" min-width="210" show-overflow-tooltip />
-          <el-table-column :label="$t('Limit Paradigm')" prop="limitParadigm" width="150" show-overflow-tooltip />
-          <el-table-column :label="$t('Remark')" prop="remark" min-width="200" show-overflow-tooltip />
-          <el-table-column :label="$t('Change History')" prop="modifyHistory" width="160">
+          <el-table-column label="Index" width="80">
+            <template #default="scope">{{ scope.$index + 1 }}</template>
+          </el-table-column>
+          <el-table-column prop="testItemId" label="Item ID" width="110" show-overflow-tooltip />
+          <el-table-column prop="buyerOwnName" label="Buyer Own Name" min-width="140" show-overflow-tooltip />
+          <el-table-column label="Standard Code" min-width="140" show-overflow-tooltip>
+            <template #default="scope">{{ (scope.row.standardIds || []).join(', ') }}</template>
+          </el-table-column>
+          <el-table-column prop="requirement" label="Requirement" min-width="140" show-overflow-tooltip />
+          <el-table-column prop="buyerModifiedGroup" label="Group" width="90" show-overflow-tooltip />
+          <!-- 保留 Change History（Group 之后） -->
+          <el-table-column :label="$t('Change History')" width="160">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="viewHistory(scope.row)">
                 <el-icon><Clock /></el-icon> {{ $t('view') }}
               </el-button>
-            </template>
-          </el-table-column>
-          <el-table-column :label="$t('operation')" width="150" fixed="right">
-            <template #default="scope">
-              <el-button type="primary" :icon="Edit" circle size="small" @click="editOpen(scope.row)" />
-              <el-popconfirm class="box-item"
-                             :title="$t('confirmDelete')"
-                             @confirm="deleteRow(scope.row)">
-                <template #reference>
-                  <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 5px" />
-                </template>
-              </el-popconfirm>
             </template>
           </el-table-column>
         </el-table>
@@ -181,58 +158,6 @@
       </div>
     </div>
 
-    <!-- 添加/编辑对话框 -->
-    <el-dialog :title="$t(dialogTitle)"
-               v-model="dialogVisible"
-               width="60%">
-      <div class="formContainer">
-        <el-form :model="dialogForm" label-width="140px">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item :label="$t('ItemName-En')">
-                <el-input v-model="dialogForm.itemNameEn" placeholder="" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item :label="$t('ItemName-Chn')">
-                <el-input v-model="dialogForm.itemNameChn" placeholder="" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item :label="$t('Cited Standards')">
-                <el-select v-model="dialogForm.standard"
-                           placeholder=""
-                           filterable
-                           allow-create
-                           default-first-option
-                           style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item :label="$t('Limit Paradigm')">
-                <el-input v-model="dialogForm.limitParadigm" placeholder="" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-form-item :label="$t('Remark')">
-            <el-input v-model="dialogForm.remark"
-                      type="textarea"
-                      :rows="3"
-                      placeholder="" />
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <el-button type="primary" @click="addConfirm">{{ $t("confirm") }}</el-button>
-        <el-button @click="addCancel">{{ $t("cancel") }}</el-button>
-      </template>
-    </el-dialog>
-
     <!-- 修改历史对话框 -->
     <el-dialog :title="$t('modifyHistory')"
                v-model="historyDialogVisible"
@@ -254,8 +179,8 @@
 </template>
 
 <script setup>
-  import { reactive, ref, onMounted, inject } from "vue";
-  import { Delete, Edit, Clock, Document } from "@element-plus/icons-vue";
+  import { reactive, ref, computed, onMounted, inject } from "vue";
+  import { Clock, Document } from "@element-plus/icons-vue";
   import { ElMessage } from 'element-plus';
 
   const request = inject('request');
@@ -268,46 +193,20 @@
   const isEditing = ref(false);
   const isSaving = ref(false);
 
-  // --- 原有的业务逻辑状态 ---
-  const dialogForm = ref({
-    itemNameEn: '',
-    itemNameChn: '',
-    standard: '',
-    limitParadigm: '',
-    remark: ''
-  });
-
+  // --- 业务逻辑状态 ---
   const form = reactive({
-    buyer: '',
-    itemNameEn: '',
-    itemNameChn: '',
-    standard: ''
+    buyer: ''
   });
 
   const buyerList = ref([]);
 
-  const itemTableData = ref([
-    {
-      id: 1,
-      itemNameEn: 'Formaldehyde Content',
-      itemNameChn: '甲醛含量',
-      standard: 'GB 18401-2010',
-      limitParadigm: '≤ 75 mg/kg',
-      remark: 'B类',
-      modifyHistory: []
-    },
-    {
-      id: 2,
-      itemNameEn: 'pH Value',
-      itemNameChn: 'pH值',
-      standard: 'GB 18401-2010',
-      limitParadigm: '4.0 - 8.5',
-      remark: 'B类',
-      modifyHistory: []
-    }
-  ]);
+  // 当前买家已加载的菜单（MenuResponseDto[]）
+  const menus = ref([]);
+  const currentMenuId = ref('');
 
-  const dialogVisible = ref(false);
+  const currentMenuItems = computed(() =>
+    menus.value.find(m => m.menuId === currentMenuId.value)?.menuItems || []);
+
   const historyDialogVisible = ref(false);
   const historyData = ref([
     {
@@ -320,21 +219,7 @@
     }
   ]);
 
-  const dialogTitle = ref('');
-
-  // --- 原有的业务方法 ---
-  function addOpen() {
-    dialogVisible.value = true;
-    dialogTitle.value = 'add';
-    dialogForm.value = {
-      itemNameEn: '',
-      itemNameChn: '',
-      standard: '',
-      limitParadigm: '',
-      remark: ''
-    };
-  }
-
+  // --- 买家与菜单加载 ---
   const fetchBuyerList = async () => {
     try {
       const res = await request.get('/buyer/buyer-list');
@@ -342,8 +227,8 @@
 
       if (res.data.isSuccess) {
         buyerList.value = res.data.value.map(item => ({
-          label: item.buyerName,
-          value: item.buyerName
+          code: item.buyerCode,
+          name: item.buyerName
         }));
       } else {
         ElMessage.error('Failed to load buyer list');
@@ -354,42 +239,20 @@
     }
   };
 
-  function editOpen(row) {
-    dialogVisible.value = true;
-    dialogTitle.value = 'edit';
-    dialogForm.value = JSON.parse(JSON.stringify(row));
-  }
-
-  function addConfirm() {
-    if (dialogTitle.value === 'add') {
-      const newId = Math.max(...itemTableData.value.map(item => item.id || 0)) + 1;
-      itemTableData.value.unshift({
-        ...dialogForm.value,
-        id: newId,
-        modifyHistory: []
-      });
-    } else {
-      const index = itemTableData.value.findIndex(item => item.id === dialogForm.value.id);
-      if (index !== -1) {
-        itemTableData.value[index] = { ...dialogForm.value };
-      }
+  // 加载某买家下的所有套餐
+  function loadMenusByBuyer(buyerId) {
+    if (!buyerId) {
+      menus.value = [];
+      currentMenuId.value = '';
+      return;
     }
-    dialogVisible.value = false;
-  }
-
-  function addCancel() {
-    dialogVisible.value = false;
-  }
-
-  function searchList() {
-    console.log("Searching with:", form);
-  }
-
-  function deleteRow(row) {
-    const index = itemTableData.value.indexOf(row);
-    if (index !== -1) {
-      itemTableData.value.splice(index, 1);
-    }
+    request.get(`/Menu/get-by-buyerId/${buyerId}`).then(res => {
+      menus.value = res.data.isSuccess ? (res.data.value || []) : [];
+      currentMenuId.value = menus.value[0]?.menuId || '';
+    }).catch(() => {
+      menus.value = [];
+      currentMenuId.value = '';
+    });
   }
 
   function viewHistory(row) {
@@ -403,7 +266,11 @@
       ElMessage.warning('Please select a Buyer first');
       return;
     }
-    await fetchFiles(form.buyer);
+    const buyer = buyerList.value.find(x => x.code === form.buyer);
+    // 加载该买家的手册文件（用买家名）
+    await fetchFiles(buyer?.name || form.buyer);
+    // 加载该买家的菜单（用买家编码）
+    loadMenusByBuyer(form.buyer);
   };
 
   const fetchFiles = async (buyer) => {
@@ -531,6 +398,43 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     border: 1px solid #e4e7ed;
     margin-bottom: 24px;
+  }
+
+  /* 套餐标签导航 */
+  .menuNav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border: 1px solid #e4e7ed;
+    border-radius: 6px;
+    padding: 8px;
+    min-height: 34px;
+    margin-bottom: 14px;
+  }
+
+  .menuNavTag {
+    cursor: pointer;
+  }
+
+  .menuNavTag.active {
+    background: #409eff;
+    color: #fff;
+    border-color: #409eff;
+  }
+
+  .menuNavTag.active :deep(.el-tag__close) {
+    color: #fff;
+  }
+
+  .emptyHint {
+    color: #909399;
+    font-size: 13px;
+  }
+
+  /* 清除全局样式 table{margin-bottom:30px} 造成的表头与首行之间的空行 */
+  .removeTableGaps :deep(table) {
+    margin-bottom: 0 !important;
   }
 
   /* ========== 文件阅读器样式 ========== */

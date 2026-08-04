@@ -157,10 +157,13 @@ async function _open(port, baud) {
   throw lastErr || new Error('unable to open')
 }
 
-// ---- 端口关闭: 先让读取循环退出, 再 close (避免Windows串口驱动崩溃) ----
+// ---- 端口关闭: 先停读取, 再拉低电平, 最后 close (避免驱动崩溃 + 电平残留) ----
+const sleep = ms => new Promise(r => setTimeout(r, ms))
 async function _close(port) {
   await stopLoop()          // 停止并等待读取循环真正退出
   if (!port) return
+  try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
+  await sleep(100)          // 等驱动把电平刷到引脚
   try { await port.close() } catch (_) {}
 }
 
@@ -175,7 +178,10 @@ async function connect() {
     portObj.value = p
     portCfg.value = cfg
     connected.value = true
-    // 非流控时手动拉高 DTR+RTS 模拟握手 (USB转串口通用)
+    recoverCount = 0        // 重连计数复位
+    // 复位握手: 先拉低 → 等待 → 拉高, 制造边沿重新触发天平输出使能
+    try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
+    await sleep(120)
     try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
     startLoop()
     ElMessage.success('已连接')
@@ -196,6 +202,7 @@ async function disconnect() {
 let stopFn = null            // 置 true 让读取循环退出
 let activeReader = null      // 当前读取循环持有的 reader
 let loopDone = Promise.resolve()  // 读取循环退出信号
+let recoverCount = 0         // 自动重连次数(上限3)
 
 function startLoop() {
   stopLoop()
@@ -231,7 +238,9 @@ function startLoop() {
           }
         }
       }
-    } catch (_) { /* reader.cancel() 唤醒时进入 */ }
+    } catch (e) {
+      if (!stopped) recover()   // 驱动错误 → 自动重连; 主动取消则不重连
+    }
     finally {
       try { reader.releaseLock() } catch (_) {}
       if (activeReader === reader) activeReader = null
@@ -250,9 +259,39 @@ async function stopLoop() {
   await loopDone
 }
 
+// ---- 读取异常自动重连 (同一端口重开, 无需重新授权) ----
+async function recover() {
+  const p = portObj.value
+  if (!p) return
+  if (recoverCount >= 3) { connected.value = false; portObj.value = null; ElMessage.error('自动重连失败(超过3次)'); return }
+  recoverCount++
+  await stopLoop()
+  try { await _close(p) } catch (_) {}
+  await sleep(300)
+  try {
+    await p.open(portCfg.value)                    // 用上次成功的配置重开
+    try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
+    await sleep(120)
+    try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
+    startLoop()
+  } catch (e) {
+    connected.value = false; portObj.value = null
+    ElMessage.error('自动重连失败: ' + e.message)
+  }
+}
+
 // 页面/浏览器关闭前先停读取, 降低驱动崩溃概率
 const onUnload = () => { if (stopFn) { stopFn(); stopFn = null } }
 window.addEventListener('beforeunload', onUnload)
+
+// ---- USB 拔出检测 ----
+const onPortDisconnect = (e) => {
+  if (portObj.value && e.port === portObj.value) {
+    stopLoop(); connected.value = false; portObj.value = null; weight.value = null
+    ElMessage.warning('设备已拔出')
+  }
+}
+navigator.serial?.addEventListener('disconnect', onPortDisconnect)
 
 // ---- 业务 ----
 function record() {
@@ -306,6 +345,7 @@ function p(n) { return String(n).padStart(2, '0') }
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', onUnload)
+  navigator.serial?.removeEventListener('disconnect', onPortDisconnect)
   _close(portObj.value).catch(() => { })
   portObj.value = null
 })
