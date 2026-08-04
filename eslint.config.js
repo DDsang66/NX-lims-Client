@@ -21,4 +21,11 @@ export default defineConfig([
 
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
+  {
+    rules: {
+      // catch (_) {} 表示"故意忽略异常"，放行空 catch 块与未使用的 _ 形参
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      'no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^_' }],
+    },
+  },
 ])

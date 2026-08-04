@@ -37,13 +37,11 @@
 
     <!-- ==================== 下半：大框 ==================== -->
     <div class="bottomBox">
-      <!-- 工具栏：单号 + 买家 + Add Menu -->
+      <!-- 工具栏：买家 + Add Menu -->
       <div class="menuToolbar">
-        <span class="toolbarLabel">Report No.</span>
-        <el-input v-model="reportNo" placeholder="report no." style="width: 180px" clearable></el-input>
         <span class="toolbarLabel">Buyer</span>
         <el-select v-model="selectedBuyer" placeholder="Select buyer" filterable clearable style="width: 180px" @change="onBuyerChange">
-          <el-option v-for="b in buyerOptions" :key="b" :value="b" :label="b"></el-option>
+          <el-option v-for="b in buyerOptions" :key="b.code" :value="b.code" :label="b.name"></el-option>
         </el-select>
         <el-button type="primary" @click="addMenuOpen">{{ $t('addMenu') }}</el-button>
       </div>
@@ -53,22 +51,28 @@
         <template v-if="currentMenus.length > 0">
           <el-tag
             v-for="m in currentMenus"
-            :key="m.name"
+            :key="m.menuId"
             class="menuNavTag"
-            :class="{ active: m.name === currentMenuName }"
-            @click="currentMenuName = m.name"
-          >{{ m.name }}</el-tag>
+            :class="{ active: m.menuId === currentMenuId }"
+            @click="currentMenuId = m.menuId"
+          >{{ m.menuName }}</el-tag>
         </template>
         <span v-else class="emptyHint">No menu yet, click "Add Menu" to create one.</span>
       </div>
 
       <!-- 当前 menu 的 items -->
       <el-table :data="currentMenuItems" border class="removeTableGaps" style="width: 100%">
-        <el-table-column prop="index" label="Index" width="60"></el-table-column>
-        <el-table-column prop="itemName" label="Item Name" min-width="140" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="standardCode" label="Standard Code" min-width="140" show-overflow-tooltip></el-table-column>
+        <el-table-column label="Index" width="60">
+          <template #default="scope">{{ scope.$index + 1 }}</template>
+        </el-table-column>
+        <el-table-column label="Item Name" min-width="140" show-overflow-tooltip>
+          <template #default="scope">{{ testItemNameOf(scope.row) }}</template>
+        </el-table-column>
+        <el-table-column label="Standard Code" min-width="140" show-overflow-tooltip>
+          <template #default="scope">{{ (scope.row.standardIds || []).join(', ') }}</template>
+        </el-table-column>
         <el-table-column prop="requirement" label="Requirement" min-width="140" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="group" label="Group" width="90" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="buyerModifiedGroup" label="Group" width="90" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('operation')" width="120" fixed="right">
           <template #default="scope">
             <el-button type="primary" :icon="Edit" circle size="small" @click="editItem(scope.row)"></el-button>
@@ -85,6 +89,9 @@
     <!-- Add Menu 对话框 -->
     <el-dialog :title="$t('addMenu')" v-model="addMenuDialog" width="400px">
       <el-form :model="newMenuForm" label-width="90px">
+        <el-form-item label="Menu ID">
+          <el-input v-model="newMenuForm.menuId" placeholder="Menu ID"></el-input>
+        </el-form-item>
         <el-form-item :label="$t('menuName')">
           <el-input v-model="newMenuForm.name" placeholder="Menu name"></el-input>
         </el-form-item>
@@ -98,20 +105,17 @@
     <!-- 编辑 Item 对话框 -->
     <el-dialog :title="$t('editItem')" v-model="editDialog" width="480px">
       <el-form :model="editForm" label-width="120px">
-        <el-form-item label="Index">
-          <el-input v-model="editForm.index" disabled></el-input>
-        </el-form-item>
-        <el-form-item label="Item Name">
-          <el-input v-model="editForm.itemName"></el-input>
+        <el-form-item label="Test Item ID">
+          <el-input v-model="editForm.testItemId" disabled></el-input>
         </el-form-item>
         <el-form-item label="Standard Code">
-          <el-input v-model="editForm.standardCode"></el-input>
+          <el-input v-model="editForm.standardIdsText" placeholder="多个标准用逗号分隔"></el-input>
         </el-form-item>
         <el-form-item label="Requirement">
           <el-input v-model="editForm.requirement"></el-input>
         </el-form-item>
         <el-form-item label="Group">
-          <el-input v-model="editForm.group"></el-input>
+          <el-input v-model="editForm.buyerModifiedGroup"></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -153,82 +157,120 @@ const filteredItems = computed(() => {
     (i.group || '').toLowerCase().includes(kw));
 });
 
-// ==================== 下半：买家 + menu（mock，只存内存） ====================
-const reportNo = ref('');                    // 单号，仅参考展示，不参与过滤
-const buyerOptions = ref([]);
-const selectedBuyer = ref('');
-const currentMenuName = ref('');
+// ==================== 下半：买家 + menu（真实后端 API） ====================
+const buyerOptions = ref([]);       // [{code: buyerCode, name: buyerName}]
+const selectedBuyer = ref('');      // 存 buyerCode
+const menus = ref([]);              // 当前买家已加载的 menu（MenuResponseDto[]）
+const currentMenuId = ref('');    // 当前选中的 menuId
 
-// menu 数据按买家存放：{ [buyer]: [{ name, items: [{index,itemName,standardCode,requirement,group}] }] }
-const menusByBuyer = reactive({});
-
-const currentMenus = computed(() => menusByBuyer[selectedBuyer.value] || []);
+const currentMenus = computed(() => menus.value);
 const currentMenuItems = computed(() =>
-  currentMenus.value.find(m => m.name === currentMenuName.value)?.items || []);
+  menus.value.find(m => m.menuId === currentMenuId.value)?.menuItems || []);
 
-let idSeq = 1;   // 行内 index 自增
+// 从已加载 items 中按 testItemId 查名称
+function testItemNameOf(row) {
+  const id = row?.testItemId;
+  if (!id) return '';
+  const it = items.value.find(i => i.id === id);
+  return it ? (it.nameEn || it.nameChn || id) : id;
+}
 
 function onBuyerChange() {
-  currentMenuName.value = currentMenus.value[0]?.name || '';
+  menus.value = [];
+  currentMenuId.value = '';
+  loadMenusByBuyer(selectedBuyer.value);
 }
 
-// 点击上半 Standard/Item 的 + 按钮 → 加入当前 menu
-function addStandardToMenu(row) {
-  pushRow({ standardCode: row.standardCode });
-}
-function addItemToMenu(row) {
-  pushRow({ itemName: row.nameEn || row.nameChn });
-}
-function pushRow(partial) {
-  if (!selectedBuyer.value) { ElMessage.warning('Please select a buyer first'); return; }
-  if (currentMenus.value.length === 0) { ElMessage.warning('Please add a menu first'); return; }
-  currentMenuItems.value.push({
-    index: String(idSeq++),
-    itemName: '',
-    standardCode: '',
-    requirement: '',
-    group: '',
-    ...partial
+// 加载某买家下的所有套餐
+function loadMenusByBuyer(buyerId) {
+  if (!buyerId) return;
+  request.get(`/Menu/get-by-buyerId/${buyerId}`).then(res => {
+    menus.value = res.data.isSuccess ? (res.data.value || []) : [];
+    currentMenuId.value = menus.value[0]?.menuId || '';
+  }).catch(() => {
+    menus.value = [];
+    currentMenuId.value = '';
   });
 }
 
-// Add Menu
+// 点击上半 Standard/Item 的 + 按钮 → 调后端加入当前 menu
+function addStandardToMenu(row) {
+  addItem({ testItemId: null, standardIds: [row.standardId], requirement: '', buyerModifiedGroup: '' });
+}
+function addItemToMenu(row) {
+  addItem({ testItemId: row.id, standardIds: [], requirement: '', buyerModifiedGroup: row.group });
+}
+function addItem(payload) {
+  if (!currentMenuId.value) { ElMessage.warning('请先选择/创建套餐'); return; }
+  request.post(`/Menu/add/${currentMenuId.value}/item`, { menuId: currentMenuId.value, menuItem: payload })
+    .then(res => {
+      if (res.data.isSuccess) { ElMessage.success('已添加'); loadMenusByBuyer(selectedBuyer.value); }
+      else ElMessage.error(res.data.error || '添加失败');
+    }).catch(() => ElMessage.error('网络错误'));
+}
+
+// Add Menu（前端输入 MenuId + 名称）
 const addMenuDialog = ref(false);
-const newMenuForm = reactive({ name: '' });
+const newMenuForm = reactive({ menuId: '', name: '' });
 function addMenuOpen() {
+  newMenuForm.menuId = '';
   newMenuForm.name = '';
   addMenuDialog.value = true;
 }
 function confirmAddMenu() {
+  const menuId = newMenuForm.menuId.trim();
   const name = newMenuForm.name.trim();
-  if (!name) { ElMessage.warning('Please enter a menu name'); return; }
-  if (!menusByBuyer[selectedBuyer.value]) menusByBuyer[selectedBuyer.value] = [];
-  menusByBuyer[selectedBuyer.value].push({ name, items: [] });
-  currentMenuName.value = name;
-  addMenuDialog.value = false;
+  if (!menuId) { ElMessage.warning('请输入套餐ID'); return; }
+  if (!name) { ElMessage.warning('请输入套餐名称'); return; }
+  request.post('/Menu/add', {
+    menuId, menuName: name, menuItems: [], remark: '', status: 'Draft', buyerId: selectedBuyer.value
+  }).then(res => {
+    if (res.data.isSuccess) { ElMessage.success('添加成功'); addMenuDialog.value = false; loadMenusByBuyer(selectedBuyer.value); }
+    else ElMessage.error(res.data.error || '添加失败');
+  }).catch(() => ElMessage.error('网络错误'));
 }
 
-// 编辑 / 删除 menu item
+// 编辑 menu item（用 item 的 id 定位）
 const editDialog = ref(false);
-const editForm = ref({ index: '', itemName: '', standardCode: '', requirement: '', group: '' });
+const editForm = ref({ id: '', testItemId: '', standardIdsText: '', requirement: '', buyerModifiedGroup: '' });
 function editItem(row) {
-  editForm.value = { ...row };
+  editForm.value = {
+    id: row.id,
+    testItemId: row.testItemId || '',
+    standardIdsText: (row.standardIds || []).join(', '),
+    requirement: row.requirement || '',
+    buyerModifiedGroup: row.buyerModifiedGroup || ''
+  };
   editDialog.value = true;
 }
 function confirmEditItem() {
-  const r = currentMenuItems.value.find(x => x.index === editForm.value.index);
-  if (r) Object.assign(r, editForm.value);
-  editDialog.value = false;
+  const payload = {
+    id: editForm.value.id,
+    testItemId: editForm.value.testItemId || null,
+    standardIds: editForm.value.standardIdsText.split(',').map(s => s.trim()).filter(Boolean),
+    requirement: editForm.value.requirement,
+    buyerModifiedGroup: editForm.value.buyerModifiedGroup
+  };
+  request.put(`/Menu/update/${currentMenuId.value}/item`, { menuId: currentMenuId.value, menuItem: payload })
+    .then(res => {
+      if (res.data.isSuccess) { ElMessage.success('已更新'); editDialog.value = false; loadMenusByBuyer(selectedBuyer.value); }
+      else ElMessage.error(res.data.error || '更新失败');
+    }).catch(() => ElMessage.error('网络错误'));
 }
+
+// 删除 menu item
 function deleteItem(row) {
-  const i = currentMenuItems.value.findIndex(x => x.index === row.index);
-  if (i > -1) currentMenuItems.value.splice(i, 1);
+  request.delete(`/Menu/delete/${currentMenuId.value}/item/${row.id}`)
+    .then(res => {
+      if (res.data.isSuccess) { ElMessage.success('已删除'); loadMenusByBuyer(selectedBuyer.value); }
+      else ElMessage.error(res.data.error || '删除失败');
+    }).catch(() => ElMessage.error('网络错误'));
 }
 
 // ==================== 初始化 ====================
 onMounted(() => {
   request.get('/buyer/buyer-list').then(res => {
-    if (res.data.isSuccess) buyerOptions.value = (res.data.value || []).map(b => b.buyerName);
+    if (res.data.isSuccess) buyerOptions.value = (res.data.value || []).map(b => ({ code: b.buyerCode, name: b.buyerName }));
   }).catch(() => {});
   request.get('/Standard/getall').then(res => {
     if (res.data.isSuccess) standards.value = res.data.value || [];

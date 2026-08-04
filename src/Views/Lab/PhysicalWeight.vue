@@ -22,6 +22,13 @@
             <span :style="{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',marginRight:'4px',background:connected?'#67c23a':'#c0c4cc',boxShadow:connected?'0 0 4px #67c23a':'none'}"></span>
             {{ connecting ? '连接中...' : connected ? '已连接 ' + cfgInfo : '未连接 — 可手动输入' }}
           </div>
+          <div v-if="connected" style="margin-top:4px;font-size:11px;color:#909399;">
+            <span :style="{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',marginRight:'4px',background:weight!=null? '#67c23a':'#c0c4cc'}"></span>
+            {{ weight != null ? '读取正常: ' + weight.toFixed(4) : '等待数据... 按天平 PRINT 键' }}
+          </div>
+          <div v-if="connected && rawBuf" style="margin-top:2px;font-size:10px;color:#909399;word-break:break-all;">
+            {{ rawBuf }}
+          </div>
         </div>
 
         <!-- 重量 -->
@@ -117,6 +124,8 @@ const cfgInfo = ref('')
 const portObj = ref(null)
 const portCfg = ref(null)  // 实际打开的端口配置 {dataBits,parity,...}
 const weight = ref(null)
+const lastRxTime = ref(0)          // 最近一次收到串口数据的时间戳
+const rawBuf = ref('')             // 调试: 最近收到的原始数据
 const area = ref(null)             // 直接输入模式
 const areaByCalc = ref(false)      // 长×宽计算模式
 const areaLen = ref(null)
@@ -131,13 +140,14 @@ const rows = reactive([])
 const sel = ref([])
 
 // ---- 串口底层 (Sartorius BSA) ----
+// 注意: USB转串口多数不支持硬件流控, 优先用非流控 + 手动DTR/RTS模拟握手
 async function _open(port, baud) {
   const cfgs = [
-    { baudRate: baud, dataBits: 7, parity: 'odd',  stopBits: 1, flowControl: 'hardware' },
-    { baudRate: baud, dataBits: 8, parity: 'odd',  stopBits: 1 },
     { baudRate: baud, dataBits: 7, parity: 'odd',  stopBits: 1 },
+    { baudRate: baud, dataBits: 8, parity: 'odd',  stopBits: 1 },
     { baudRate: baud, dataBits: 7, parity: 'even', stopBits: 1 },
     { baudRate: baud, dataBits: 8, parity: 'none', stopBits: 1 },
+    { baudRate: baud, dataBits: 7, parity: 'odd',  stopBits: 1, flowControl: 'hardware' },
   ]
   let lastErr
   for (const c of cfgs) {
@@ -147,9 +157,10 @@ async function _open(port, baud) {
   throw lastErr || new Error('unable to open')
 }
 
+// ---- 端口关闭: 先让读取循环退出, 再 close (避免Windows串口驱动崩溃) ----
 async function _close(port) {
-  try { if (port.readable) { const r = port.readable.getReader(); r.releaseLock(); await port.readable.cancel() } } catch (_) {}
-  try { if (port.writable) { const w = port.writable.getWriter(); w.releaseLock(); await port.writable.close() } } catch (_) {}
+  await stopLoop()          // 停止并等待读取循环真正退出
+  if (!port) return
   try { await port.close() } catch (_) {}
 }
 
@@ -164,6 +175,7 @@ async function connect() {
     portObj.value = p
     portCfg.value = cfg
     connected.value = true
+    // 非流控时手动拉高 DTR+RTS 模拟握手 (USB转串口通用)
     try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
     startLoop()
     ElMessage.success('已连接')
@@ -173,60 +185,74 @@ async function connect() {
 }
 
 async function disconnect() {
-  stopLoop()
-  if (portObj.value) { await _close(portObj.value); portObj.value = null }
+  await _close(portObj.value)   // 等读取循环退出后再关端口
+  portObj.value = null
   connected.value = false
   weight.value = null
   ElMessage.info('已断开')
 }
 
-// ---- 持续读取 (持久 reader + ESC P 定时敲) ----
-let stopFn = null
+// ---- 持续读取 (持久 reader, 连接期间只保留一个) ----
+let stopFn = null            // 置 true 让读取循环退出
+let activeReader = null      // 当前读取循环持有的 reader
+let loopDone = Promise.resolve()  // 读取循环退出信号
 
 function startLoop() {
   stopLoop()
   const p = portObj.value
   let stopped = false
   stopFn = () => { stopped = true }
+  let resolve
+  loopDone = new Promise(r => { resolve = r })
 
-  // 持久 reader: 一直活着，收到数据立刻更新重量
   ;(async () => {
     let reader
-    try { reader = p.readable.getReader() } catch (_) { return }
+    try { reader = p.readable.getReader() } catch (_) { resolve?.(); return }
+    activeReader = reader
     let buf = ''
     try {
       while (!stopped) {
         const { value, done } = await reader.read()
         if (done || stopped) break
-        if (value) {
+        if (value && value.length) {
+          lastRxTime.value = Date.now()
+          // 剥离校验位 (7-bit 模式)
           if (portCfg.value && portCfg.value.dataBits === 7) { for (let i = 0; i < value.length; i++) value[i] &= 0x7F }
-          buf += new TextDecoder().decode(value)
-          const lines = buf.split(/[\r\n]+/)
-          buf = lines.pop() || ''
-          for (const line of lines) {
+          const dec = new TextDecoder().decode(value)
+          buf += dec
+          rawBuf.value = (rawBuf.value + dec).slice(-80)  // 最近80字符
+          // 按行拆分, 攒够一行才解析
+          const parts = buf.split('\n')
+          buf = parts.pop() || ''
+          for (const part of parts) {
+            const line = part.replace(/\r$/, '')
             const m = line.trim().match(/([+-]?\d+\.\d+)/)
             if (m) weight.value = parseFloat(m[1])
           }
         }
       }
-    } catch (_) { /* cancel */ }
-    finally { try { reader.releaseLock() } catch (_) {} }
+    } catch (_) { /* reader.cancel() 唤醒时进入 */ }
+    finally {
+      try { reader.releaseLock() } catch (_) {}
+      if (activeReader === reader) activeReader = null
+      resolve?.()
+    }
   })()
-
-  // 定时 ESC P (原始字节, 解决 7-bit 编码问题)
-  let timer
-  function ping() {
-    if (stopped) return
-    const raw = new Uint8Array([0x1b, 0x50, 0x0d, 0x0a]) // ESC P CR LF
-    const w = p.writable.getWriter()
-    w.write(raw).catch(() => {}).finally(() => w.releaseLock())
-    timer = setTimeout(ping, (refreshInterval.value || 1) * 1000)
-  }
-  ping()
-  stopFn = () => { stopped = true; clearTimeout(timer) }
 }
 
-function stopLoop() { if (stopFn) { stopFn(); stopFn = null } }
+async function stopLoop() {
+  if (stopFn) { stopFn(); stopFn = null }
+  // 取消 pending read 唤醒循环, 让它在释放锁后自己退出
+  if (activeReader) {
+    const r = activeReader
+    try { r.cancel().catch(() => {}) } catch (_) {}
+  }
+  await loopDone
+}
+
+// 页面/浏览器关闭前先停读取, 降低驱动崩溃概率
+const onUnload = () => { if (stopFn) { stopFn(); stopFn = null } }
+window.addEventListener('beforeunload', onUnload)
 
 // ---- 业务 ----
 function record() {
@@ -278,7 +304,11 @@ async function doSave() {
 function ts(s) { if (!s) return '-'; const d = new Date(s); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` }
 function p(n) { return String(n).padStart(2, '0') }
 
-onBeforeUnmount(() => { stopLoop(); if (portObj.value) _close(portObj.value).catch(() => { }) })
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onUnload)
+  _close(portObj.value).catch(() => { })
+  portObj.value = null
+})
 </script>
 
 <style scoped>
