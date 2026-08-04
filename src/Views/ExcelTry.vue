@@ -89,7 +89,6 @@
           <small>{{ editingUser }} is editing.</small>
         </div>
       </div>
-
       <!-- 功能切换区域 (剩余区域) -->
       <div class="function-tabs">
         <el-tabs v-model="activeTab" type="border-card" class="full-height-tabs">
@@ -168,6 +167,12 @@
           </el-tab-pane>
         </el-tabs>
       </div>
+
+      <!-- 下半部分：手写输入区域 -->
+      <div class="handwriting-wrapper">
+        <HandwritingInput @input="handleHandwritingInput" ref="handwritingRef" />
+      </div>
+
     </div>
   </div>
 </template>
@@ -177,6 +182,7 @@
   import { ElMessage } from 'element-plus' 
   import { Plus } from '@element-plus/icons-vue'
   import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
+  import HandwritingInput from '@/components/HandwritingInput.vue'
 
   const userStore = inject('userAuthStore')
   const isDocumentChanged = ref(false);
@@ -441,6 +447,93 @@
       onlyofficeEditor.value = null
     }
   })
+
+
+  const handwritingRef = ref(null)
+
+  // 处理手写输入 - 插入到当前光标位置
+  const handleHandwritingInput = (text) => {
+    // 获取当前活动的输入框或编辑器
+    const activeElement = document.activeElement
+
+    // 情况1：如果是普通的input或textarea
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+      const start = activeElement.selectionStart
+      const end = activeElement.selectionEnd
+      const value = activeElement.value
+
+      // 在光标位置插入文本
+      const newValue = value.substring(0, start) + text + value.substring(end)
+      activeElement.value = newValue
+
+      // 触发input事件，以便Vue更新绑定的数据
+      activeElement.dispatchEvent(new Event('input', { bubbles: true }))
+
+      // 将光标移到插入文本的后面
+      const newCursorPos = start + text.length
+      activeElement.setSelectionRange(newCursorPos, newCursorPos)
+      activeElement.focus()
+
+      ElMessage.success(`已插入 "${text}"`)
+      return
+    }
+
+    // 情况2：如果是OnlyOffice编辑器
+    if (onlyofficeEditor.value) {
+      // 使用OnlyOffice的API插入文本
+      try {
+        // 注意：OnlyOffice可能不支持直接插入文本，需要通过键盘事件模拟
+        // 这里使用简化的方法：发送文本到编辑器
+        const selection = window.getSelection()
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0)
+          const textNode = document.createTextNode(text)
+          range.deleteContents()
+          range.insertNode(textNode)
+          // 将光标移到插入文本后面
+          range.setStartAfter(textNode)
+          range.collapse(true)
+          selection.removeAllRanges()
+          selection.addRange(range)
+          ElMessage.success(`已插入 "${text}"`)
+        } else {
+          // 如果无法获取选區，使用clipboard API作为备选
+          navigator.clipboard.writeText(text).then(() => {
+            // 模拟粘贴操作（需要用户手动Ctrl+V）
+            ElMessage.info('文本已复制到剪贴板，请按 Ctrl+V 粘贴到编辑器')
+          })
+        }
+      } catch (error) {
+        console.error('插入文本失败:', error)
+        // 降级方案：复制到剪贴板
+        navigator.clipboard.writeText(text)
+        ElMessage.info('文本已复制到剪贴板，请按 Ctrl+V 粘贴到编辑器')
+      }
+      return
+    }
+
+    // 情况3：如果是内容可编辑的div (contenteditable)
+    if (activeElement && activeElement.contentEditable === 'true') {
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        const textNode = document.createTextNode(text)
+        range.deleteContents()
+        range.insertNode(textNode)
+        range.setStartAfter(textNode)
+        range.collapse(true)
+        selection.removeAllRanges()
+        selection.addRange(range)
+        ElMessage.success(`已插入 "${text}"`)
+      }
+      return
+    }
+
+    // 默认降级方案：复制到剪贴板
+    navigator.clipboard.writeText(text)
+    ElMessage.info('未检测到可输入区域，文本已复制到剪贴板')
+  }
+
 </script>
 
 <style>
@@ -483,14 +576,35 @@
   .right-panel {
     width: 20%;
     height: 100%;
-    margin-left: 10px; /* 添加左边距，使左右面板有间隔 */
-    background-color: #fff; /* 添加白色背景 */
-    border-radius: 8px; /* 添加圆角 */
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1); /* 添加阴影 */
+    margin-left: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
     padding: 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    gap: 10px; /* 添加间距 */
+  }
+
+  /* 用户列表 - 占上半部分 */
+  .user-list {
+    height: 15%; /* 调整高度，给手写板留出空间 */
+    border-bottom: 1px solid #ebeef5;
+    padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* 防止被压缩 */
+  }
+
+  /* 手写输入区域 - 占下半部分 */
+  .handwriting-wrapper {
+    flex: 1; /* 占剩余空间 */
+    min-height: 300px; /* 保证最小高度 */
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #ebeef5;
+    background: #fff;
   }
 
   .search-form {
@@ -526,13 +640,13 @@
   }
 
   /* 用户列表样式 */
-  .user-list {
+  /*.user-list {
     height: 15%;
     border-bottom: 1px solid #ebeef5;
     padding: 10px 0;
     display: flex;
     flex-direction: column;
-  }
+  }*/
 
   .user-list-title {
     font-size: 14px;

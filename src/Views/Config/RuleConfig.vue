@@ -1,80 +1,139 @@
 <template>
   <div>
     <div class="domContent">
-      <div class="searchParametersContanier">
-        <el-form inline style="display: flex">
-          <el-form-item label="Rule ID">
-            <el-input v-model="searchRuleId" placeholder="" clearable style="width: 200px"></el-input>
-          </el-form-item>
-          <el-form-item label="Formula ID">
-            <el-input v-model="searchFormulaId" placeholder="" clearable style="width: 200px"></el-input>
-          </el-form-item>
-          <el-form-item label="Param Name">
-            <el-input v-model="searchParamName" placeholder="" clearable style="width: 200px"></el-input>
-          </el-form-item>
-          <el-form-item style="flex: 1; margin-right: 0; text-align: right;">
-            <el-button type="primary" @click="addOpen">Add Rule</el-button>
-          </el-form-item>
-        </el-form>
+      <!-- ==================== 上半：Formula / ParamStructure 各占一半 ==================== -->
+      <div class="topHalf">
+        <!-- 左：Formula 框 -->
+        <div class="halfBox">
+          <div class="boxTitle">Formula</div>
+          <div class="formula-toolbar">
+            <el-input v-model="formulaSearch" placeholder="Search formula" clearable style="flex: 1;"></el-input>
+            <el-select v-model="selectedStandardFamilyId" 
+                       placeholder="Filter by family" 
+                       filterable 
+                       clearable 
+                       style="width: 200px; margin-left: 10px;"
+                       @change="handleFamilyFilterChange">
+              <el-option v-for="item in standardFamilyOptions" 
+                         :key="item.id" 
+                         :label="item.standardFamilyCode || item.name" 
+                         :value="item.id" />
+            </el-select>
+          </div>
+          <el-table :data="filteredFormulas" border class="removeTableGaps" height="300" style="width: 100%" table-layout="fixed" >
+            <el-table-column prop="id" label="ID" width="160" fixed="left" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="name" label="Name" min-width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="paramName" label="Param Name" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="expressionTemplate" label="Expression" min-width="200" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="conditionFields" label="Condition Fields" width="150">
+              <template #default="{ row }">
+                <el-tag v-for="field in (row.conditionFields || [])" :key="field" size="small" style="margin-right: 3px; margin-bottom: 2px;">
+                  {{ field }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="description" label="Description" min-width="150" show-overflow-tooltip></el-table-column>
+            <el-table-column label="Status" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
+                  {{ row.isActive ? 'Active' : 'Inactive' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="" width="90" fixed="right">
+              <template #default="scope">
+                <el-button type="primary" size="small" @click="selectFormula(scope.row)">Select</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 右：ParamStructure 框 -->
+        <div class="halfBox">
+          <div class="boxTitle">Param Structure</div>
+          <el-input v-model="paramStructureSearch" placeholder="Search param structure" clearable></el-input>
+          <el-table :data="filteredParamStructures" border class="removeTableGaps" height="300" style="width: 100%">
+            <el-table-column prop="id" label="ID" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="name" label="Name" min-width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="description" label="Description" min-width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column label="" width="55" fixed="right">
+              <template #default="scope">
+                <el-button type="primary" size="small" circle @click="addParamStructureToRule(scope.row)">+</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </div>
 
-      <el-table :data="pagedData" border class="removeTableGaps" style="width: 100%" v-loading="loading">
-        <el-table-column type="expand">
-          <template #default="{ row }">
-            <div style="margin-left: 30px; padding: 10px 0;">
-              <div style="margin-bottom: 8px;">
-                <b>Param Structure ID:</b> {{ row.paramStructureId || '-' }}
-              </div>
-              <el-table :data="matchRows(row)" border size="small" style="width: 100%">
-                <el-table-column prop="type" label="Type" width="120"></el-table-column>
-                <el-table-column prop="field" label="Field" width="200"></el-table-column>
-                <el-table-column prop="value" label="Value" min-width="200" show-overflow-tooltip></el-table-column>
-              </el-table>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="id" label="Rule ID" width="200" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="formulaId" label="Formula ID" width="180" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="paramName" label="Param Name" width="150"></el-table-column>
-        <el-table-column prop="priority" label="Priority" width="100"></el-table-column>
-        <el-table-column label="Status" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
-              {{ row.isActive ? 'Active' : 'Inactive' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="resultValue" label="Result Value" width="120"></el-table-column>
-        <el-table-column prop="resultNotes" label="Result Notes" min-width="200" show-overflow-tooltip></el-table-column>
-        <el-table-column label="Operation" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" :icon="Edit" circle size="small" @click="editOpen(row)"></el-button>
-            <el-tooltip :content="row.isActive ? 'Deactivate' : 'Activate'" placement="top">
-              <el-button :type="row.isActive ? 'danger' : 'success'" circle size="small"
-                         style="margin-left: 4px"
-                         @click="row.isActive ? deactiveRule(row) : activeRule(row)">
-                <el-icon size="14">
-                  <CircleCheck v-if="!row.isActive" />
-                  <VideoPause v-else />
-                </el-icon>
-              </el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- ==================== 下半：Rule 大框 ==================== -->
+      <div class="bottomBox">
+        <!-- 工具栏：搜索 + Add Rule -->
+        <div class="ruleToolbar">
+          <el-input v-model="searchRuleId" placeholder="Rule ID" clearable style="width: 180px"></el-input>
+          <el-input v-model="searchFormulaId" placeholder="Formula ID" clearable style="width: 180px"></el-input>
+          <el-input v-model="searchParamName" placeholder="Param Name" clearable style="width: 180px"></el-input>
+          <el-button type="primary" @click="addOpen" style="margin-left: auto;">Add Rule</el-button>
+        </div>
 
-      <div style="display: flex; justify-content: center; margin-top: 16px;">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="filteredData.length"
-          layout="total, sizes, prev, pager, next"
-          background
-        />
+        <el-table :data="pagedData" border class="removeTableGaps" style="width: 100%" v-loading="loading">
+          <el-table-column type="expand">
+            <template #default="{ row }">
+              <div style="margin-left: 30px; padding: 10px 0;">
+                <div style="margin-bottom: 8px;">
+                  <b>Param Structure ID:</b> {{ row.paramStructureId || '-' }}
+                </div>
+                <el-table :data="matchRows(row)" border size="small" style="width: 100%">
+                  <el-table-column prop="type" label="Type" width="120"></el-table-column>
+                  <el-table-column prop="field" label="Field" width="200"></el-table-column>
+                  <el-table-column prop="value" label="Value" min-width="200" show-overflow-tooltip></el-table-column>
+                </el-table>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="id" label="Rule ID" width="200" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="formulaId" label="Formula ID" width="180" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="paramName" label="Param Name" width="150"></el-table-column>
+          <el-table-column prop="priority" label="Priority" width="100"></el-table-column>
+          <el-table-column label="Status" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
+                {{ row.isActive ? 'Active' : 'Inactive' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="resultValue" label="Result Value" width="120"></el-table-column>
+          <el-table-column prop="resultNotes" label="Result Notes" min-width="200" show-overflow-tooltip></el-table-column>
+          <el-table-column label="Operation" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" :icon="Edit" circle size="small" @click="editOpen(row)"></el-button>
+              <el-tooltip :content="row.isActive ? 'Deactivate' : 'Activate'" placement="top">
+                <el-button :type="row.isActive ? 'danger' : 'success'" circle size="small"
+                           style="margin-left: 4px"
+                           @click="row.isActive ? deactiveRule(row) : activeRule(row)">
+                  <el-icon size="14">
+                    <CircleCheck v-if="!row.isActive" />
+                    <VideoPause v-else />
+                  </el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div style="display: flex; justify-content: center; margin-top: 16px;">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="filteredData.length"
+            layout="total, sizes, prev, pager, next"
+            background
+          />
+        </div>
       </div>
     </div>
 
+    <!-- ==================== Add/Edit Rule 对话框 ==================== -->
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="70%">
       <el-form :model="dialogForm" label-width="150px">
         <el-form-item label="Rule ID">
@@ -136,6 +195,76 @@ const searchParamName = ref('');
 const currentPage = ref(1);
 const pageSize = ref(20);
 
+// ==================== 上半：Formula 数据 ====================
+const formulas = ref([]);
+const allFormulas = ref([]); // 存储所有 Formula，用于过滤
+const standardFamilyOptions = ref([]);
+const selectedStandardFamilyId = ref('');
+const formulaSearch = ref('');
+
+// ==================== 上半：ParamStructure 数据 ====================
+const paramStructures = ref([]);
+const paramStructureSearch = ref('');
+
+// 过滤后的 Formula
+const filteredFormulas = computed(() => {
+  let result = allFormulas.value;
+  
+  // 按 Standard Family 过滤
+  if (selectedStandardFamilyId.value) {
+    const selectedFamily = standardFamilyOptions.value.find(f => f.id === selectedStandardFamilyId.value);
+    if (selectedFamily && selectedFamily.formulaIds) {
+      result = result.filter(f => selectedFamily.formulaIds.includes(f.id));
+    }
+  }
+  
+  // 按搜索关键词过滤
+  const kw = formulaSearch.value.trim().toLowerCase();
+  if (kw) {
+    result = result.filter(f =>
+      (f.id || '').toLowerCase().includes(kw) ||
+      (f.name || '').toLowerCase().includes(kw) ||
+      (f.paramName || '').toLowerCase().includes(kw) ||
+      (f.description || '').toLowerCase().includes(kw)
+    );
+  }
+  
+  return result;
+});
+
+// 过滤后的 ParamStructure
+const filteredParamStructures = computed(() => {
+  const kw = paramStructureSearch.value.trim().toLowerCase();
+  if (!kw) return paramStructures.value;
+  return paramStructures.value.filter(p =>
+    (p.id || '').toLowerCase().includes(kw) ||
+    (p.name || '').toLowerCase().includes(kw) ||
+    (p.description || '').toLowerCase().includes(kw));
+});
+
+// 选择 Formula
+function selectFormula(row) {
+  searchFormulaId.value = row.id;
+  ElMessage.success(`已选择 Formula: ${row.id}`);
+}
+
+// Standard Family 过滤变化
+function handleFamilyFilterChange(val) {
+  // 只是触发 computed 重新计算
+  currentPage.value = 1; // 重置分页
+}
+
+// 从 ParamStructure 添加
+function addParamStructureToRule(row) {
+  if (dialogVisible.value) {
+    dialogForm.value.paramStructureId = row.id;
+  } else {
+    addOpen();
+    dialogForm.value.paramStructureId = row.id;
+  }
+}
+
+// ==================== 下半：Rule 数据 ====================
 const filteredData = computed(() => {
   return allData.value.filter(item => {
     return (!searchFormulaId.value || (item.formulaId || '').toLowerCase().includes(searchFormulaId.value.toLowerCase())) &&
@@ -374,14 +503,169 @@ function matchRows(row) {
   return rows;
 }
 
-onMounted(() => fetchAll());
+// ==================== 加载数据 ====================
+
+// 加载 Standard Family 列表
+function fetchStandardFamilies() {
+  request.get('/StandardFamily/getall').then(res => {
+    if (res.data.isSuccess) {
+      standardFamilyOptions.value = res.data.value || [];
+    } else {
+      ElMessage.error(res.data.error || 'Failed to load standard families');
+      standardFamilyOptions.value = [];
+    }
+  }).catch(() => {
+    ElMessage.error('Failed to load standard families');
+    standardFamilyOptions.value = [];
+  });
+}
+
+// 加载所有 Formula
+function fetchAllFormulas() {
+  request.get('/ParamFormula/getall').then(res => {
+    if (res.data.isSuccess) {
+      allFormulas.value = res.data.value || [];
+    } else {
+      ElMessage.error(res.data.error || 'Failed to load formulas');
+      allFormulas.value = [];
+    }
+  }).catch(() => {
+    ElMessage.error('Failed to load formulas');
+    allFormulas.value = [];
+  });
+}
+
+// 根据 Standard Family ID 加载 Formula（用于后续扩展）
+async function fetchFormulasByFamily(familyId) {
+  if (!familyId) {
+    // 如果没有选择 family，加载所有
+    fetchAllFormulas();
+    return;
+  }
+  
+  const selectedFamily = standardFamilyOptions.value.find(f => f.id === familyId);
+  if (!selectedFamily || !selectedFamily.formulaIds || selectedFamily.formulaIds.length === 0) {
+    allFormulas.value = [];
+    return;
+  }
+  
+  try {
+    const res = await request.get('/ParamFormula/get-by-ids', {
+      params: {
+        ids: selectedFamily.formulaIds
+      }
+    });
+    
+    if (res.data.isSuccess) {
+      allFormulas.value = res.data.value || [];
+    } else {
+      ElMessage.error(res.data.error || 'Failed to fetch formulas');
+      allFormulas.value = [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch formulas by family:', error);
+    ElMessage.error('Failed to fetch formulas');
+    allFormulas.value = [];
+  }
+}
+
+function fetchParamStructures() {
+  // TODO: 接口待接入
+  // request.get('/ParamStructure/getall').then(res => {
+  //   if (res.data.isSuccess) paramStructures.value = res.data.value || [];
+  // }).catch(() => {});
+  // 模拟数据
+  paramStructures.value = [
+    { id: 'PS001', name: 'Dimension Structure', description: 'Dimensions like length, width, height' },
+    { id: 'PS002', name: 'Material Structure', description: 'Material properties and compositions' },
+  ];
+}
+
+// 监听 Standard Family 选择变化，重新加载 Formula
+watch(selectedStandardFamilyId, (newVal) => {
+  if (newVal) {
+    fetchFormulasByFamily(newVal);
+  } else {
+    fetchAllFormulas();
+  }
+  currentPage.value = 1;
+});
+
+onMounted(() => {
+  fetchAll();
+  fetchAllFormulas();
+  fetchStandardFamilies();
+  fetchParamStructures();
+});
 </script>
 
-<style scoped>
-.domContent { margin: 0 auto; }
-.removeTableGaps :deep(table) { margin-bottom: 0 !important; }
+<style scoped lang="scss">
+.domContent {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
 
-.modeToggle { display: flex; gap: 8px; }
+// ==================== 上半区样式 ====================
+.topHalf {
+  display: flex;
+  gap: 15px;
+}
+
+  .halfBox {
+    flex: 1;
+    min-width: 0; // 关键：防止内容撑开 flex 容器
+    border: 1px solid var(--el-border-color);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; // 确保内容不会溢出
+    gap: 10px;
+  }
+
+  // 给表格添加固定布局
+  .halfBox :deep(.el-table) {
+    table-layout: fixed;
+  }
+
+.boxTitle {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--el-text-color-primary);
+}
+
+.formula-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// ==================== 下半区样式 ====================
+.bottomBox {
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ruleToolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.removeTableGaps :deep(table) {
+  margin-bottom: 0 !important;
+}
+
+.modeToggle {
+  display: flex;
+  gap: 8px;
+}
 .modeBlock {
   padding: 4px 16px;
   border: 1px solid #DCDFE6;
