@@ -343,6 +343,7 @@ function removeAllProperty(group){
   }
 }
 async function getPropertys() {
+  if(!props.buyerNameDto){ return }
   const rep = await request.get('/render/sampledesc', {
     params: {
       buyername:props.buyerNameDto,

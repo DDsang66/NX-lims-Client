@@ -76,6 +76,9 @@
       <el-table
         :data="currentMenuItems"
         border class="removeTableGaps" style="width: 100%"
+        row-key="id"
+        :expand-row-keys="expandedRows"
+        @expand-change="onExpandChange"
         @row-click="onItemRowClick"
         :row-class-name="rowClassName"
       >
@@ -85,7 +88,13 @@
             <div class="itemStandards">
               <template v-if="(scope.row.standardIds || []).length > 0">
                 <span class="stdLabel">Standards:</span>
-                <el-tag v-for="s in scope.row.standardIds" :key="s" class="stdTag">{{ s }}</el-tag>
+                <el-tag
+                  v-for="s in scope.row.standardIds"
+                  :key="s"
+                  class="stdTag"
+                  closable
+                  @close.stop="removeStandardFromItem(scope.row, s)"
+                >{{ s }}</el-tag>
               </template>
               <span v-else class="emptyHint">No standard yet, select the item and add from the Standard box above.</span>
             </div>
@@ -224,6 +233,12 @@ const selectedItemId = ref('');
 function onItemRowClick(row) {
   selectedItemId.value = row.id;
 }
+// 展开的子行 id（受控，数据重载后保持展开）
+const expandedRows = ref([]);
+function onExpandChange(_row, expandedRowsArr) {
+  // expand-change 第二参是“当前展开行对象数组”，映射成 id（expand-row-keys 需要 row-key 值）
+  expandedRows.value = (expandedRowsArr || []).map(r => r.id);
+}
 // 行高亮 class
 function rowClassName({ row }) {
   return row.id === selectedItemId.value ? 'selected-item-row' : '';
@@ -255,6 +270,24 @@ function addStandardToSelectedItem(row) {
   }).then(res => {
     if (res.data.isSuccess) { ElMessage.success('已添加 standard'); loadMenusByBuyer(selectedBuyer.value); }
     else ElMessage.error(res.data.error || '添加失败');
+  }).catch(() => ElMessage.error('网络错误'));
+}
+// 展开子行的 × → 从该 item 移除一个 standard
+function removeStandardFromItem(item, stdId) {
+  const newIds = (item.standardIds || []).filter(s => s !== stdId);
+  request.put(`/Menu/update/${currentMenuId.value}/item`, {
+    menuId: currentMenuId.value,
+    menuItem: {
+      id: item.id,
+      testItemId: item.testItemId || null,
+      standardIds: newIds,
+      requirement: item.requirement || '',
+      buyerModifiedGroup: item.buyerModifiedGroup || '',
+      buyerOwnName: item.buyerOwnName || ''
+    }
+  }).then(res => {
+    if (res.data.isSuccess) { ElMessage.success('已移除 standard'); loadMenusByBuyer(selectedBuyer.value); }
+    else ElMessage.error(res.data.error || '移除失败');
   }).catch(() => ElMessage.error('网络错误'));
 }
 function addItem(payload) {
@@ -393,7 +426,8 @@ onMounted(() => {
 }
 
 .halfBox {
-  flex: 1;
+  flex: 1 1 50%;
+  min-width: 0;
   border: 1px solid var(--el-border-color);
   border-radius: 10px;
   padding: 12px;
@@ -495,8 +529,14 @@ onMounted(() => {
   margin-right: 4px;
 }
 
-/* 点击选中的 item 行高亮 */
+/* 点击选中的 item 行高亮（加深 + 白字 + 加粗，保证明显） */
 :deep(.selected-item-row) {
-  background: var(--el-color-primary-light-9);
+  background: var(--el-color-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+:deep(.selected-item-row td) {
+  background: var(--el-color-primary) !important;
 }
 </style>

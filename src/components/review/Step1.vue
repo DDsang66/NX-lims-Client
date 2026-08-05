@@ -76,7 +76,7 @@
           </el-form-item>
         </el-form>
       </div>
-      <div style="width: 40%" class="thisBlock">
+      <div style="width: 40%" class="thisBlock rightBlock">
         <el-form
           label-position="left"
           label-width="auto"
@@ -85,30 +85,32 @@
           :rules="rules2"
           :validate-on-rule-change="false"
           hide-required-asterisk
-          inline>
-          <el-form-item prop="newItem">
+          class="rightForm">
+          <el-form-item prop="newItem" class="rightFormItem">
             <template #label>
               <div class="itemLabel2">{{$t('item')}}</div>
             </template>
             <el-select style="width: 300px" :size="size" v-model="newItemName" filterable @change="newItemstandardCode=''">
-              <el-option v-for="itemName  in newItemOptions.map(item=>item.itemName)"
+              <el-option v-for="itemName in newItemOptions.map(item => item.itemName)"
                          :key="itemName"
                          :value="itemName"
                          :label="itemName">
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item prop="newItem.standardCode">
+          <el-form-item prop="newItem.standardCode" class="rightFormItem">
             <template #label>
               <div class="itemLabel2">{{$t('standardCode')}}</div>
             </template>
-            <el-select style="width: 300px" :size="size" filterable
-                       v-model="newItemstandardCode">
-              <el-option v-for="standardCode in newItemOption.standardCodes" :key="standardCode"
-                         :value="standardCode">
-              </el-option>
-            </el-select>
-            <el-button type="primary" style="margin-left: 5px" @click="addAdditionalItem">+</el-button>
+            <div class="standardLine">
+              <el-select style="width: 300px" :size="size" filterable
+                         v-model="newItemstandardCode">
+                <el-option v-for="s in standardOptions" :key="s.standardCode"
+                           :value="s.standardCode">
+                </el-option>
+              </el-select>
+              <el-button type="primary" class="addBtn" @click="addAdditionalItem">+</el-button>
+            </div>
           </el-form-item>
         </el-form>
       </div>
@@ -124,10 +126,6 @@
           <div class="menuFirstListContainer">
 <!--            模糊搜索-->
             <div class="itemFuzzyQueryContainer">
-              <div class="oneFormItem" v-if="menu.groups">
-                <div class="itemLabel">{{$t('group')}}</div>
-                <el-input v-model="itemFuzzyQueryParameters.group" style="width: 150px"></el-input>
-              </div>
               <div class="oneFormItem">
                 <div class="itemLabel">{{$t('item')}}</div>
                 <el-input v-model="itemFuzzyQueryParameters.itemName" style="width: 300px"></el-input>
@@ -136,12 +134,11 @@
                 <div class="itemLabel">{{$t('standardCode')}}</div>
                 <el-input v-model="itemFuzzyQueryParameters.standardCode" style="width: 300px"></el-input>
               </div>
-              <el-button @click="itemFuzzyQuery" circle><el-icon><Search /></el-icon></el-button>
               <el-button @click="itemFuzzyQueryReset">{{$t('reset')}}</el-button>
             </div>
 <!--            分组-->
             <div v-if="menu.groups">
-              <div v-for="group in menu.groups" :key="group.name" v-show="group.name.includes(itemFuzzyQueryParameters.group)">
+              <div v-for="group in menu.groups" :key="group.name">
                 <h6 class="">{{ group.name }}</h6>
                 <el-table
                   border
@@ -252,7 +249,6 @@ import SamplesSelect from "@/components/self made UI/SamplesSelect.vue";
 import {computed, onBeforeUnmount, onMounted, reactive, ref, watch} from "vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import {data} from "@visactor/vtable";
-import {Search} from "@element-plus/icons-vue";
 import request from "@/utils/request.js";
 import {useI18n} from "vue-i18n";
 
@@ -272,7 +268,6 @@ const props=defineProps({
 const itemFuzzyQueryParameters=reactive({
   itemName: '',
   standardCode: '',
-  group: '',
 })
 //事件
 const emit=defineEmits(['update:buyerNameDto'])
@@ -303,96 +298,24 @@ const reportIsError=computed(()=>data4IsError.value||data5IsError.value)
 //订单错误汇总
 const reportErrorSummary=reactive(new Set())
 const reportError=computed(()=>Array.from(reportErrorSummary)[0])
-//menu的选项
-const menuOptions = ref([{
-  name: 'menu1',
-  groups: [{
-    name: 'Physics', items: [
-      {
-        index: '1',
-        itemName: 'item1',
-        standardCode: 'sdfsa',
-        requirement: 'asdfasfdas',
-        samples: []
-      },
-      {
-        index: '2',
-        itemName: 'item2',
-        standardCode: 'sdfsa',
-        requirement: 'asdfasfdas',
-        samples: []
-      },
-      {
-        index: '3',
-        itemName: 'Seam2',
-        standardCode: 'sdfsa',
-        requirement: 'asdfasfdas',
-        samples: []
-      },
-      {
-        index: '4',
-        itemName: 'Seam1',
-        standardCode: 'sdfsa',
-        requirement: 'asdfasfdas',
-        samples: []
-      },
-      {index: '5', itemName: 'item5', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []}
-    ]
-  },
-    {
-      name: 'Chemistry', items: [
-        {
-          index: '1',
-          itemName: 'item1',
-          standardCode: 'sdfsa',
-          requirement: 'asdfasfdas',
-          samples: []
-        },
-        {
-          index: '2',
-          itemName: 'item2',
-          standardCode: 'sdfsa',
-          requirement: 'asdfasfdas',
-          samples: []
-        },
-        {
-          index: '3',
-          itemName: 'item3',
-          standardCode: 'sdfsa',
-          requirement: 'asdfasfdas',
-          samples: []
-        },
-        {
-          index: '4',
-          itemName: 'item4',
-          standardCode: 'sdfsa',
-          requirement: 'asdfasfdas',
-          samples: []
-        },
-      ]
-    }]
-}, {
-  name: 'menu2',
-  items: [
-    {index: '1', itemName: 'item1', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []},
-    {index: '2', itemName: 'item2', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []},
-    {index: '3', itemName: 'item3', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []},
-    {index: '4', itemName: 'item4', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []},
-    {index: '5', itemName: 'item5', standardCode: 'sdfsa', requirement: 'asdfasfdas', samples: []}
-  ]
-}])
+//menu的选项（选买家后由真实 API 加载）
+const menuOptions = ref([])
+//当前选中的买家 code（用于调 GET /Menu/get-by-buyerId/{code}）
+const selectedBuyerCode = ref('')
+//TestItem / Standard 映射（id → 名称/编码）
+const testItemMap = ref({})
+const standardMap = ref({})
 const newItemName = ref('')
 const newItemstandardCode = ref('')
 const newItem=computed(()=>{
-  return newItemName.value ? {itemName: newItemName.value,standardCode:newItemstandardCode.value} :null
+  const opt = newItemOptions.value.find(o => o.itemName === newItemName.value)
+  return newItemName.value
+    ? { itemName: newItemName.value, standardCode: newItemstandardCode.value, testItemId: opt?.testItemId || '' }
+    : null
 })
-const newItemOptions = ref([
-  {itemName: 'Seam', standardCodes: ['standard1', 'standard2']},
-  {itemName: 'item2', standardCodes: ['standard3', 'standard4']},
-])
-const newItemOption =computed(()=>{
-  return newItemOptions.value.find(item=>item.itemName===newItemName.value)|| {}
-})
+//真实 API：右上角 Item / Standard Code 选项（加载真实数据，不保存到 menu）
+const newItemOptions = ref([])      // [{itemName: nameEn, testItemId, group}]
+const standardOptions = ref([])     // [{standardId, standardCode}]
 //定时器
 let timer=null
 // //项目默认值
@@ -465,24 +388,10 @@ async function getBuyerOptions(){
   })
 }
 //项目模糊查询
-// function itemFuzzyQuery(){
-//   //如果分组
-//   if(menus.value.groups){
-//
-//   }
-//   //不分组
-//   menusBeDisplayed.value=menuOptions.value.filter(menu=>menu.name.includes(itemFuzzyQueryParameters.itemName)
-//     || menu.items.some(item=>item.itemName.includes(itemFuzzyQueryParameters.itemName))
-//     || menu.items.some(item=>item.standardCode.includes(itemFuzzyQueryParameters.standardCode))
-//     || menu.items.some(item=>item.requirement.includes(itemFuzzyQueryParameters.group))
-//   )
-// }
-
 //重置
 function itemFuzzyQueryReset(){
   itemFuzzyQueryParameters.itemName=''
   itemFuzzyQueryParameters.standardCode=''
-  itemFuzzyQueryParameters.group=''
 }
 
 // // 单号报错
@@ -504,6 +413,71 @@ function removeMenuHandler(tagValue){
 //buyer改变
 function buyerChange() {
   emit('update:buyerNameDto', globalFunctions.cleanAndLowercase(buyerName.value))
+  // 找到选中的买家 code → 加载真实菜单
+  const matched = buyerOptions.value.find(b => b.name === buyerName.value)
+  selectedBuyerCode.value = matched?.buyerCode || matched?.code || ''
+  loadMenus(selectedBuyerCode.value)
+}
+//加载 TestItem/Standard 映射（id → 名称/编码），同时填充右上角 Item / Standard Code 选项
+function loadMappings() {
+  request.get('/TestItem/getall').then(res => {
+    if (res.data.isSuccess) {
+      const map = {}
+      ;(res.data.value || []).forEach(i => { map[i.id] = i })
+      testItemMap.value = map
+      // 右上角 Item 下拉：显示英文名
+      newItemOptions.value = (res.data.value || []).map(i => ({
+        itemName: i.nameEn || i.nameChn || i.id,
+        testItemId: i.id,
+        group: i.group || ''
+      }))
+    }
+  }).catch(() => {})
+  request.get('/Standard/getall').then(res => {
+    if (res.data.isSuccess) {
+      const map = {}
+      ;(res.data.value || []).forEach(s => { map[s.standardId] = s.standardCode })
+      standardMap.value = map
+      // 右上角 Standard Code 下拉：全局标准列表
+      standardOptions.value = res.data.value || []
+    }
+  }).catch(() => {})
+}
+//加载某买家的真实菜单 → 填充 menuOptions
+function loadMenus(buyerCode) {
+  if (!buyerCode) { menuOptions.value = []; return }
+  request.get(`/Menu/get-by-buyerId/${buyerCode}`).then(res => {
+    if (!res.data.isSuccess) { menuOptions.value = []; return }
+    const list = res.data.value || []
+    menuOptions.value = list.map(menu => {
+      const items = (menu.menuItems || []).map((item, idx) => ({
+        index: String(idx + 1),
+        itemName: (testItemMap.value[item.testItemId]?.nameEn)
+               || (testItemMap.value[item.testItemId]?.nameChn)
+               || item.buyerOwnName || item.testItemId || '',
+        standardCode: (item.standardIds || []).map(id => standardMap.value[id] || id).join(','),
+        requirement: item.requirement || '',
+        samples: []
+      }))
+      // 按 buyerModifiedGroup 分组
+      const groupsMap = {}
+      items.forEach((it, idx) => {
+        const g = menu.menuItems[idx]?.buyerModifiedGroup || ''
+        if (!groupsMap[g]) groupsMap[g] = []
+        groupsMap[g].push(it)
+      })
+      const groups = Object.entries(groupsMap)
+        .filter(([g]) => g !== '')
+        .map(([g, its]) => ({ name: g, items: its }))
+      const ungrouped = groupsMap[''] || []
+      const result = { name: menu.menuName, groups: groups }
+      if (ungrouped.length > 0) {
+        if (groups.length === 0) result.items = ungrouped       // 全无组 → flat
+        else groups.push({ name: 'Default', items: ungrouped })  // 有组+无组 → 默认组
+      }
+      return result
+    })
+  }).catch(() => { menuOptions.value = [] })
 }
 //失去焦点，判断四位数
 function data4Blur() {
@@ -801,6 +775,7 @@ onBeforeUnmount(() => {
 
 onMounted(()=>{
   getBuyerOptions()
+  loadMappings()
 })
 </script>
 
@@ -813,6 +788,43 @@ onMounted(()=>{
 .thisBlock {
   @include thisBlockBorder;
   padding: 10px 10px 0;
+}
+/*右边 Item/Standard Code 框：弹性布局，缩放时不错位*/
+.rightBlock{
+  min-width: 0;               /* 允许 flex 子项收缩，防止溢出换行 */
+  align-items: center;
+  justify-content: center;
+}
+.rightForm{
+  width: 100%;
+  /* Item 与 Standard Code 分两行显示，不并排 */
+  display: block;
+}
+.rightFormItem{
+  width: 100%;
+  margin-bottom: 8px;
+}
+.rightFormItem:last-child{
+  margin-bottom: 0;
+}
+.rightForm :deep(.el-form-item){
+  margin-right: 0;
+  flex: 1;
+  min-width: 0;
+}
+.rightForm :deep(.el-form-item__content){
+  flex: 1;
+  min-width: 0;
+}
+.standardLine{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.addBtn{
+  flex-shrink: 0;
 }
 /*.maxContainer .thisBlock{
   @include thisBlockBorder;

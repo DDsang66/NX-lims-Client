@@ -546,6 +546,7 @@ const confirmAction = async () => {
 //   }
 // }
 async function getPropertys() {
+  if(!props.buyer){ return }
   const rep = await request.get('/render/sampledesc', {
     params: {
       buyername: globalFunctions.cleanAndLowercase(props.buyer),

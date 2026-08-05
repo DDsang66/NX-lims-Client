@@ -1,40 +1,37 @@
 <template>
   <div class="allContainer">
-    <div style="display: flex; width: 100%; height: 100%; gap: 10px; padding: 10px; box-sizing: border-box;">
+    <div class="main">
 
       <!-- ==================== 左侧面板 ==================== -->
-      <div style="width: 240px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+      <div class="left">
 
         <!-- 设备连接 -->
         <div class="card">
-          <div class="ctitle">设备连接</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:12px;">波特率</span>
+          <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
+          <div class="row">
+            <span class="lbl">波特率</span>
             <el-select v-model="baudRate" size="small" style="width:90px" :disabled="connected">
               <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
             </el-select>
           </div>
-          <div style="display:flex;gap:8px;">
-            <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect">连接设备</el-button>
-            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">断开</el-button>
+          <div class="row" style="gap:8px;">
+            <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect">
+              <el-icon style="margin-right:4px;"><Link /></el-icon>连接设备
+            </el-button>
+            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
+              <el-icon style="margin-right:4px;"><SwitchButton /></el-icon>断开
+            </el-button>
           </div>
-          <div style="margin-top:6px;font-size:12px;">
-            <span :style="{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',marginRight:'4px',background:connected?'#67c23a':'#c0c4cc',boxShadow:connected?'0 0 4px #67c23a':'none'}"></span>
-            {{ connecting ? '连接中...' : connected ? '已连接 ' + cfgInfo : '未连接 — 可手动输入' }}
-          </div>
-          <div v-if="connected" style="margin-top:4px;font-size:11px;color:#909399;">
-            <span :style="{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',marginRight:'4px',background:weight!=null? '#67c23a':'#c0c4cc'}"></span>
-            {{ weight != null ? '读取正常: ' + weight.toFixed(4) : '等待数据... 按天平 PRINT 键' }}
-          </div>
-          <div v-if="connected && rawBuf" style="margin-top:2px;font-size:10px;color:#909399;word-break:break-all;">
-            {{ rawBuf }}
+          <div class="st"><span class="dot" :class="{on:connected}"></span>{{ connecting ? '连接中...' : connected ? '已连接 ' + cfgInfo : '未连接 — 可手动输入' }}</div>
+          <div v-if="connected" class="st" style="color:#67c23a;">
+            <span class="dot" :class="{on:weight!=null}"></span>{{ weight != null ? '读取正常: ' + weight.toFixed(4) : '等待数据... 按天平 PRINT 键' }}
           </div>
         </div>
 
         <!-- 重量 -->
         <div class="card">
-          <div class="ctitle">重量 (g)</div>
-          <div class="wtbox" :style="{background:connected?'#f0f9eb':'#fdf6ec',border:connected?'2px solid #67c23a':'1px dashed #e6a23c'}">
+          <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>重量 (g)</div>
+          <div class="wtbox" :class="{live:connected}">
             <span v-if="!connected">
               <el-input-number v-model="weight" :precision="4" :min="0" :step="0.0001" controls-position="right" style="width:100%" placeholder="手动输入"/>
             </span>
@@ -44,7 +41,7 @@
 
         <!-- 刷新间隔 -->
         <div class="card">
-          <div class="ctitle">刷新间隔</div>
+          <div class="ctitle"><el-icon><Timer /></el-icon>刷新间隔</div>
           <el-select v-model="refreshInterval" style="width:100%" size="small">
             <el-option :value="0.5" label="0.5s" />
             <el-option :value="1" label="1s" />
@@ -56,43 +53,43 @@
 
         <!-- 试样面积 -->
         <div class="card">
-          <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
-            <span>试样面积 (cm²)</span>
+          <div class="ctitle" style="justify-content:space-between;">
+            <span><el-icon><Grid /></el-icon>试样面积 (cm²)</span>
             <el-switch v-model="areaByCalc" size="small" active-text="长×宽" inactive-text="直接" style="--el-switch-on-color:#409eff;" />
           </div>
           <template v-if="areaByCalc">
-            <div style="display:flex;gap:4px;margin-bottom:4px;">
-              <span style="font-size:11px;">长</span>
+            <div class="row" style="gap:4px;">
+              <span class="lbl">长</span>
               <el-input-number v-model="areaLen" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
-              <span style="font-size:11px;">宽</span>
+              <span class="lbl">宽</span>
               <el-input-number v-model="areaWid" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
             </div>
-            <span v-if="areaLen>0 && areaWid>0" style="font-size:11px;color:#909399;">= {{ area }} cm²</span>
+            <span v-if="areaLen>0 && areaWid>0" class="hint">= {{ area }} cm²</span>
           </template>
           <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
         </div>
       </div>
 
       <!-- ==================== 中间按钮 ==================== -->
-      <div style="display:flex;flex-direction:column;justify-content:center;gap:10px;flex-shrink:0;width:90px;">
-        <el-button type="primary" @click="record">结果记录</el-button>
-        <el-button type="warning" @click="clearAll">清除数据</el-button>
-        <el-button type="danger" :disabled="!sel.length" @click="delSel">删除选中</el-button>
-        <el-button type="success" :disabled="!rows.length" @click="doExport">导出Excel</el-button>
-        <el-button :disabled="!rows.length" @click="doPrint">打印</el-button>
-        <el-button :disabled="!rows.length" @click="doSave">保存到服务器</el-button>
+      <div class="mid">
+        <el-button type="primary" round @click="record"><el-icon><CirclePlus /></el-icon>结果记录</el-button>
+        <el-button type="warning" round @click="clearAll"><el-icon><RefreshLeft /></el-icon>清除数据</el-button>
+        <el-button type="danger" round :disabled="!sel.length" @click="delSel"><el-icon><Delete /></el-icon>删除选中</el-button>
+        <el-button type="success" round :disabled="!rows.length" @click="doExport"><el-icon><Download /></el-icon>导出Excel</el-button>
+        <el-button round :disabled="!rows.length" @click="doPrint"><el-icon><Printer /></el-icon>打印</el-button>
+        <el-button round :disabled="!rows.length" @click="doSave"><el-icon><Upload /></el-icon>保存到服务器</el-button>
       </div>
 
       <!-- ==================== 右侧面板 ==================== -->
-      <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:13px;">试样编号 <el-input v-model="sid" placeholder="试样编号" style="width:120px" clearable/></span>
-          <span style="font-size:13px;">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
-          <span style="font-size:13px;">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
-          <span style="font-size:13px;">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
+      <div class="right">
+        <div class="card" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;padding:10px 14px;">
+          <span class="field">试样编号 <el-input v-model="sid" placeholder="试样编号" style="width:120px" clearable/></span>
+          <span class="field">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
+          <span class="field">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
+          <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
         </div>
-        <div style="flex:1;min-height:0;">
-          <el-table class="removeTableGaps" :data="rows" border stripe style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
+        <div class="tbl-wrap">
+          <el-table :data="rows" border stripe style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
             <el-table-column type="selection" width="40"/>
             <el-table-column prop="ri" label="次数" width="50" align="center"/>
             <el-table-column prop="sid" label="试样编号" width="120"/>
@@ -112,6 +109,7 @@
 <script setup>
 import { ref, reactive, inject, onBeforeUnmount, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Connection, Link, SwitchButton, ScaleToOriginal, Timer, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload } from '@element-plus/icons-vue'
 
 const api = inject('request')
 
@@ -125,7 +123,6 @@ const portObj = ref(null)
 const portCfg = ref(null)  // 实际打开的端口配置 {dataBits,parity,...}
 const weight = ref(null)
 const lastRxTime = ref(0)          // 最近一次收到串口数据的时间戳
-const rawBuf = ref('')             // 调试: 最近收到的原始数据
 const area = ref(null)             // 直接输入模式
 const areaByCalc = ref(false)      // 长×宽计算模式
 const areaLen = ref(null)
@@ -227,7 +224,6 @@ function startLoop() {
           if (portCfg.value && portCfg.value.dataBits === 7) { for (let i = 0; i < value.length; i++) value[i] &= 0x7F }
           const dec = new TextDecoder().decode(value)
           buf += dec
-          rawBuf.value = (rawBuf.value + dec).slice(-80)  // 最近80字符
           // 按行拆分, 攒够一行才解析
           const parts = buf.split('\n')
           buf = parts.pop() || ''
@@ -352,8 +348,42 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.card { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; }
-.ctitle { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
-.wtbox { padding: 8px; border-radius: 4px; text-align: center; min-height: 40px; display: flex; align-items: center; justify-content: center; }
-.wtval { font-size: 28px; font-weight: 700; font-family: 'Consolas', 'Courier New', monospace; color: #333; }
+/* 页面容器: 渐变背景 + 圆角面板 */
+.allContainer { padding: 14px; box-sizing: border-box; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%); }
+.main { display: flex; width: 100%; height: 100%; gap: 12px; box-sizing: border-box; }
+
+/* 左右侧列 */
+.left { width: 248px; display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; overflow-y: auto; }
+.right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+/* 卡片 */
+.card { background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); transition: box-shadow .2s; }
+.card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.07); }
+.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.ctitle .el-icon { color: #409eff; }
+
+/* 行/标签 */
+.row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding-left: 16px; }
+.lbl { font-size: 12px; color: #666; white-space: nowrap; }
+
+/* 连接状态 */
+.st { margin-top: 8px; font-size: 12px; color: #666; display: flex; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #c0c4cc; margin-right: 5px; transition: all .2s; }
+.dot.on { background: #67c23a; box-shadow: 0 0 4px #67c23a; }
+
+/* 重量框 */
+.wtbox { padding: 12px; border-radius: 8px; text-align: center; min-height: 56px; display: flex; align-items: center; justify-content: center; background: #fdf6ec; border: 1px dashed #e6a23c; transition: all .25s; }
+.wtbox.live { background: #f0f9eb; border: 2px solid #67c23a; }
+.wtval { font-size: 30px; font-weight: 700; font-family: 'Consolas', 'Courier New', monospace; color: #1f3d2b; }
+
+.hint { font-size: 11px; color: #909399; }
+
+/* 中间按钮列 */
+.mid { display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; width: 118px; padding: 0 4px; }
+.mid .el-button { width: 100%; margin: 0; }
+.mid .el-button .el-icon { margin-right: 4px; }
+
+/* 右侧信息栏: 4个输入框一行横排 (容器用内联 flex:row, 保证不折行) */
+.field { font-size: 13px; color: #444; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.tbl-wrap { flex: 1; min-height: 0; background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 </style>

@@ -16,11 +16,23 @@
       </div>
     </div>
 
-    <!--    三个模块同时显示-->
-    <div v-for="step in steps" :key="step.index" class="moduleBlock" ref="moduleBlocks">
-      <Step1 v-if="step.index===1" :ref="setStep1Dom" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
-      <Step2 v-else-if="step.index===2" :step1Dom="step1Dom" :buyerNameDto="buyerNameDto"/>
-      <Step3 v-else-if="step.index===3" :step1Dom="step1Dom"/>
+    <!--    三个模块：按序挂载（Step1 完成 → Step2 渲染；Step2 完成 → Step3 渲染）-->
+    <div class="moduleBlock" :ref="(el) => setModuleBlock(0, el)">
+      <Step1 :ref="setStep1Dom" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
+      <!-- Step1 末尾：下一步 → 校验并挂载 Step2 -->
+      <div class="moduleFooter" v-if="steps[0].status !== 'success'">
+        <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
+      </div>
+    </div>
+    <div v-if="steps[0].status==='success'" class="moduleBlock" :ref="(el) => setModuleBlock(1, el)">
+      <Step2 :step1Dom="step1Dom" :buyerNameDto="buyerNameDto"/>
+      <!-- Step2 末尾：下一步 → 挂载 Step3 -->
+      <div class="moduleFooter" v-if="steps[0].status==='success' && steps[1].status !== 'success'">
+        <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
+      </div>
+    </div>
+    <div v-if="steps[1].status==='success'" class="moduleBlock" :ref="(el) => setModuleBlock(2, el)">
+      <Step3 :step1Dom="step1Dom"/>
     </div>
 
   </div>
@@ -61,8 +73,11 @@ const step1Dom=ref(null)
 function setStep1Dom(el){
   if(el) step1Dom.value=el
 }
-//三个模块区块的 DOM（v-for 内字符串 ref 收集为数组，顺序同 steps）
+//三个模块区块的 DOM（函数 ref 填充，index 0/1/2 对应 step1/2/3）
 const moduleBlocks=ref([])
+function setModuleBlock(index, el){
+  if(el) moduleBlocks.value[index]=el
+}
 //scroll-spy：当前最接近视口中央的步骤
 const activeStepIndex=ref(1)
 //悬浮步骤栏的定位（fixed，锚定内容区左侧中部，始终不变）
@@ -78,6 +93,19 @@ function positionStepPanel(){
 //打印单子
 function printReport(){
   steps.forEach(step => step.status='success')
+}
+//下一步：校验当前步骤 → 标记 success → 挂载下一步模块
+async function toNextStep() {
+  // Step1 需校验 allCheck；Step2/Step3 无需校验（只有挂载动作）
+  if (steps[0].status !== 'success') {
+    const ok = await step1Dom.value?.allCheck();
+    if (!ok) return;   // 校验不通过，不推进
+    steps[0].status = 'success';
+    return;
+  }
+  if (steps[1].status !== 'success') {
+    steps[1].status = 'success';
+  }
 }
 //点击步骤圆框 → 滚动 allDom 使对应模块垂直居中（只滚容器，不滚窗口）
 function jumpToModule(index){
@@ -146,6 +174,12 @@ onBeforeUnmount(() => {
 /*模块区块：纵向排列，不再留左侧槽位*/
 .moduleBlock{
   margin-bottom: 10px;
+}
+/*模块末尾的"下一步"按钮行：右对齐*/
+.moduleFooter{
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 /*悬浮步骤栏：fixed 锚定内容区左侧中部，位置始终不变*/
 .stepPanel{
