@@ -55,7 +55,7 @@
                     <template v-slot="scope">
                       <el-input type="number" placeholder="比例"
                                 @keydown="handleKeydown"
-                                @blur="updateRateOnBlur(group,scope.row.rate)"
+                                @blur="updateRateOnBlur(group, scope.row)"
                                 v-model.number="scope.row.rate" min="0" max="100" />
                     </template>
                   </el-table-column>
@@ -208,13 +208,15 @@ function handleKeydown(e) {
   }
 }
 // 失焦时才进行校验和更新
-function updateRateOnBlur(group, rate) {
-  if(!rate)
-    return alert('Please enter the proportion')
-  //比例超过100
-  if(getCountRate(group.rows)>100)
-    return alert('The proportion cannot exceed 100')
-}
+  function updateRateOnBlur(group, row) {
+    const total = getCountRate(group.rows);
+    if (total > 100) {
+      // 回滚到合理值
+      const excess = total - 100;
+      row.rate = Math.max(0, row.rate - excess);
+      alert('The proportion cannot exceed 100, adjusted automatically');
+    }
+  }
 onMounted(()=>{
   getCompositions()
 })

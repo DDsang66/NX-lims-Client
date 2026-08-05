@@ -187,6 +187,9 @@
             <el-menu-item index="/main/FormulaConfig">
               <span>Formula Config</span>
             </el-menu-item>
+            <el-menu-item index="/main/StructureConfig">
+              <span>Structure Config</span>
+            </el-menu-item>
             <el-menu-item index="/main/RuleConfig">
               <span>Rule Config</span>
             </el-menu-item>
