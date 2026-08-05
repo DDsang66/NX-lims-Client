@@ -250,7 +250,10 @@ import {computed, onBeforeUnmount, onMounted, reactive, ref, watch} from "vue";
 import globalFunctions from "@/utils/globalFunctions.js";
 import {data} from "@visactor/vtable";
 import request from "@/utils/request.js";
-import {useI18n} from "vue-i18n";
+import { useI18n } from "vue-i18n";
+import { ElMessage } from 'element-plus'; 
+
+  const emit = defineEmits(['update:buyerNameDto', 'update:step1Data'])
 
 const { t } = useI18n()
 const props=defineProps({
@@ -269,8 +272,7 @@ const itemFuzzyQueryParameters=reactive({
   itemName: '',
   standardCode: '',
 })
-//事件
-const emit=defineEmits(['update:buyerNameDto'])
+
 //活跃标签页
 const activeTabName=ref('default')
 //ref
@@ -321,20 +323,7 @@ let timer=null
 // //项目默认值
 // let itemDefalutObj={copies:1,samples:[]}
 //买家选项
-const buyerOptions = ref([
-  {name: 'Mango'},
-  {name: 'Crazy Line'},
-  {name:'JAKO'},
-  {name:'Tchibo'},
-  {name:'Primark'},
-  {name:'KiK'},
-  {name:'Pepco'},
-  {name:'NEXT'},
-  {name:'Woolworth'},
-  {name:'LTAG'},
-  {name:'LPP'},
-  {name:'Focus'},
-])
+const buyerOptions = ref([])
 
 //持久表单数据----------------------------------------
 const buyerName = ref('')
@@ -378,15 +367,35 @@ let rules2=computed(()=>{
 
 /*function------------------------------------------------------------------------------------------*/
 //获取买家选项
-async function getBuyerOptions(){
-  let options=await request.get('/buyer/buyer-list')
-  // console.log('buyerList',options.data.value)
-  if(!options.data.isSuccess) return
-  buyerOptions.value=options.data.value.map(buyer=>{
-    buyer.name=buyer.buyerName
-    return buyer
-  })
-}
+  async function getBuyerOptions() {
+    try {
+      const res = await request.get('/buyer/buyer-list')
+
+      if (!res.data.isSuccess) {
+        console.warn('Failed to load buyer list:', res.data.message)
+        return
+      }
+
+      // 确保数据结构正确
+      buyerOptions.value = res.data.value.map(buyer => ({
+        name: buyer.buyerName || buyer.name || buyer.buyerCode || 'Unknown',
+        buyerCode: buyer.buyerCode || buyer.code || '',
+        code: buyer.buyerCode || buyer.code || ''  // 保留两种命名方式以便兼容
+      }))
+
+      // 如果之前有选中的买家，尝试重新匹配
+      if (buyerName.value) {
+        const matched = buyerOptions.value.find(b => b.name === buyerName.value)
+        if (!matched) {
+          buyerName.value = ''
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching buyer list:', error)
+      // 可选：设置默认数据或显示错误提示
+      ElMessage?.error?.('Failed to load buyer list')
+    }
+  }
 //项目模糊查询
 //重置
 function itemFuzzyQueryReset(){
@@ -411,13 +420,15 @@ function removeMenuHandler(tagValue){
     menuOptions.value.splice(menuOptions.value.findIndex(menu=>menu.name==="AdditionalMenu"),1)
 }
 //buyer改变
-function buyerChange() {
-  emit('update:buyerNameDto', globalFunctions.cleanAndLowercase(buyerName.value))
-  // 找到选中的买家 code → 加载真实菜单
-  const matched = buyerOptions.value.find(b => b.name === buyerName.value)
-  selectedBuyerCode.value = matched?.buyerCode || matched?.code || ''
-  loadMenus(selectedBuyerCode.value)
-}
+  function buyerChange() {
+    emit('update:buyerNameDto', globalFunctions.cleanAndLowercase(buyerName.value))
+    // 找到选中的买家 code → 加载真实菜单
+    const matched = buyerOptions.value.find(b => b.name === buyerName.value)
+    // 兼容多种字段名
+    selectedBuyerCode.value = matched?.buyerCode || matched?.code || ''
+    loadMenus(selectedBuyerCode.value)
+  }
+
 //加载 TestItem/Standard 映射（id → 名称/编码），同时填充右上角 Item / Standard Code 选项
 function loadMappings() {
   request.get('/TestItem/getall').then(res => {
@@ -435,10 +446,27 @@ function loadMappings() {
   }).catch(() => {})
   request.get('/Standard/getall').then(res => {
     if (res.data.isSuccess) {
-      const map = {}
-      ;(res.data.value || []).forEach(s => { map[s.standardId] = s.standardCode })
-      standardMap.value = map
-      // 右上角 Standard Code 下拉：全局标准列表
+      // 建立两个映射
+      const codeToIdMap = {}  // standardCode → standardId
+      const idToCodeMap = {}  // standardId → standardCode
+
+        ; (res.data.value || []).forEach(s => {
+          const id = s.standardId || s.StandardId  // 兼容大小写
+          const code = s.standardCode
+          if (code && id) {
+            codeToIdMap[code] = id
+            idToCodeMap[id] = code
+          }
+        })
+
+      // 这里我们需要两个映射
+      // 但只有一个 standardMap，所以需要调整
+      standardMap.value = codeToIdMap  // 用于编码→ID 转换
+
+      // 为了在 loadMenus 中显示，需要另一个映射
+      // 可以复用 standardMap 或者新建一个
+      // 但为了最小改动，我们直接在 loadMenus 中使用 standardMap 的反向查找
+
       standardOptions.value = res.data.value || []
     }
   }).catch(() => {})
@@ -450,15 +478,27 @@ function loadMenus(buyerCode) {
     if (!res.data.isSuccess) { menuOptions.value = []; return }
     const list = res.data.value || []
     menuOptions.value = list.map(menu => {
-      const items = (menu.menuItems || []).map((item, idx) => ({
-        index: String(idx + 1),
-        itemName: (testItemMap.value[item.testItemId]?.nameEn)
-               || (testItemMap.value[item.testItemId]?.nameChn)
-               || item.buyerOwnName || item.testItemId || '',
-        standardCode: (item.standardIds || []).map(id => standardMap.value[id] || id).join(','),
-        requirement: item.requirement || '',
-        samples: []
-      }))
+      const items = (menu.menuItems || []).map((item, idx) => {
+        // 将 standardIds (ID列表) 转换为 standardCode (编码字符串)
+        const standardCodes = (item.standardIds || []).map(id => {
+          // 查找 ID 对应的编码
+          const code = Object.keys(standardMap.value).find(key => standardMap.value[key] === id)
+          return code || id  // 如果找不到，返回 ID 本身
+        })
+
+        return {
+          index: String(idx + 1),
+          itemName: (testItemMap.value[item.testItemId]?.nameEn)
+            || (testItemMap.value[item.testItemId]?.nameChn)
+            || item.buyerOwnName || item.testItemId || '',
+          standardCode: standardCodes.join(','),  // 显示编码
+          requirement: item.requirement || '',
+          samples: [],
+          testItemId: item.testItemId || '',
+          buyerModifiedTestItemId: item.buyerModifiedTestItemId || null,
+          buyerModifiedTextMethodId: item.buyerModifiedTextMethodId || null,
+        }
+      })
       // 按 buyerModifiedGroup 分组
       const groupsMap = {}
       items.forEach((it, idx) => {
@@ -479,6 +519,7 @@ function loadMenus(buyerCode) {
     })
   }).catch(() => { menuOptions.value = [] })
 }
+
 //失去焦点，判断四位数
 function data4Blur() {
   data4Check()
@@ -492,6 +533,7 @@ function data4Blur() {
     }
   }
 }
+
 //data5失去焦点，判断两位数
 function data5Blur() {
   data5Check()
@@ -506,6 +548,7 @@ function data5Blur() {
     reportNums.data5 = '.' + data5Number
   }
 }
+
 //检查data4的输入
 function data4Check(){
   let emptyErrorMessage = 'reportMessage.fourth.empty'
@@ -526,6 +569,7 @@ function data4Check(){
   }
   return !data4IsError.value
 }
+
 //检验data5输入
 function data5Check() {
   let emptyErrorMessage = 'reportMessage.fifth.empty'
@@ -553,16 +597,37 @@ function reportNoCheck(){
   return data4Check()&&data5Check()
 }
 //统一检查
-async function allCheck(){
-  let reportCorrect=reportNoCheck()
-  let form1OtherCorrect
-  try {
-    form1OtherCorrect=await form1Ref.value.validate()
-  }catch{
-    form1OtherCorrect=false
+  async function allCheck() {
+    // 1. 先进行表单验证
+    let reportCorrect = reportNoCheck()
+    let form1OtherCorrect
+
+    try {
+      form1OtherCorrect = await form1Ref.value.validate()
+    } catch {
+      form1OtherCorrect = false
+    }
+
+    if (!reportCorrect || !form1OtherCorrect) {
+      return false
+    }
+
+    // 2. 提交 sample 数据到后端
+    const submitSuccess = await submitSampleData()
+
+    if (submitSuccess) {
+      // 3. 将数据传递给父组件
+      emit('update:step1Data', {
+        reportNo: reportNo.value,
+        buyerName: buyerName.value,
+        menus: menus.value,
+        sampleData: collectSampleData()
+      })
+      return true
+    }
+
+    return false
   }
-  return reportCorrect&&form1OtherCorrect
-}
 
 //data4中按下enter
 function data4Keydown(e) {
@@ -578,6 +643,7 @@ function enterBlur(e) {
     e.target.blur();
   }
 }
+
 //添加额外项目
 async function addAdditionalItem() {
   //校验
@@ -717,12 +783,125 @@ function globalMouseDown(e) {
   ctrlPreventDefault(e)
 }
 
-function globalMouseMove(e) {
-  ctrlPreventDefault(e)
-  throttle(() => {
-    mouseClientY = e.clientY
-  }, 50)
-}
+  function globalMouseMove(e) {
+    ctrlPreventDefault(e)
+    throttle(() => {
+      mouseClientY = e.clientY
+    }, 50)
+  }
+
+  // 收集有 sample 值的行数据
+  // 收集有 sample 值的行数据
+  function collectSampleData() {
+    const items = []
+
+    // 遍历所有选中的菜单
+    for (const menu of menus.value) {
+      // 处理有分组的情况
+      if (menu.groups) {
+        for (const group of menu.groups) {
+          for (const item of group.items) {
+            if (item.samples && item.samples.length > 0) {
+              // 转换 standardCode 为 standardIds 数组（ID 列表）
+              const standardIds = []
+              if (item.standardCode) {
+                const codes = item.standardCode.split(',').map(s => s.trim()).filter(Boolean)
+                for (const code of codes) {
+                  // 通过 standardMap 查找对应的 ID
+                  const id = standardMap.value[code]
+                  if (id) {
+                    standardIds.push(id)
+                  } else {
+                    console.warn(`Standard code not found: ${code}`)
+                    // 如果找不到映射，使用 code 本身作为 fallback
+                    standardIds.push(code)
+                  }
+                }
+              }
+
+              items.push({
+                testItemId: item.testItemId || '',
+                buyerModifiedTestItemId: null,
+                standardIds: standardIds,  // ← 现在是 ID 列表
+                buyerModifiedTextMethodId: null,
+                testGroup: 0,
+                samples: item.samples || [],
+                requirement: item.requirement || ''
+              })
+            }
+          }
+        }
+      }
+      // 处理无分组的情况 - 修复后
+      else if (menu.items) {
+        for (const item of menu.items) {
+          if (item.samples && item.samples.length > 0) {
+            // 转换 standardCode 为 standardIds 数组（ID 列表）
+            const standardIds = []
+            if (item.standardCode) {
+              const codes = item.standardCode.split(',').map(s => s.trim()).filter(Boolean)
+              for (const code of codes) {
+                // 通过 standardMap 查找对应的 ID
+                const id = standardMap.value[code]
+                if (id) {
+                  standardIds.push(id)
+                } else {
+                  console.warn(`Standard code not found: ${code}`)
+                  standardIds.push(code)
+                }
+              }
+            }
+
+            items.push({
+              testItemId: item.testItemId || '',
+              buyerModifiedTestItemId: null,
+              standardIds: standardIds,  // ← 现在是 ID 列表
+              buyerModifiedTextMethodId: null,
+              testGroup: 0,
+              samples: item.samples || [],
+              requirement: item.requirement || ''
+            })
+          }
+        }
+      }
+    }
+
+    return items
+  }
+
+  //提交数据到后端
+  async function submitSampleData() {
+    const items = collectSampleData()
+
+    if (items.length === 0) {
+      ElMessage.warning(t('message.noSampleData') || 'Please add samples before proceeding')
+      return false
+    }
+
+    try {
+      const payload = {
+        sourceId: reportNo.value,
+        items: items,
+        remark: '' // 暂无备注
+      }
+
+      const res = await request.post('/checklist/add', payload)
+
+      if (res.data.isSuccess) {
+        ElMessage.success(t('message.sampleSubmitSuccess') || 'Sample data submitted successfully')
+        return true
+      } else {
+        ElMessage.error(res.data.message || t('message.sampleSubmitFailed') || 'Failed to submit sample data')
+        return false
+      }
+    } catch (error) {
+      console.error('Submit sample data error:', error)
+      ElMessage.error(t('message.sampleSubmitError') || 'Error submitting sample data')
+      return false
+    }
+  }
+
+
 
 /*暴露数据-------------------------------------------------------------------------------------------*/
 defineExpose({

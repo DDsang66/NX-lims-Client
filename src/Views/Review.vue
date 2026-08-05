@@ -3,7 +3,6 @@
     <!--    标题行：买家名 + Print 按钮-->
     <div class="headerRow">
       <h3>{{ step1Dom?.buyerName ? step1Dom.buyerName : 'BuyerName' }}</h3>
-      <el-button @click="printReport" class="header-button">{{$t('print')}}</el-button>
     </div>
 
     <!--    悬浮的左侧步骤栏：位置固定始终可见，紧凑排列，点击滚动到对应模块中心-->
@@ -18,14 +17,22 @@
 
     <!--    三个模块：按序挂载（Step1 完成 → Step2 渲染；Step2 完成 → Step3 渲染）-->
     <div class="moduleBlock" :ref="(el) => setModuleBlock(0, el)">
-      <Step1 :ref="setStep1Dom" :allDom="allDom" v-model:buyerNameDto="buyerNameDto" :size="size"/>
+      <Step1
+             :ref="setStep1Dom"
+             :allDom="allDom"
+             v-model:buyerNameDto="buyerNameDto"
+             :size="size"
+             @update:step1Data="handleStep1Data"/>
       <!-- Step1 末尾：下一步 → 校验并挂载 Step2 -->
       <div class="moduleFooter" v-if="steps[0].status !== 'success'">
         <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
       </div>
     </div>
     <div v-if="steps[0].status==='success'" class="moduleBlock" :ref="(el) => setModuleBlock(1, el)">
-      <Step2 :step1Dom="step1Dom" :buyerNameDto="buyerNameDto"/>
+      <Step2
+             :step1Dom="step1Dom"
+             :buyerNameDto="buyerNameDto"
+             :step1Data ="step1Data"/>
       <!-- Step2 末尾：下一步 → 挂载 Step3 -->
       <div class="moduleFooter" v-if="steps[0].status==='success' && steps[1].status !== 'success'">
         <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
@@ -43,6 +50,8 @@ import {onBeforeUnmount, onMounted, reactive, ref} from 'vue'
 import Step1 from "@/components/review/Step1.vue";
 import Step2 from "@/components/review/Step2.vue";
 import Step3 from "@/components/review/Step3.vue";
+
+  const step1Data = ref(null)
 
 //步骤信息
 const steps=reactive([
@@ -136,6 +145,11 @@ function updateActiveStep(){
   })
   activeStepIndex.value=nearest
 }
+
+  function handleStep1Data(data) {
+    console.log('Step1 data received:', data)
+    step1Data.value = data
+  }
 
 let resizeObserver=null
 onMounted(() => {
