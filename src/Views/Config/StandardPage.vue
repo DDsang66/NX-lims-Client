@@ -18,8 +18,9 @@
 
       <!-- 表格区域 -->
       <el-table :data="filteredTableData" border class="removeTableGaps" style="width: 100%"
-                v-loading="loading">
+                v-loading="loading" :span-method="spanMethod">
         <el-table-column :label="$t('standardFamily')" prop="standardFamilyCode" width="150" show-overflow-tooltip></el-table-column>
+        <el-table-column :label="$t('standardId')" prop="standardId" width="200" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('standardCode')" prop="standardCode" width="160" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('standardNameEn')" prop="standardCodeNameEn" min-width="180" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('standardNameChn')" prop="standardCodeNameChn" min-width="160" show-overflow-tooltip></el-table-column>
@@ -44,16 +45,22 @@
     </div>
 
     <!-- 添加/编辑标准对话框 -->
-    <el-dialog :title="$t(dialogTitle)" v-model="dialogVisible" width="55%">
+    <el-dialog :title="$t(dialogTitle)" v-model="dialogVisible" width="70%">
       <div class="formContainer">
         <el-form :model="dialogForm" label-width="150px">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item :label="$t('standardFamily')">
-                <el-select v-model="dialogForm.standardFamilyCode" :placeholder="$t('pleaseSelect')"
-                           style="width: 100%" filterable allow-create clearable>
+                <el-select v-model="dialogForm.standardFamilyId"
+                           :placeholder="$t('pleaseSelect')"
+                           style="width: 100%"
+                           filterable
+                           clearable>
                   <el-option v-for="item in standardFamilyOptions"
-                             :key="item" :label="item" :value="item"></el-option>
+                             :key="item.id"
+                             :label="item.standardFamilyCode"
+                             :value="item.id">
+                  </el-option>
                 </el-select>
               </el-form-item>
             </el-col>
@@ -115,226 +122,290 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, reactive, ref, watch } from "vue";
-import { Delete, Edit } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+  import { computed, inject, onMounted, reactive, ref, watch } from "vue";
+  import { Delete, Edit } from "@element-plus/icons-vue";
+  import { ElMessage } from "element-plus";
 
-const request = inject("request");
+  const request = inject("request");
 
-// ==================== 状态数据 ====================
-const loading = ref(false);
+  // ==================== 状态数据 ====================
+  const loading = ref(false);
 
-// ==================== 搜索表单 ====================
-const form = reactive({
-  standardFamilyCode: '',
-  standardCode: ''
-});
-
-// ==================== 表格数据 ====================
-const tableData = ref([]);
-
-// 前端筛选
-const filteredTableData = computed(() => {
-  return tableData.value.filter(item => {
-    return (!form.standardFamilyCode || (item.standardFamilyCode || '').toLowerCase().includes(form.standardFamilyCode.toLowerCase())) &&
-           (!form.standardCode || (item.standardCode || '').toLowerCase().includes(form.standardCode.toLowerCase()));
+  // ==================== 搜索表单 ====================
+  const form = reactive({
+    standardFamilyCode: '',
+    standardCode: ''
   });
-});
 
-// 从表格数据中提取去重的标准族列表
-const standardFamilyOptions = computed(() => {
-  const set = new Set();
-  tableData.value.forEach(item => {
-    if (item.standardFamilyCode) set.add(item.standardFamilyCode);
+  // ==================== 表格数据 ====================
+  const tableData = ref([]);
+
+  // 前端筛选
+  const filteredTableData = computed(() => {
+    return tableData.value.filter(item => {
+      return (!form.standardFamilyCode || (item.standardFamilyCode || '').toLowerCase().includes(form.standardFamilyCode.toLowerCase())) &&
+        (!form.standardCode || (item.standardCode || '').toLowerCase().includes(form.standardCode.toLowerCase()));
+    });
   });
-  return [...set].sort();
-});
 
-// ==================== 对话框 ====================
-const dialogVisible = ref(false);
-const dialogTitle = ref('addStandard');
-const isEdit = computed(() => dialogTitle.value === 'editStandard');
+  // ==================== 标准族选项（从独立接口获取） ====================
+  const standardFamilyOptions = ref([]);
 
-const dialogForm = ref({
-  standardId: '',
-  standardCode: '',
-  standardCodeNameEn: '',
-  standardCodeNameChn: '',
-  status: 'Draft',
-  standardFamilyCode: ''
-});
-
-function statusTagType(status) {
-  const map = { 'Draft': 'info', 'Active': 'success', 'Deprecated': 'danger', 'Superseded': 'warning', 'Pending': '' };
-  return map[status] || '';
-}
-
-// ==================== Standard ID 四段拼接 ====================
-const prefixOptions = ['SFL'];
-const siteOptions = ref(['NB', 'XM', 'BJ', 'HK', 'GZ']);
-const standardItemOptions = ref(['CFR', 'CON', 'DIM', 'PFO', 'STR']);
-const statusOptions = ref(['Draft', 'Active', 'Deprecated', 'Superseded', 'Pending']);
-
-const idSeg1 = ref('SFL');
-const idSeg2 = ref('NB');
-const idSeg3 = ref('');
-const idSeg4 = ref('');
-
-// 段变化 → 自动拼接
-watch([idSeg1, idSeg2, idSeg3, idSeg4], () => {
-  dialogForm.value.standardId = [idSeg1.value, idSeg2.value, idSeg3.value, idSeg4.value].join('_');
-});
-
-// 反向解析 standardId → 四段
-function parseStandardId(id) {
-  const parts = (id || '').split('_');
-  if (parts.length === 4) {
-    idSeg1.value = parts[0] || 'SFL';
-    idSeg2.value = parts[1] || 'NB';
-    idSeg3.value = parts[2] || '';
-    idSeg4.value = parts[3] || '';
+  // 根据标准族ID获取对应的Code（用于显示）
+  function getStandardFamilyCodeById(id) {
+    const found = standardFamilyOptions.value.find(item => item.id === id);
+    return found ? found.standardFamilyCode : '';
   }
-}
 
-// ==================== API 方法 ====================
-function fetchAllStandards() {
-  loading.value = true;
-  request.get('/Standard/getall').then(res => {
-    if (res.data.isSuccess) {
-      tableData.value = (res.data.value || []).map(item => ({
-        ...item
-      }));
-    }
-  }).catch(err => {
-    const msg = err.response?.status
-      ? `HTTP ${err.response.status}: ${err.response.statusText}`
-      : (err.message || 'Network error');
-    console.error('Failed to fetch standards:', msg);
-    ElMessage.error(`Failed to load standards: ${msg}`);
-  }).finally(() => {
-    loading.value = false;
-  });
-}
+  // 根据标准族Code获取对应的ID
+  function getStandardFamilyIdByCode(code) {
+    const found = standardFamilyOptions.value.find(item => item.standardFamilyCode === code);
+    return found ? found.id : '';
+  }
 
-function addOpen() {
-  dialogVisible.value = true;
-  dialogTitle.value = 'addStandard';
-  idSeg1.value = 'SFL';
-  idSeg2.value = 'NB';
-  idSeg3.value = '';
-  idSeg4.value = '';
-  dialogForm.value = {
+  // ==================== 对话框 ====================
+  const dialogVisible = ref(false);
+  const dialogTitle = ref('addStandard');
+  const isEdit = computed(() => dialogTitle.value === 'editStandard');
+
+  const dialogForm = ref({
     standardId: '',
     standardCode: '',
     standardCodeNameEn: '',
     standardCodeNameChn: '',
     status: 'Draft',
-    standardFamilyCode: ''
-  };
-}
+    standardFamilyId: ''  // 存储选中的标准族ID
+  });
 
-function editOpen(row) {
-  dialogVisible.value = true;
-  dialogTitle.value = 'editStandard';
-  parseStandardId(row.standardId);
-  dialogForm.value = {
-    standardId: row.standardId,
-    standardCode: row.standardCode,
-    standardCodeNameEn: row.standardCodeNameEn,
-    standardCodeNameChn: row.standardCodeNameChn,
-    status: row.status || 'Draft',
-    standardFamilyCode: row.standardFamilyCode || ''
-  };
-}
-
-function confirmStandard() {
-  if (dialogTitle.value === 'addStandard') {
-    request.post('/Standard/add', {
-      standardId: dialogForm.value.standardId,
-      standardCode: dialogForm.value.standardCode,
-      standardNameCn: dialogForm.value.standardCodeNameChn,
-      standardNameEn: dialogForm.value.standardCodeNameEn,
-      standardFamilyCode: dialogForm.value.standardFamilyCode || null,
-      status: dialogForm.value.status || 'Draft'
-    }).then(res => {
-      if (res.data.isSuccess) {
-        ElMessage.success('Standard added');
-        dialogVisible.value = false;
-        tableData.value.unshift({
-          standardId: dialogForm.value.standardId,
-          standardCode: dialogForm.value.standardCode,
-          standardCodeNameEn: dialogForm.value.standardCodeNameEn,
-          standardCodeNameChn: dialogForm.value.standardCodeNameChn,
-          status: dialogForm.value.status || 'Draft',
-          standardFamilyCode: dialogForm.value.standardFamilyCode
-        });
-      } else {
-        ElMessage.error(res.data.error || 'Failed to add standard');
-      }
-    }).catch(() => ElMessage.error('Failed to add standard'));
-  } else {
-    request.put('/Standard/update', {
-      standardId: dialogForm.value.standardId,
-      standardCode: dialogForm.value.standardCode,
-      standardNameCn: dialogForm.value.standardCodeNameChn,
-      standardNameEn: dialogForm.value.standardCodeNameEn,
-      standardFamilyCode: dialogForm.value.standardFamilyCode || null,
-      status: dialogForm.value.status || ''
-    }).then(res => {
-      if (res.data.isSuccess) {
-        ElMessage.success('Standard updated');
-        dialogVisible.value = false;
-        const idx = tableData.value.findIndex(item => item.standardId === dialogForm.value.standardId);
-        if (idx !== -1) {
-          tableData.value[idx] = {
-            ...tableData.value[idx],
-            standardCode: dialogForm.value.standardCode,
-            standardCodeNameEn: dialogForm.value.standardCodeNameEn,
-            standardCodeNameChn: dialogForm.value.standardCodeNameChn,
-            status: dialogForm.value.status,
-            standardFamilyCode: dialogForm.value.standardFamilyCode
-          };
-        }
-      } else {
-        ElMessage.error(res.data.error || 'Failed to update standard');
-      }
-    }).catch(() => ElMessage.error('Failed to update standard'));
+  function statusTagType(status) {
+    const map = { 'Draft': 'info', 'Active': 'success', 'Deprecated': 'danger', 'Superseded': 'warning', 'Pending': '' };
+    return map[status] || '';
   }
-}
 
-function deleteStandard(row) {
-  request.delete(`/Standard/remove/${row.standardId}`).then(res => {
-    if (res.data.isSuccess) {
-      ElMessage.success('Standard deleted');
-      const idx = tableData.value.findIndex(item => item.standardId === row.standardId);
-      if (idx !== -1) tableData.value.splice(idx, 1);
-    } else {
-      ElMessage.error(res.data.error || 'Failed to delete standard');
+  // ==================== 单元格合并方法 ====================
+  function spanMethod({ row, columnIndex, rowIndex }) {
+    if (columnIndex === 0) {
+      const key = row.standardFamilyCode || '';
+      const data = filteredTableData.value;
+      let startIndex = -1;
+      let count = 0;
+      for (let i = 0; i < data.length; i++) {
+        const currentKey = data[i].standardFamilyCode || '';
+        if (currentKey === key) {
+          if (startIndex === -1) startIndex = i;
+          count++;
+        } else if (startIndex !== -1) {
+          break;
+        }
+      }
+      if (rowIndex === startIndex) {
+        return [count, 1];
+      } else {
+        return [0, 0];
+      }
     }
-  }).catch(() => ElMessage.error('Failed to delete standard'));
-}
+    return [1, 1];
+  }
 
-// ==================== 初始化 ====================
-onMounted(() => {
-  fetchAllStandards();
-  request.get('/Enum/sites').then(res => {
-    if (res.data) siteOptions.value = res.data;
-  }).catch(() => {});
-  request.get('/Enum/standard-items').then(res => {
-    if (res.data) standardItemOptions.value = res.data;
-  }).catch(() => {});
-  request.get('/Enum/statuses').then(res => {
-    if (res.data) statusOptions.value = res.data;
-  }).catch(() => {});
-});
+  // ==================== Standard ID 四段拼接 ====================
+  const prefixOptions = ['SFL'];
+  const siteOptions = ref(['NB', 'XM', 'BJ', 'HK', 'GZ']);
+  const standardItemOptions = ref(['CFR', 'CON', 'DIM', 'PFO', 'STR']);
+  const statusOptions = ref(['Draft', 'Active', 'Deprecated', 'Superseded', 'Pending']);
+
+  const idSeg1 = ref('SFL');
+  const idSeg2 = ref('NB');
+  const idSeg3 = ref('');
+  const idSeg4 = ref('');
+
+  // 段变化 → 自动拼接
+  watch([idSeg1, idSeg2, idSeg3, idSeg4], () => {
+    dialogForm.value.standardId = [idSeg1.value, idSeg2.value, idSeg3.value, idSeg4.value].join('_');
+  });
+
+  // 反向解析 standardId → 四段
+  function parseStandardId(id) {
+    const parts = (id || '').split('_');
+    if (parts.length === 4) {
+      idSeg1.value = parts[0] || 'SFL';
+      idSeg2.value = parts[1] || 'NB';
+      idSeg3.value = parts[2] || '';
+      idSeg4.value = parts[3] || '';
+    }
+  }
+
+  // ==================== API 方法 ====================
+
+  // 获取标准族列表（独立接口）
+  function fetchStandardFamilies() {
+    // 假设接口路径是 /StandardFamily/getall，请根据实际情况修改
+    request.get('/StandardFamily/getall').then(res => {
+      if (res.data.isSuccess) {
+        const data = res.data.value || [];
+        standardFamilyOptions.value = data.map(item => ({
+          id: item.id,
+          standardFamilyCode: item.standardFamilyCode
+        }));
+      }
+    }).catch(err => {
+      console.error('Failed to fetch standard families:', err);
+      ElMessage.error('Failed to load standard families');
+    });
+  }
+
+  // ==================== 监听标准族选项变化，更新表格显示 ====================
+  watch(standardFamilyOptions, (newVal) => {
+    if (newVal.length > 0 && tableData.value.length > 0) {
+      tableData.value = tableData.value.map(item => {
+        const name = getStandardFamilyCodeById(item.standardFamilyCode);
+        return {
+          ...item,
+          standardFamilyCode: name || item.standardFamilyCode || ''
+        };
+
+      });
+    }
+  });
+
+  // 获取标准列表
+  function fetchAllStandards() {
+    loading.value = true;
+    request.get('/Standard/getall').then(res => {
+      if (res.data.isSuccess) {
+        tableData.value = (res.data.value || []).map(item => ({
+          ...item,
+          // 如果 standardFamilyOptions 已经加载完成，直接转换
+          standardFamilyCode: standardFamilyOptions.value.length > 0
+            ? getStandardFamilyCodeById(item.standardFamilyCode) || item.standardFamilyCode || ''
+            : item.standardFamilyCode || ''
+        }));
+      }
+    }).catch(err => {
+      const msg = err.response?.status
+        ? `HTTP ${err.response.status}: ${err.response.statusText}`
+        : (err.message || 'Network error');
+      console.error('Failed to fetch standards:', msg);
+      ElMessage.error(`Failed to load standards: ${msg}`);
+    }).finally(() => {
+      loading.value = false;
+    });
+  }
+
+  function addOpen() {
+    dialogVisible.value = true;
+    dialogTitle.value = 'addStandard';
+    idSeg1.value = 'SFL';
+    idSeg2.value = 'NB';
+    idSeg3.value = '';
+    idSeg4.value = '';
+    dialogForm.value = {
+      standardId: '',
+      standardCode: '',
+      standardCodeNameEn: '',
+      standardCodeNameChn: '',
+      status: 'Draft',
+      standardFamilyId: ''
+    };
+  }
+
+  function editOpen(row) {
+    dialogVisible.value = true;
+    dialogTitle.value = 'editStandard';
+    parseStandardId(row.standardId);
+
+    // 根据标准族Code查找对应的ID
+    const familyId = getStandardFamilyIdByCode(row.standardFamilyCode || '');
+
+    dialogForm.value = {
+      standardId: row.standardId,
+      standardCode: row.standardCode,
+      standardCodeNameEn: row.standardCodeNameEn,
+      standardCodeNameChn: row.standardCodeNameChn,
+      status: row.status || 'Draft',
+      standardFamilyId: familyId
+    };
+  }
+
+  function confirmStandard() {
+    // 根据选中的标准族ID获取对应的Code
+    const familyCode = getStandardFamilyCodeById(dialogForm.value.standardFamilyId);
+
+    const payload = {
+      standardId: dialogForm.value.standardId,
+      standardCode: dialogForm.value.standardCode,
+      standardNameCn: dialogForm.value.standardCodeNameChn,
+      standardNameEn: dialogForm.value.standardCodeNameEn,
+      status: dialogForm.value.status || 'Draft'
+    };
+
+    // 如果选择了标准族，添加标准族相关字段
+    if (dialogForm.value.standardFamilyId) {
+      payload.standardFamilyCode = dialogForm.value.standardFamilyId;
+    }
+
+    if (dialogTitle.value === 'addStandard') {
+      request.post('/Standard/add', payload).then(res => {
+        if (res.data.isSuccess) {
+          ElMessage.success('Standard added');
+          dialogVisible.value = false;
+          // 重新获取数据，保持一致性
+          fetchAllStandards();
+        } else {
+          ElMessage.error(res.data.error || 'Failed to add standard');
+        }
+      }).catch(() => ElMessage.error('Failed to add standard'));
+    } else {
+      request.put('/Standard/update', payload).then(res => {
+        if (res.data.isSuccess) {
+          ElMessage.success('Standard updated');
+          dialogVisible.value = false;
+          // 重新获取数据，保持一致性
+          fetchAllStandards();
+        } else {
+          ElMessage.error(res.data.error || 'Failed to update standard');
+        }
+      }).catch(() => ElMessage.error('Failed to update standard'));
+    }
+  }
+
+  function deleteStandard(row) {
+    request.delete(`/Standard/remove/${row.standardId}`).then(res => {
+      if (res.data.isSuccess) {
+        ElMessage.success('Standard deleted');
+        const idx = tableData.value.findIndex(item => item.standardId === row.standardId);
+        if (idx !== -1) tableData.value.splice(idx, 1);
+      } else {
+        ElMessage.error(res.data.error || 'Failed to delete standard');
+      }
+    }).catch(() => ElMessage.error('Failed to delete standard'));
+  }
+
+  // ==================== 初始化 ====================
+  onMounted(() => {
+    // 并行获取两个接口数据
+    Promise.all([
+      fetchStandardFamilies(),  // 获取标准族列表（用于下拉选择）
+      fetchAllStandards()       // 获取标准列表（用于表格展示）
+    ]);
+
+    request.get('/Enum/sites').then(res => {
+      if (res.data) siteOptions.value = res.data;
+    }).catch(() => { });
+    request.get('/Enum/standard-items').then(res => {
+      if (res.data) standardItemOptions.value = res.data;
+    }).catch(() => { });
+    request.get('/Enum/statuses').then(res => {
+      if (res.data) statusOptions.value = res.data;
+    }).catch(() => { });
+  });
 </script>
 
 <style scoped>
-.removeTableGaps :deep(table) {
-  margin-bottom: 0 !important;
-}
+  .removeTableGaps :deep(table) {
+    margin-bottom: 0 !important;
+  }
 
-.domContent {
-  margin: 0 auto;
-}
+  .domContent {
+    margin: 0 auto;
+  }
 </style>
