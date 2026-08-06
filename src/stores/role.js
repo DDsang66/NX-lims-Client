@@ -32,6 +32,7 @@ import RuleConfig from "@/Views/Config/RuleConfig.vue";
 import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
 import MenuManagement from "@/Views/Config/MenuManagement.vue";
 import StructureConfig from "@/Views/Config/StructureConfig.vue";
+import LogicValidation from "@/Views/Config/LogicValidation.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -72,7 +73,8 @@ const useRoleStore = defineStore('role', {
       { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig, meta: { title: 'Formula Config' } },
       { path: 'RuleConfig', name: 'RuleConfig', component: RuleConfig, meta: { title: 'Rule Config' } },
       { path: 'MenuManagement', name: 'MenuManagement', component: MenuManagement, meta: { title: 'Menu Management' } },
-        { path: 'StructureConfig', name: 'StructureConfig', component: StructureConfig, meta: { title: 'ParamStructure Config' } }
+        { path: 'StructureConfig', name: 'StructureConfig', component: StructureConfig, meta: { title: 'ParamStructure Config' } },
+        { path: 'LogicValidation', name: 'LogicValidation', component: LogicValidation, meta: { title: 'LogicValidation' } }
       ]
     }))
   }),
