@@ -146,6 +146,9 @@
         <el-form-item label="Test Item ID">
           <el-input v-model="editForm.testItemId" disabled></el-input>
         </el-form-item>
+        <el-form-item label="Buyer Own Name">
+          <el-input v-model="editForm.buyerOwnName" placeholder="买家自定义名称"></el-input>
+        </el-form-item>
         <el-form-item label="Standard Code">
           <el-input v-model="editForm.standardIdsText" placeholder="多个标准用逗号分隔"></el-input>
         </el-form-item>
@@ -245,9 +248,15 @@ function rowClassName({ row }) {
 }
 
 // Item 框的 + → 加 item 到当前 menu
-function addItemToMenu(row) {
-  addItem({ testItemId: row.id, standardIds: [], requirement: '', buyerModifiedGroup: row.group });
-}
+  function addItemToMenu(row) {
+    addItem({
+      testItemId: row.id,
+      standardIds: [],
+      requirement: '',
+      buyerModifiedGroup: row.group,
+      buyerOwnName: ''  // 独立字段，默认为空
+    });
+  }
 // Standard 框的 + → 给当前选中的 item 添加该 standard（不再创建独立 item）
 function addStandardToSelectedItem(row) {
   if (!currentMenuId.value) { ElMessage.warning('请先选择/创建套餐'); return; }
@@ -322,24 +331,26 @@ function confirmAddMenu() {
 
 // 编辑 menu item（用 item 的 id 定位）
 const editDialog = ref(false);
-const editForm = ref({ id: '', testItemId: '', standardIdsText: '', requirement: '', buyerModifiedGroup: '' });
-function editItem(row) {
-  editForm.value = {
-    id: row.id,
-    testItemId: row.testItemId || '',
-    standardIdsText: (row.standardIds || []).join(', '),
-    requirement: row.requirement || '',
-    buyerModifiedGroup: row.buyerModifiedGroup || ''
-  };
-  editDialog.value = true;
-}
+  const editForm = ref({ id: '', testItemId: '', standardIdsText: '', requirement: '', buyerModifiedGroup: '', buyerOwnName: '' });
+  function editItem(row) {
+    editForm.value = {
+      id: row.id,
+      testItemId: row.testItemId || '',
+      standardIdsText: (row.standardIds || []).join(', '),
+      requirement: row.requirement || '',
+      buyerModifiedGroup: row.buyerModifiedGroup || '',
+      buyerOwnName: row.buyerOwnName || ''  // 添加这行
+    };
+    editDialog.value = true;
+  }
 function confirmEditItem() {
   const payload = {
     id: editForm.value.id,
     testItemId: editForm.value.testItemId || null,
     standardIds: editForm.value.standardIdsText.split(',').map(s => s.trim()).filter(Boolean),
     requirement: editForm.value.requirement,
-    buyerModifiedGroup: editForm.value.buyerModifiedGroup
+    buyerModifiedGroup: editForm.value.buyerModifiedGroup,
+    buyerOwnName: editForm.value.buyerOwnName  // 添加这行
   };
   request.put(`/Menu/update/${currentMenuId.value}/item`, { menuId: currentMenuId.value, menuItem: payload })
     .then(res => {

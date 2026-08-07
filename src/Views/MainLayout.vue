@@ -70,9 +70,9 @@
             <el-menu-item index="/main/OrderReporting" v-if="hasPower('OrderReporting')">
               <span>Order Reporting</span>
             </el-menu-item>
-            <el-menu-item index="/main/OrderSummary" v-if="hasPower('OrderSummary')">
+            <!--<el-menu-item index="/main/OrderSummary" v-if="hasPower('OrderSummary')">
               <span>Order Summary</span>
-            </el-menu-item>
+            </el-menu-item>-->
             <el-menu-item index="/main/OrderEntry" v-if="hasPower('OrderEntry')">
               <span>Order Pick Up</span>
             </el-menu-item>
@@ -140,7 +140,7 @@
               <span>Lab</span>
             </template>
             <el-menu-item index="/main/Review">
-              <span>Laboratory Schedule</span>
+              <span>Review</span>
             </el-menu-item>
             <el-menu-item index="/main/ExcelTry">
               <span>Work Sheet Edit</span>

@@ -59,7 +59,7 @@ const useRoleStore = defineStore('role', {
       LabOut: [{ path: 'LabOut', name: 'LabOut', component: LabOut, meta: { title: 'Order Lab Out' } }],
       Lab: [
         { path: 'ExcelTry', name: 'ExcelTry', component: ExcelTry, meta: { title: 'Work Sheet Edit' } },
-        { path: 'Review', name: 'Review', component: Review, meta: { title: 'Laboratory Schedule' } },
+        { path: 'Review', name: 'Review', component: Review, meta: { title: 'Review' } },
         { path: "BuyerManual", name: "BuyerManual", component: BuyerManual, meta: { title: 'Buyer Manual' } },
         { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet, meta: { title: 'Fiber Team' } },
         { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview, meta: { title: 'Reporting List' } },
