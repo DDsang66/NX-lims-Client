@@ -4,7 +4,7 @@
       <!-- ==================== Top: Search/Filter Area ==================== -->
       <div class="topHalf">
         <!-- Left: Search and Filter -->
-        <div class="halfBox">
+        <div class="halfBox" style="width: 100%;">
           <div class="boxTitle">Param Structure Management</div>
           <div class="toolbar">
             <el-input 
@@ -47,7 +47,6 @@
             height="350" 
             style="width: 100%" 
             v-loading="loading"
-            @row-click="handleRowClick"
           >
             <el-table-column type="expand">
               <template #default="{ row }">
@@ -178,45 +177,6 @@
             />
           </div>
         </div>
-
-        <!-- Right: Quick View of Associated Data -->
-        <div class="halfBox">
-          <div class="boxTitle">Quick View</div>
-          <div class="quick-view-tabs">
-            <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-              <el-tab-pane label="Formulas" name="formulas">
-                <el-table :data="relatedFormulas" border size="small" height="280" style="width: 100%">
-                  <el-table-column prop="id" label="ID" width="160" show-overflow-tooltip />
-                  <el-table-column prop="name" label="Name" min-width="140" show-overflow-tooltip />
-                  <el-table-column prop="paramName" label="Param Name" width="120" show-overflow-tooltip />
-                  <el-table-column label="Status" width="80">
-                    <template #default="{ row }">
-                      <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
-                        {{ row.isActive ? 'Active' : 'Inactive' }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </el-tab-pane>
-              
-              <el-tab-pane label="Rules" name="rules">
-                <el-table :data="relatedRules" border size="small" height="280" style="width: 100%">
-                  <el-table-column prop="id" label="ID" width="160" show-overflow-tooltip />
-                  <el-table-column prop="paramName" label="Param Name" width="120" show-overflow-tooltip />
-                  <el-table-column prop="formulaId" label="Formula ID" width="140" show-overflow-tooltip />
-                  <el-table-column prop="priority" label="Priority" width="80" align="center" />
-                  <el-table-column label="Status" width="80">
-                    <template #default="{ row }">
-                      <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
-                        {{ row.isActive ? 'Active' : 'Inactive' }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </el-tab-pane>
-            </el-tabs>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -227,7 +187,7 @@
       width="65%"
       :close-on-click-modal="false"
     >
-      <el-form :model="dialogForm" label-width="140px" :rules="formRules" ref="formRef">
+      <el-form :model="dialogForm" label-width="180px" :rules="formRules" ref="formRef">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Param Structure ID" prop="id">
@@ -252,7 +212,7 @@
                     :rows="3"
                     placeholder="Enter description" />
         </el-form-item>
-        <!-- 在描述字段后面添加 -->
+
         <el-form-item label="Formula ID" prop="formulaId">
           <el-input v-model="dialogForm.formulaId" placeholder="Enter Formula ID" />
         </el-form-item>
@@ -475,36 +435,29 @@ const filteredData = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(20);
 
-// Related Data Views
-const activeTab = ref('formulas');
-const relatedFormulas = ref([]);
-const relatedRules = ref([]);
-const selectedStructureId = ref('');
-
 // ==================== Dialog Related ====================
 const dialogVisible = ref(false);
 const dialogTitle = ref('New Param Structure');
 const formRef = ref(null);
 
-  const dialogForm = ref({
-    id: '',
+const dialogForm = ref({
+  id: '',
+  name: '',
+  description: '',
+  requiredParam: {
     name: '',
+    valueType: 'System.String',
     description: '',
-    requiredParam: {
-      name: '',
-      valueType: 'System.String',
-      description: '',
-      isNullable: false,
-      defaultValue: null
-    },
-    conditionRequirements: [],
-    limitations: {},
-    // 新增字段
-    formulaId: '',
-    standardFamilyIds: [],
-    ruleIds: [],
-    effectiveDate: new Date().toISOString()
-  });
+    isNullable: false,
+    defaultValue: null
+  },
+  conditionRequirements: [],
+  limitations: {},
+  formulaId: '',
+  standardFamilyIds: [],
+  ruleIds: [],
+  effectiveDate: new Date().toISOString()
+});
 
 // Form Validation Rules
 const formRules = {
@@ -534,7 +487,6 @@ function handleSearch() {
 function applyFilters() {
   let result = allData.value;
   
-  // Keyword Search
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.trim().toLowerCase();
     result = result.filter(item => 
@@ -544,7 +496,6 @@ function applyFilters() {
     );
   }
   
-  // Status Filter
   if (searchStatus.value !== '') {
     const isActive = searchStatus.value === 'true';
     result = result.filter(item => item.isActive === isActive);
@@ -553,91 +504,77 @@ function applyFilters() {
   filteredData.value = result;
 }
 
-  // ==================== 数据映射适配器 ====================
-  function mapParamStructureResponse(item) {
-    return {
-      // 字段名映射
-      id: item.paramStructureId,  // ParamStructureResponseDto.ParamStructureId → id
-      name: item.paramName,        // ParamStructureResponseDto.ParamName → name
-      description: item.paramSchema?.requiredParam?.description || '',
-      isActive: true,              // 后端可能没有这个字段，默认true或从其他字段推断
-      createdTime: item.effectiveDate,  // 使用生效时间作为创建时间
-      lastModifiedTime: item.effectiveDate, // 暂时使用生效时间
-
-      // 关联数据 - 从ID列表获取（需要额外加载）
-      formulas: [],  // 需要通过 FormulaId 或 StandardFamilyIds 获取
-      rules: [],     // 需要通过 RuleIds 获取
-
-      // Schema 信息（用于编辑）
-      paramSchema: item.paramSchema,
-      formulaId: item.formulaId,
-      standardFamilyIds: item.standardFamilyIds || [],
-      ruleIds: item.ruleIds || [],
-      effectiveDate: item.effectiveDate
-    };
-  }
+// 数据映射适配器
+function mapParamStructureResponse(item) {
+  return {
+    id: item.paramStructureId,
+    name: item.paramName,
+    description: item.paramSchema?.requiredParam?.description || '',
+    isActive: true,
+    createdTime: item.effectiveDate,
+    lastModifiedTime: item.effectiveDate,
+    formulas: [],
+    rules: [],
+    paramSchema: item.paramSchema,
+    formulaId: item.formulaId,
+    standardFamilyIds: item.standardFamilyIds || [],
+    ruleIds: item.ruleIds || [],
+    effectiveDate: item.effectiveDate
+  };
+}
 
 // Fetch All Data
-  function fetchAll() {
-    loading.value = true;
-    request.get('/ParamStructure/getall')
-      .then(res => {
-        if (res.data.isSuccess) {
-          // 映射后端数据到前端格式
-          allData.value = (res.data.value || []).map(item => mapParamStructureResponse(item));
-
-          // 批量加载关联数据
-          loadAllRelatedData(allData.value);
-
-          applyFilters();
-        } else {
-          ElMessage.error(res.data.error || 'Failed to load data');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        ElMessage.error('Failed to load data');
-      })
-      .finally(() => {
-        loading.value = false;
-      });
-  }
-
-  async function loadAllRelatedData(items) {
-    const promises = [];
-
-    items.forEach(item => {
-      // 如果有 FormulaId，加载公式信息
-      if (item.formulaId) {
-        promises.push(
-          request.get(`/ParamFormula/get/${item.formulaId}`)
-            .then(res => {
-              if (res.data.isSuccess) {
-                item.formulas = [res.data.value];
-              }
-            })
-            .catch(() => { })
-        );
+function fetchAll() {
+  loading.value = true;
+  request.get('/ParamStructure/getall')
+    .then(res => {
+      if (res.data.isSuccess) {
+        allData.value = (res.data.value || []).map(item => mapParamStructureResponse(item));
+        loadAllRelatedData(allData.value);
+        applyFilters();
+      } else {
+        ElMessage.error(res.data.error || 'Failed to load data');
       }
-
-      // 如果有 RuleIds，加载规则信息
-      if (item.ruleIds && item.ruleIds.length > 0) {
-        promises.push(
-          request.get('/ParamRules/get-by-ids', {
-            params: { ids: item.ruleIds }
-          })
-            .then(res => {
-              if (res.data.isSuccess) {
-                item.rules = res.data.value || [];
-              }
-            })
-            .catch(() => { })
-        );
-      }
+    })
+    .catch(err => {
+      console.error(err);
+      ElMessage.error('Failed to load data');
+    })
+    .finally(() => {
+      loading.value = false;
     });
+}
 
-    await Promise.allSettled(promises);
-  }
+async function loadAllRelatedData(items) {
+  const promises = [];
+  items.forEach(item => {
+    if (item.formulaId) {
+      promises.push(
+        request.get(`/ParamFormula/get/${item.formulaId}`)
+          .then(res => {
+            if (res.data.isSuccess) {
+              item.formulas = [res.data.value];
+            }
+          })
+          .catch(() => {})
+      );
+    }
+    if (item.ruleIds && item.ruleIds.length > 0) {
+      promises.push(
+        request.get('/ParamRules/get-by-ids', {
+          params: { ids: item.ruleIds }
+        })
+          .then(res => {
+            if (res.data.isSuccess) {
+              item.rules = res.data.value || [];
+            }
+          })
+          .catch(() => {})
+      );
+    }
+  });
+  await Promise.allSettled(promises);
+}
 
 // Open Add Dialog
 function openAddDialog() {
@@ -654,83 +591,82 @@ function openAddDialog() {
       defaultValue: null
     },
     conditionRequirements: [],
-    limitations: {}
+    limitations: {},
+    formulaId: '',
+    standardFamilyIds: [],
+    ruleIds: [],
+    effectiveDate: new Date().toISOString()
   };
   dialogVisible.value = true;
 }
 
 // Open Edit Dialog
-  function openEditDialog(row) {
-    dialogTitle.value = 'Edit Param Structure';
-
-    // 直接从 row 中获取数据，因为我们已经映射过了
-    dialogForm.value = {
-      id: row.id,
-      name: row.name,
-      description: row.description || '',
-      requiredParam: row.paramSchema?.requiredParam || {
-        name: '',
-        valueType: 'System.String',
-        description: '',
-        isNullable: false,
-        defaultValue: null
-      },
-      conditionRequirements: row.paramSchema?.conditionRequirements || [],
-      limitations: row.paramSchema?.limitations || {},
-      // 额外字段
-      formulaId: row.formulaId || '',
-      standardFamilyIds: row.standardFamilyIds || [],
-      ruleIds: row.ruleIds || [],
-      effectiveDate: row.effectiveDate || new Date().toISOString()
-    };
-    dialogVisible.value = true;
-  }
+function openEditDialog(row) {
+  dialogTitle.value = 'Edit Param Structure';
+  dialogForm.value = {
+    id: row.id,
+    name: row.name,
+    description: row.description || '',
+    requiredParam: row.paramSchema?.requiredParam || {
+      name: '',
+      valueType: 'System.String',
+      description: '',
+      isNullable: false,
+      defaultValue: null
+    },
+    conditionRequirements: row.paramSchema?.conditionRequirements || [],
+    limitations: row.paramSchema?.limitations || {},
+    formulaId: row.formulaId || '',
+    standardFamilyIds: row.standardFamilyIds || [],
+    ruleIds: row.ruleIds || [],
+    effectiveDate: row.effectiveDate || new Date().toISOString()
+  };
+  dialogVisible.value = true;
+}
 
 // Confirm Submit
-  // 确认提交
-  function confirmSubmit() {
-    formRef.value?.validate((valid) => {
-      if (!valid) return;
+function confirmSubmit() {
+  formRef.value?.validate((valid) => {
+    if (!valid) return;
 
-      submitLoading.value = true;
+    submitLoading.value = true;
 
-      // 构建请求数据（适配后端格式）
-      const requestData = {
-        paramStructureId: dialogForm.value.id,
-        paramName: dialogForm.value.name,
-        formulaId: dialogForm.value.formulaId,
-        standardFamilyIds: dialogForm.value.standardFamilyIds,
-        ruleIds: dialogForm.value.ruleIds,
-        effectiveDate: dialogForm.value.effectiveDate || new Date().toISOString(),
-        paramSchema: {
-          requiredParam: dialogForm.value.requiredParam,
-          conditionRequirements: dialogForm.value.conditionRequirements,
-          limitations: dialogForm.value.limitations
+    const requestData = {
+      paramStructureId: dialogForm.value.id,
+      paramName: dialogForm.value.name,
+      formulaId: dialogForm.value.formulaId,
+      standardFamilyIds: dialogForm.value.standardFamilyIds,
+      ruleIds: dialogForm.value.ruleIds,
+      effectiveDate: dialogForm.value.effectiveDate || new Date().toISOString(),
+      paramSchema: {
+        requiredParam: dialogForm.value.requiredParam,
+        conditionRequirements: dialogForm.value.conditionRequirements,
+        limitations: dialogForm.value.limitations
+      }
+    };
+
+    const isEdit = dialogTitle.value === 'Edit Param Structure';
+    const url = isEdit ? '/ParamStructure/update' : '/ParamStructure/add';
+    const method = isEdit ? request.put : request.post;
+
+    method(url, requestData)
+      .then(res => {
+        if (res.data.isSuccess) {
+          ElMessage.success(isEdit ? 'Updated successfully' : 'Created successfully');
+          dialogVisible.value = false;
+          fetchAll();
+        } else {
+          ElMessage.error(res.data.error || 'Operation failed');
         }
-      };
-
-      const isEdit = dialogTitle.value === 'Edit Param Structure';
-      const url = isEdit ? '/ParamStructure/update' : '/ParamStructure/add';
-      const method = isEdit ? request.put : request.post;
-
-      method(url, requestData)
-        .then(res => {
-          if (res.data.isSuccess) {
-            ElMessage.success(isEdit ? 'Updated successfully' : 'Created successfully');
-            dialogVisible.value = false;
-            fetchAll();
-          } else {
-            ElMessage.error(res.data.error || 'Operation failed');
-          }
-        })
-        .catch(() => {
-          ElMessage.error('Operation failed');
-        })
-        .finally(() => {
-          submitLoading.value = false;
-        });
-    });
-  }
+      })
+      .catch(() => {
+        ElMessage.error('Operation failed');
+      })
+      .finally(() => {
+        submitLoading.value = false;
+      });
+  });
+}
 
 // Toggle Status
 function toggleStatus(row) {
@@ -794,63 +730,6 @@ function deleteParamStructure(row) {
 function hasRelatedData(row) {
   return (row.formulas && row.formulas.length > 0) || 
          (row.rules && row.rules.length > 0);
-}
-
-// Click row to show related data
-function handleRowClick(row) {
-  selectedStructureId.value = row.id;
-  loadRelatedData(row.id);
-}
-
-// Load related data
-  // 加载关联数据（点击行时）
-  function loadRelatedData(structureId) {
-    // 从已加载的数据中查找
-    const item = allData.value.find(d => d.id === structureId);
-    if (!item) return;
-
-    // 加载关联公式
-    if (item.formulaId) {
-      request.get(`/ParamFormula/get/${item.formulaId}`)
-        .then(res => {
-          if (res.data.isSuccess) {
-            relatedFormulas.value = [res.data.value];
-          } else {
-            relatedFormulas.value = [];
-          }
-        })
-        .catch(() => {
-          relatedFormulas.value = [];
-        });
-    } else {
-      relatedFormulas.value = [];
-    }
-
-    // 加载关联规则
-    if (item.ruleIds && item.ruleIds.length > 0) {
-      request.get('/ParamRules/get-by-ids', {
-        params: { ids: item.ruleIds }
-      })
-        .then(res => {
-          if (res.data.isSuccess) {
-            relatedRules.value = res.data.value || [];
-          } else {
-            relatedRules.value = [];
-          }
-        })
-        .catch(() => {
-          relatedRules.value = [];
-        });
-    } else {
-      relatedRules.value = [];
-    }
-  }
-
-// Tab change handler
-function handleTabChange(tab) {
-  if (selectedStructureId.value) {
-    loadRelatedData(selectedStructureId.value);
-  }
 }
 
 // Condition Requirements Management
@@ -945,6 +824,7 @@ watch([searchKeyword, searchStatus], () => {
   overflow: hidden;
   gap: 12px;
   background: #fff;
+  width: 100%;
 }
 
 .boxTitle {
@@ -967,11 +847,6 @@ watch([searchKeyword, searchStatus], () => {
   font-size: 13px;
   color: var(--el-text-color-secondary);
   padding: 4px 0;
-}
-
-.quick-view-tabs {
-  flex: 1;
-  min-height: 0;
 }
 
 .removeTableGaps :deep(table) {
@@ -1008,10 +883,6 @@ watch([searchKeyword, searchStatus], () => {
 
 // Responsive Adjustments
 @media (max-width: 1200px) {
-  .topHalf {
-    flex-direction: column;
-  }
-  
   .halfBox {
     max-height: 500px;
   }
