@@ -51,8 +51,19 @@
           </el-select>
         </div>
 
-        <!-- 试样面积 -->
+        <!-- 测试类型切换 -->
         <div class="card">
+          <div class="ctitle"><el-icon><Grid /></el-icon>测试类型</div>
+          <el-radio-group v-model="testType" size="small" style="width:100%" @change="onTestTypeChange">
+            <el-radio-button value="area" style="width:33.33%">面积克重</el-radio-button>
+            <el-radio-button value="length" style="width:33.33%">长度克重</el-radio-button>
+            <el-radio-button value="piece" style="width:33.33%">条重</el-radio-button>
+          </el-radio-group>
+          <div class="st" style="color:#909399;">{{ TYPE_LABEL[testType] }}</div>
+        </div>
+
+        <!-- 试样面积 (面积克重) -->
+        <div v-if="testType==='area'" class="card">
           <div class="ctitle" style="justify-content:space-between;">
             <span><el-icon><Grid /></el-icon>试样面积 (cm²)</span>
             <el-switch v-model="areaByCalc" size="small" active-text="长×宽" inactive-text="直接" style="--el-switch-on-color:#409eff;" />
@@ -68,14 +79,30 @@
           </template>
           <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
         </div>
+
+        <!-- 试样长度 (长度克重) -->
+        <div v-if="testType==='length'" class="card">
+          <div class="ctitle"><el-icon><Grid /></el-icon>试样长度 (cm)</div>
+          <el-input-number v-model="lengthCm" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入长度 cm"/>
+        </div>
+
+        <!-- 试样条重 (条重) -->
+        <div v-if="testType==='piece'" class="card">
+          <div class="ctitle" style="justify-content:space-between;">
+            <span><el-icon><Grid /></el-icon>试样条重</span>
+            <el-switch v-model="pieceMode" size="small" active-text="每打" inactive-text="条数" :active-value="'perDozen'" :inactive-value="'count'" style="--el-switch-on-color:#409eff;" />
+          </div>
+          <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" :placeholder="pieceMode==='perDozen' ? '每打条数 (默认12)' : '称重条数'"/>
+        </div>
       </div>
 
       <!-- ==================== 中间按钮 ==================== -->
-      <div class="mid">
+      <div class="mid card">
         <el-button type="primary" round @click="record"><el-icon><CirclePlus /></el-icon>结果记录</el-button>
         <el-button type="warning" round @click="clearAll"><el-icon><RefreshLeft /></el-icon>清除数据</el-button>
         <el-button type="danger" round :disabled="!sel.length" @click="delSel"><el-icon><Delete /></el-icon>删除选中</el-button>
         <el-button type="success" round :disabled="!rows.length" @click="doExport"><el-icon><Download /></el-icon>导出Excel</el-button>
+        <el-button type="primary" round :disabled="!rows.length" @click="doReport"><el-icon><Document /></el-icon>生成报告</el-button>
         <el-button round :disabled="!rows.length" @click="doPrint"><el-icon><Printer /></el-icon>打印</el-button>
         <el-button round :disabled="!rows.length" @click="doSave"><el-icon><Upload /></el-icon>保存到服务器</el-button>
       </div>
@@ -95,9 +122,24 @@
             <el-table-column prop="sid" label="试样编号" width="120"/>
             <el-table-column prop="point" label="试样测点" width="100"/>
             <el-table-column label="重量(g)" width="100" align="right"><template #default="s">{{ s.row.w?.toFixed(4) }}</template></el-table-column>
-            <el-table-column label="面积(cm²)" width="100" align="right"><template #default="s">{{ s.row.a?.toFixed(2) }}</template></el-table-column>
-            <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(2) }}</template></el-table-column>
-            <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(2) }}</template></el-table-column>
+            <!-- 面积克重 -->
+            <template v-if="testType==='area'">
+              <el-table-column label="面积(cm²)" width="100" align="right"><template #default="s">{{ s.row.a?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(2) }}</template></el-table-column>
+            </template>
+            <!-- 长度克重 -->
+            <template v-if="testType==='length'">
+              <el-table-column label="长度(cm)" width="100" align="right"><template #default="s">{{ s.row.lc?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="oz/yd" width="90" align="right"><template #default="s">{{ s.row.oyd?.toFixed(2) }}</template></el-table-column>
+            </template>
+            <!-- 条重 -->
+            <template v-if="testType==='piece'">
+              <el-table-column label="条数" width="80" align="right"><template #default="s">{{ s.row.pc }}</template></el-table-column>
+              <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(2) }}</template></el-table-column>
+            </template>
             <el-table-column label="测试时间" width="155"><template #default="s">{{ ts(s.row.t) }}</template></el-table-column>
           </el-table>
         </div>
@@ -109,7 +151,7 @@
 <script setup>
 import { ref, reactive, inject, onBeforeUnmount, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Connection, Link, SwitchButton, ScaleToOriginal, Timer, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload } from '@element-plus/icons-vue'
+import { Connection, Link, SwitchButton, ScaleToOriginal, Timer, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload, Document } from '@element-plus/icons-vue'
 
 const api = inject('request')
 
@@ -123,11 +165,20 @@ const portObj = ref(null)
 const portCfg = ref(null)  // 实际打开的端口配置 {dataBits,parity,...}
 const weight = ref(null)
 const lastRxTime = ref(0)          // 最近一次收到串口数据的时间戳
+// ---- 测试类型: area(面积克重) | length(长度克重) | piece(条重) ----
+const testType = ref('area')
+const TYPE_LABEL = { area: '面积克重', length: '长度克重', piece: '条重' }
+// ---- 面积 ----
 const area = ref(null)             // 直接输入模式
 const areaByCalc = ref(false)      // 长×宽计算模式
 const areaLen = ref(null)
 const areaWid = ref(null)
 const areaValue = computed(() => areaByCalc.value && areaLen.value && areaWid.value ? parseFloat((areaLen.value * areaWid.value).toFixed(2)) : area.value)
+// ---- 长度 ----
+const lengthCm = ref(null)         // 试样长度 cm
+// ---- 条重 ----
+const pieceMode = ref('count')     // count(条数) | perDozen(每打条数)
+const pieceCount = ref(12)         // 称重条数(默认 12 = 1打)
 const refreshInterval = ref(1)
 const sid = ref('')
 const point = ref('')
@@ -135,6 +186,10 @@ const temp = ref(null)
 const humid = ref(null)
 const rows = reactive([])
 const sel = ref([])
+
+// ---- 换算常量 ----
+const OZ_PER_YD_TO_G_PER_M = 31.0035   // 1 oz/yd = 31.0035 g/m
+const LB_TO_G = 453.592                 // 1 lb = 453.592 g
 
 // ---- 串口底层 (Sartorius BSA) ----
 // 注意: USB转串口多数不支持硬件流控, 优先用非流控 + 手动DTR/RTS模拟握手
@@ -234,7 +289,7 @@ function startLoop() {
           }
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (!stopped) recover()   // 驱动错误 → 自动重连; 主动取消则不重连
     }
     finally {
@@ -290,13 +345,44 @@ const onPortDisconnect = (e) => {
 navigator.serial?.addEventListener('disconnect', onPortDisconnect)
 
 // ---- 业务 ----
+function onTestTypeChange(v) {
+  if (rows.length) {
+    ElMessageBox.confirm(`切换测试类型将清空已记录的 ${rows.length} 条数据，确定？`, '确认', { type: 'warning' })
+      .then(() => { rows.splice(0); applyTypeDefaults(v) })
+      .catch(() => { testType.value = rows[0]?.type || 'area' })
+    return
+  }
+  applyTypeDefaults(v)
+}
+
+function applyTypeDefaults(v) {
+  if (v === 'piece' && !pieceCount.value) pieceCount.value = 12
+}
+
 function record() {
   if (weight.value == null || +weight.value <= 0) { ElMessage.warning('重量>0'); return }
-  if (areaValue.value == null || +areaValue.value <= 0) { ElMessage.warning('面积>0'); return }
   if (!sid.value.trim()) { ElMessage.warning('试样编号不能为空'); return }
-  const w = +weight.value, a = +areaValue.value
-  rows.push({ id: crypto.randomUUID?.() ?? Math.random().toString(36), ri: rows.length + 1, sid: sid.value.trim(), point: point.value.trim(), w, a, gsm: +(w / a * 10000).toFixed(2), oz: +((w / a * 10000) / 33.9057).toFixed(2), temp: temp.value, humid: humid.value, t: new Date().toISOString() })
-  ElMessage.success(`g/m²=${rows[rows.length-1].gsm}  oz/yd²=${rows[rows.length-1].oz}`)
+  const w = +weight.value, t = new Date().toISOString()
+  const base = { id: crypto.randomUUID?.() ?? Math.random().toString(36), ri: rows.length + 1, sid: sid.value.trim(), point: point.value.trim(), type: testType.value, w, temp: temp.value, humid: humid.value, t }
+  if (testType.value === 'area') {
+    const a = areaValue.value
+    if (a == null || +a <= 0) { ElMessage.warning('面积>0'); return }
+    const gsm = +(w / a * 10000).toFixed(2), oz = +(gsm / 33.9057).toFixed(2)
+    rows.push({ ...base, a, gsm, oz })
+    ElMessage.success(`g/m²=${gsm}  oz/yd²=${oz}`)
+  } else if (testType.value === 'length') {
+    const lc = lengthCm.value
+    if (lc == null || +lc <= 0) { ElMessage.warning('长度>0'); return }
+    const gm = +(w / lc * 100).toFixed(2), oyd = +(gm / OZ_PER_YD_TO_G_PER_M).toFixed(2)
+    rows.push({ ...base, lc, gm, oyd })
+    ElMessage.success(`g/m=${gm}  oz/yd=${oyd}`)
+  } else {
+    const pc = +pieceCount.value || 0
+    if (pc <= 0) { ElMessage.warning('条数>0'); return }
+    const gp = +(w / pc).toFixed(2), lbd = +(gp * 12 / LB_TO_G).toFixed(2)
+    rows.push({ ...base, pc, gp, lbd })
+    ElMessage.success(`g/piece=${gp}  lb/dozen=${lbd}`)
+  }
 }
 
 async function clearAll() {
@@ -318,10 +404,43 @@ async function delSel() {
 async function doExport() {
   if (!rows.length) return
   const XLSX = await import('xlsx')
-  const ws = XLSX.utils.json_to_sheet(rows.map(r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(2), 'oz/yd²': r.oz?.toFixed(2), '测试时间': ts(r.t) })))
+  let map
+  if (testType.value === 'length') {
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '长度(cm)': r.lc?.toFixed(2), 'g/m': r.gm?.toFixed(2), 'oz/yd': r.oyd?.toFixed(2), '测试时间': ts(r.t) })
+  } else if (testType.value === 'piece') {
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '条数': r.pc, 'g/piece': r.gp?.toFixed(2), 'lb/dozen': r.lbd?.toFixed(2), '测试时间': ts(r.t) })
+  } else {
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(2), 'oz/yd²': r.oz?.toFixed(2), '测试时间': ts(r.t) })
+  }
+  const ws = XLSX.utils.json_to_sheet(rows.map(map))
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PhysicalWeight')
   XLSX.writeFile(wb, `PhysicalWeight_${new Date().toISOString().slice(0,10)}.xlsx`)
   ElMessage.success('导出成功')
+}
+
+// 生成 docx 报告: 调后端用 PHY_Weight.docx 模板填充并下载
+async function doReport() {
+  if (!rows.length) { ElMessage.warning('请先记录数据'); return }
+  if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(报告号)'); return }
+  try {
+    const res = await api.post('/PhysicalWeightReport/report', {
+      reportNumber: sid.value.trim(),
+      testType: testType.value,
+      testMethod: '',
+      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a }))
+    })
+    if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
+    const { downloadUrl, fileName } = res.data.value
+    ElMessage.success('生成成功,开始下载')
+    // downloadUrl 是 /api/... 相对路径, 需拼后端 origin(不能走 axios baseURL, 会重复 /api)
+    const backendOrigin = new URL(api.defaults.baseURL).origin   // http://localhost:5051
+    const fullUrl = backendOrigin + downloadUrl
+    const resp = await api.get(fullUrl, { responseType: 'blob' })
+    const url = URL.createObjectURL(new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))
+    const a = document.createElement('a'); a.href = url; a.download = fileName
+    a.style.display = 'none'; document.body.appendChild(a); a.click()
+    document.body.removeChild(a); URL.revokeObjectURL(url)
+  } catch (e) { ElMessage.error('网络错误: ' + e.message) }
 }
 
 function doPrint() { window.print() }
@@ -330,8 +449,8 @@ async function doSave() {
   if (!rows.length) return
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(单号)'); return }
   try {
-    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, testPoint: r.point, weight: r.w, area: r.a, gPerSqm: r.gsm, ozPerSqyd: r.oz, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
-    ElMessage[res.data.success ? 'success' : 'error'](res.data.message || '保存失败')
+    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, sampleId: sid.value.trim(), testPoint: r.point, weight: r.w, area: r.a || 0, gsm: r.gsm || 0, oz: r.oz || 0, testType: r.type, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
+    ElMessage[res.data.isSuccess ? 'success' : 'error'](res.data.error || '保存失败')
   } catch (e) { ElMessage.error('网络错误: ' + e.message) }
 }
 
@@ -378,8 +497,8 @@ onBeforeUnmount(() => {
 
 .hint { font-size: 11px; color: #909399; }
 
-/* 中间按钮列 */
-.mid { display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; width: 118px; padding: 0 4px; }
+/* 中间按钮列 (卡片化, 贴合内容高度) */
+.mid { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; align-self: center; width: 138px; padding: 14px; box-sizing: border-box; }
 .mid .el-button { width: 100%; margin: 0; }
 .mid .el-button .el-icon { margin-right: 4px; }
 
