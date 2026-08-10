@@ -146,7 +146,7 @@
               <span>Work Sheet Edit</span>
             </el-menu-item>
             <el-menu-item index="/main/FiberWorkSheet">
-              <span>Fiber Team</span>
+              <span>Fiber Analysis</span>
             </el-menu-item>
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
@@ -180,6 +180,9 @@
             </el-menu-item>
             <el-menu-item index="/main/MenuManagement">
               <span>Menu Management</span>
+            </el-menu-item>
+            <el-menu-item index="/main/TemplateManagement">
+              <span>Template Management</span>
             </el-menu-item>
             <el-menu-item index="/main/ParamConfig">
               <span>Test Logic Config</span>
