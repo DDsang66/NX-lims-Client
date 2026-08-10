@@ -32,7 +32,7 @@
               v-if="searchParams.group==='All'"
               @expand-change="expandChange"
               :expand-row-keys="expandRowKeys"
-              row-key="reportNum"
+              row-key="reportNumber"
               >
       <el-table-column type="expand">
         <template #default="props">
@@ -294,7 +294,7 @@ onMounted(() => {
               v-if="searchParams.group==='All'"
               @expand-change="expandChange"
               :expand-row-keys="expandRowKeys"
-              row-key="reportNum"
+              row-key="reportNumber"
               >
       <el-table-column type="expand">
         <template #default="props">
