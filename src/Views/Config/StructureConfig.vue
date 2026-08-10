@@ -223,7 +223,12 @@
                      filterable
                      allow-create
                      placeholder="Select Standard Families"
-                     style="width: 100%" />
+                     style="width: 100%">
+            <el-option v-for="fam in standardFamilyOptions"
+                       :key="fam.id"
+                       :label="fam.standardFamilyCode || fam.id"
+                       :value="fam.id" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="Rule IDs" prop="ruleIds">
@@ -232,7 +237,12 @@
                      filterable
                      allow-create
                      placeholder="Select Rules"
-                     style="width: 100%" />
+                     style="width: 100%">
+            <el-option v-for="rule in ruleOptions"
+                       :key="rule.id"
+                       :label="rule.paramName ? `${rule.id} - ${rule.paramName}` : rule.id"
+                       :value="rule.id" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="Effective Date" prop="effectiveDate">
@@ -272,9 +282,14 @@
               </el-col>
             </el-row>
             <el-row :gutter="10" style="margin-top: 8px;">
-              <el-col :span="24">
+              <el-col :span="12">
                 <el-input v-model="dialogForm.requiredParam.description"
                           placeholder="Parameter description"
+                          size="small" />
+              </el-col>
+              <el-col :span="12">
+                <el-input v-model="dialogForm.requiredParam.defaultValue"
+                          placeholder="Default value (used when engine can't compute)"
                           size="small" />
               </el-col>
             </el-row>
@@ -340,21 +355,13 @@
           </div>
         </el-form-item>
 
-        <!-- Parameter Limitations -->
+        <!-- Parameter Limitations（作用于主参数，即 Required Parameter 的 name） -->
         <el-form-item label="Parameter Limitations">
           <div style="width: 100%;">
-            <div v-for="(limitation, key) in dialogForm.limitations"
-                 :key="key"
-                 style="margin-bottom: 10px; padding: 10px; border: 1px solid #DCDFE6; border-radius: 4px;">
+            <div style="padding: 10px; border: 1px solid #DCDFE6; border-radius: 4px;">
               <el-row :gutter="10">
                 <el-col :span="6">
-                  <el-input v-model="limitation.key"
-                            placeholder="Parameter name"
-                            size="small"
-                            @input="updateLimitationKey(key, $event)" />
-                </el-col>
-                <el-col :span="6">
-                  <el-select v-model="limitation.valueType"
+                  <el-select v-model="dialogForm.limitation.valueType"
                              placeholder="Type"
                              size="small"
                              style="width: 100%">
@@ -364,8 +371,8 @@
                     <el-option label="Boolean" value="System.Boolean" />
                   </el-select>
                 </el-col>
-                <el-col :span="10">
-                  <el-select v-model="limitation.allowedValues"
+                <el-col :span="18">
+                  <el-select v-model="dialogForm.limitation.allowedValues"
                              multiple
                              filterable
                              allow-create
@@ -373,34 +380,23 @@
                              size="small"
                              style="width: 100%" />
                 </el-col>
-                <el-col :span="2" style="text-align: right;">
-                  <el-button type="danger"
-                             size="small"
-                             circle
-                             @click="removeLimitation(key)">
-                    <el-icon><Delete /></el-icon>
-                  </el-button>
-                </el-col>
               </el-row>
               <el-row :gutter="10" style="margin-top: 8px;">
                 <el-col :span="12">
-                  <el-input v-model="limitation.min"
+                  <el-input v-model="dialogForm.limitation.min"
                             placeholder="Min value"
                             size="small" />
                 </el-col>
                 <el-col :span="12">
-                  <el-input v-model="limitation.max"
+                  <el-input v-model="dialogForm.limitation.max"
                             placeholder="Max value"
                             size="small" />
                 </el-col>
               </el-row>
+              <div class="form-tip" style="margin-top: 4px;">
+                Applies to Required Parameter "{{ dialogForm.requiredParam.name || '(not set)' }}"
+              </div>
             </div>
-            <el-button size="small"
-                       @click="addLimitation"
-                       style="width: 100%;">
-              <el-icon><Plus /></el-icon>
-              Add Parameter Limitation
-            </el-button>
           </div>
         </el-form-item>
       </el-form>
@@ -440,6 +436,10 @@ const dialogVisible = ref(false);
 const dialogTitle = ref('New Param Structure');
 const formRef = ref(null);
 
+// 下拉选项数据（Standard Family / Rule 真实数据）
+const standardFamilyOptions = ref([]);
+const ruleOptions = ref([]);
+
 const dialogForm = ref({
   id: '',
   name: '',
@@ -452,7 +452,7 @@ const dialogForm = ref({
     defaultValue: null
   },
   conditionRequirements: [],
-  limitations: {},
+  limitation: { valueType: 'System.String', allowedValues: [], min: null, max: null },
   formulaId: '',
   standardFamilyIds: [],
   ruleIds: [],
@@ -576,6 +576,28 @@ async function loadAllRelatedData(items) {
   await Promise.allSettled(promises);
 }
 
+// 加载 Standard Family 列表（用于弹窗下拉）
+function fetchStandardFamilyOptions() {
+  request.get('/StandardFamily/getall')
+    .then(res => {
+      standardFamilyOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+    })
+    .catch(() => {
+      standardFamilyOptions.value = [];
+    });
+}
+
+// 加载 Rule 列表（用于弹窗下拉）
+function fetchRuleOptions() {
+  request.get('/ParamRules/getall')
+    .then(res => {
+      ruleOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+    })
+    .catch(() => {
+      ruleOptions.value = [];
+    });
+}
+
 // Open Add Dialog
 function openAddDialog() {
   dialogTitle.value = 'New Param Structure';
@@ -591,7 +613,7 @@ function openAddDialog() {
       defaultValue: null
     },
     conditionRequirements: [],
-    limitations: {},
+    limitation: { valueType: 'System.String', allowedValues: [], min: null, max: null },
     formulaId: '',
     standardFamilyIds: [],
     ruleIds: [],
@@ -615,7 +637,9 @@ function openEditDialog(row) {
       defaultValue: null
     },
     conditionRequirements: row.paramSchema?.conditionRequirements || [],
-    limitations: row.paramSchema?.limitations || {},
+    // limitations 字典 → 取主参数名那条作为单条 limitation
+    limitation: pickMainLimitation(row.paramSchema?.limitations, row.name)
+      || { valueType: 'System.String', allowedValues: [], min: null, max: null },
     formulaId: row.formulaId || '',
     standardFamilyIds: row.standardFamilyIds || [],
     ruleIds: row.ruleIds || [],
@@ -641,7 +665,10 @@ function confirmSubmit() {
       paramSchema: {
         requiredParam: dialogForm.value.requiredParam,
         conditionRequirements: dialogForm.value.conditionRequirements,
-        limitations: dialogForm.value.limitations
+        // 单条 limitation → 用主参数名作为 key（自动绑定主参数，通过后端 ValidateLimitations）
+        limitations: dialogForm.value.limitation
+          ? { [dialogForm.value.requiredParam.name]: dialogForm.value.limitation }
+          : {}
       }
     };
 
@@ -746,31 +773,13 @@ function removeCondition(index) {
   dialogForm.value.conditionRequirements.splice(index, 1);
 }
 
-// Parameter Limitations Management
-function addLimitation() {
-  const key = `param_${Date.now()}`;
-  dialogForm.value.limitations[key] = {
-    key: key,
-    valueType: 'System.String',
-    allowedValues: [],
-    min: null,
-    max: null
-  };
-}
-
-function removeLimitation(key) {
-  delete dialogForm.value.limitations[key];
-}
-
-function updateLimitationKey(oldKey, newKey) {
-  if (oldKey !== newKey && newKey) {
-    const value = dialogForm.value.limitations[oldKey];
-    delete dialogForm.value.limitations[oldKey];
-    dialogForm.value.limitations[newKey] = value;
-  }
-}
-
 // ==================== Utility Methods ====================
+// 从 limitations 字典中取主参数名对应的那条限制（兼容 key 大小写差异）
+function pickMainLimitation(limitations, mainName) {
+  if (!limitations || !mainName) return null;
+  const key = Object.keys(limitations).find(k => k.toLowerCase() === String(mainName).toLowerCase());
+  return key ? limitations[key] : null;
+}
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
@@ -791,6 +800,8 @@ function formatDate(dateStr) {
 // ==================== Lifecycle ====================
 onMounted(() => {
   fetchAll();
+  fetchStandardFamilyOptions();
+  fetchRuleOptions();
 });
 
 // Watch search changes

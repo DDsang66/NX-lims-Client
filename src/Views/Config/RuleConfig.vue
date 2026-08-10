@@ -20,7 +20,7 @@
                          :value="item.id" />
             </el-select>
           </div>
-          <el-table :data="filteredFormulas" border class="removeTableGaps" height="300" style="width: 100%" table-layout="fixed" >
+          <el-table :data="filteredFormulas" border class="removeTableGaps" height="300" style="width: 100%" table-layout="fixed" :row-class-name="formulaRowClassName" >
             <el-table-column prop="id" label="ID" width="160" fixed="left" show-overflow-tooltip></el-table-column>
             <el-table-column prop="name" label="Name" min-width="140" show-overflow-tooltip></el-table-column>
             <el-table-column prop="paramName" label="Param Name" width="120" show-overflow-tooltip></el-table-column>
@@ -53,9 +53,9 @@
           <div class="boxTitle">Param Structure</div>
           <el-input v-model="paramStructureSearch" placeholder="Search param structure" clearable></el-input>
           <el-table :data="filteredParamStructures" border class="removeTableGaps" height="300" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="120" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="name" label="Name" min-width="140" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="description" label="Description" min-width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="paramStructureId" label="ID" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="paramName" label="Name" min-width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="formulaId" label="Formula ID" min-width="140" show-overflow-tooltip></el-table-column>
             <el-table-column label="" width="55" fixed="right">
               <template #default="scope">
                 <el-button type="primary" size="small" circle @click="addParamStructureToRule(scope.row)">+</el-button>
@@ -201,6 +201,7 @@ const allFormulas = ref([]); // 存储所有 Formula，用于过滤
 const standardFamilyOptions = ref([]);
 const selectedStandardFamilyId = ref('');
 const formulaSearch = ref('');
+const selectedFormulaId = ref(''); // 点击 Formula 表格 Select 按钮后选中的公式 id
 
 // ==================== 上半：ParamStructure 数据 ====================
 const paramStructures = ref([]);
@@ -232,20 +233,38 @@ const filteredFormulas = computed(() => {
   return result;
 });
 
-// 过滤后的 ParamStructure
+// 过滤后的 ParamStructure（选中 Formula 时只显示它对应的 structure）
 const filteredParamStructures = computed(() => {
+  let result = paramStructures.value;
+  if (selectedFormulaId.value) {
+    result = result.filter(p => (p.formulaId || '') === selectedFormulaId.value);
+  }
   const kw = paramStructureSearch.value.trim().toLowerCase();
-  if (!kw) return paramStructures.value;
-  return paramStructures.value.filter(p =>
-    (p.id || '').toLowerCase().includes(kw) ||
-    (p.name || '').toLowerCase().includes(kw) ||
-    (p.description || '').toLowerCase().includes(kw));
+  if (kw) {
+    result = result.filter(p =>
+      (p.paramStructureId || '').toLowerCase().includes(kw) ||
+      (p.paramName || '').toLowerCase().includes(kw) ||
+      (p.formulaId || '').toLowerCase().includes(kw));
+  }
+  return result;
 });
 
-// 选择 Formula
+// 选择 Formula（再次点击同一行取消选中）
 function selectFormula(row) {
-  searchFormulaId.value = row.id;
-  ElMessage.success(`已选择 Formula: ${row.id}`);
+  if (selectedFormulaId.value === row.id) {
+    selectedFormulaId.value = '';
+    searchFormulaId.value = '';
+    ElMessage.info(`已取消选择 Formula: ${row.id}`);
+  } else {
+    selectedFormulaId.value = row.id;
+    searchFormulaId.value = row.id;
+    ElMessage.success(`已选择 Formula: ${row.id}`);
+  }
+}
+
+// 选中公式的行高亮
+function formulaRowClassName({ row }) {
+  return row.id === selectedFormulaId.value ? 'selected-item-row' : '';
 }
 
 // Standard Family 过滤变化
@@ -257,10 +276,10 @@ function handleFamilyFilterChange(val) {
 // 从 ParamStructure 添加
 function addParamStructureToRule(row) {
   if (dialogVisible.value) {
-    dialogForm.value.paramStructureId = row.id;
+    dialogForm.value.paramStructureId = row.paramStructureId;
   } else {
     addOpen();
-    dialogForm.value.paramStructureId = row.id;
+    dialogForm.value.paramStructureId = row.paramStructureId;
   }
 }
 
@@ -570,15 +589,17 @@ async function fetchFormulasByFamily(familyId) {
 }
 
 function fetchParamStructures() {
-  // TODO: 接口待接入
-  // request.get('/ParamStructure/getall').then(res => {
-  //   if (res.data.isSuccess) paramStructures.value = res.data.value || [];
-  // }).catch(() => {});
-  // 模拟数据
-  paramStructures.value = [
-    { id: 'PS001', name: 'Dimension Structure', description: 'Dimensions like length, width, height' },
-    { id: 'PS002', name: 'Material Structure', description: 'Material properties and compositions' },
-  ];
+  request.get('/ParamStructure/getall').then(res => {
+    if (res.data.isSuccess) {
+      paramStructures.value = res.data.value || [];
+    } else {
+      ElMessage.error(res.data.error || 'Failed to load param structures');
+      paramStructures.value = [];
+    }
+  }).catch(() => {
+    ElMessage.error('Failed to load param structures');
+    paramStructures.value = [];
+  });
 }
 
 // 监听 Standard Family 选择变化，重新加载 Formula
@@ -660,6 +681,15 @@ onMounted(() => {
 
 .removeTableGaps :deep(table) {
   margin-bottom: 0 !important;
+}
+
+/* Formula 表格选中行高亮（浅蓝） */
+:deep(.selected-item-row) {
+  background: #ecf5ff !important;
+}
+
+:deep(.selected-item-row td) {
+  background: #ecf5ff !important;
 }
 
 .modeToggle {

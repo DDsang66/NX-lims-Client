@@ -459,7 +459,7 @@ async function doSave() {
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(单号)'); return }
   try {
     const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, sampleId: sid.value.trim(), testPoint: r.point, weight: r.w, area: r.a || 0, gsm: r.gsm || 0, oz: r.oz || 0, testType: r.type, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
-    ElMessage[res.data.isSuccess ? 'success' : 'error'](res.data.error || '保存失败')
+    if (res.data.isSuccess) { ElMessage.success('保存成功') } else { ElMessage.error(res.data.error || '保存失败') }
   } catch (e) { ElMessage.error('网络错误: ' + e.message) }
 }
 

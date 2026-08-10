@@ -23,7 +23,6 @@ import FiberWorkSheet from "@/Views/FiberTeam/FiberWorkSheet.vue";
 import ItemConfig from "@/Views/Config/ItemConfig.vue";
 import StandardFamily from "@/Views/Config/StandardFamily.vue";
 import StandardPage from "@/Views/Config/StandardPage.vue";
-import ParamConfig from "@/Views/Config/ParamConfig.vue";
 import BuyerManual from "@/Views/BuyerManual.vue";
 import OrderOverview from "@/Views/OrderOverview.vue";
 import WashLabel from "@/Views/WashLabel/WashLabel.vue";
@@ -70,7 +69,6 @@ const useRoleStore = defineStore('role', {
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },
       { path: 'StandardPage', name: 'StandardPage', component: StandardPage, meta: { title: 'Standard Management' } },
-      { path: 'ParamConfig', name: 'ParamConfig', component: ParamConfig, meta: { title: 'Test Logic Config' } },
       { path: 'FormulaConfig', name: 'FormulaConfig', component: FormulaConfig, meta: { title: 'Formula Config' } },
       { path: 'RuleConfig', name: 'RuleConfig', component: RuleConfig, meta: { title: 'Rule Config' } },
       { path: 'MenuManagement', name: 'MenuManagement', component: MenuManagement, meta: { title: 'Menu Management' } },
