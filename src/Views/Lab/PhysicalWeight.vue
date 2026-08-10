@@ -39,18 +39,6 @@
           </div>
         </div>
 
-        <!-- 刷新间隔 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Timer /></el-icon>刷新间隔</div>
-          <el-select v-model="refreshInterval" style="width:100%" size="small">
-            <el-option :value="0.5" label="0.5s" />
-            <el-option :value="1" label="1s" />
-            <el-option :value="2" label="2s" />
-            <el-option :value="5" label="5s" />
-            <el-option :value="0" label="手动" />
-          </el-select>
-        </div>
-
         <!-- 测试类型切换 -->
         <div class="card">
           <div class="ctitle"><el-icon><Grid /></el-icon>测试类型</div>
@@ -88,11 +76,8 @@
 
         <!-- 试样条重 (条重) -->
         <div v-if="testType==='piece'" class="card">
-          <div class="ctitle" style="justify-content:space-between;">
-            <span><el-icon><Grid /></el-icon>试样条重</span>
-            <el-switch v-model="pieceMode" size="small" active-text="每打" inactive-text="条数" :active-value="'perDozen'" :inactive-value="'count'" style="--el-switch-on-color:#409eff;" />
-          </div>
-          <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" :placeholder="pieceMode==='perDozen' ? '每打条数 (默认12)' : '称重条数'"/>
+          <div class="ctitle"><el-icon><Grid /></el-icon>试样条重</div>
+          <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" placeholder="称重条数 (默认12)"/>
         </div>
       </div>
 
@@ -110,37 +95,43 @@
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right">
         <div class="card" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;padding:10px 14px;">
-          <span class="field">试样编号 <el-input v-model="sid" placeholder="试样编号" style="width:120px" clearable/></span>
+          <span class="field">试样编号
+            <el-input v-model="rep1" style="width:52px" disabled/>
+            <el-select v-model="rep2" style="width:76px"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
+            <el-select v-model="rep3" style="width:64px"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear-1) + '.'">{{ twoDigitYear-1 }}</el-option></el-select>
+            <el-input v-model="rep4" style="width:76px" @blur="data4Blur" placeholder="序号"/>
+            <el-input v-model="rep5" style="width:56px"/>
+          </span>
           <span class="field">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
           <span class="field">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
           <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
         </div>
         <div class="tbl-wrap">
-          <el-table :data="rows" border stripe style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
+          <el-table :data="rows" border stripe class="removeTableGaps" style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
             <el-table-column type="selection" width="40"/>
-            <el-table-column prop="ri" label="次数" width="50" align="center"/>
-            <el-table-column prop="sid" label="试样编号" width="120"/>
+            <el-table-column prop="ri" label="次数" width="60" align="center"/>
+            <el-table-column prop="sid" label="试样编号" width="200"/>
             <el-table-column prop="point" label="试样测点" width="100"/>
             <el-table-column label="重量(g)" width="100" align="right"><template #default="s">{{ s.row.w?.toFixed(4) }}</template></el-table-column>
             <!-- 面积克重 -->
             <template v-if="testType==='area'">
               <el-table-column label="面积(cm²)" width="100" align="right"><template #default="s">{{ s.row.a?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(4) }}</template></el-table-column>
             </template>
             <!-- 长度克重 -->
             <template v-if="testType==='length'">
               <el-table-column label="长度(cm)" width="100" align="right"><template #default="s">{{ s.row.lc?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="oz/yd" width="90" align="right"><template #default="s">{{ s.row.oyd?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="oz/yd" width="90" align="right"><template #default="s">{{ s.row.oyd?.toFixed(4) }}</template></el-table-column>
             </template>
             <!-- 条重 -->
             <template v-if="testType==='piece'">
               <el-table-column label="条数" width="80" align="right"><template #default="s">{{ s.row.pc }}</template></el-table-column>
-              <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(2) }}</template></el-table-column>
+              <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(4) }}</template></el-table-column>
             </template>
-            <el-table-column label="测试时间" width="155"><template #default="s">{{ ts(s.row.t) }}</template></el-table-column>
+            <el-table-column label="测试时间" min-width="155"><template #default="s">{{ ts(s.row.t) }}</template></el-table-column>
           </el-table>
         </div>
       </div>
@@ -151,7 +142,7 @@
 <script setup>
 import { ref, reactive, inject, onBeforeUnmount, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Connection, Link, SwitchButton, ScaleToOriginal, Timer, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload, Document } from '@element-plus/icons-vue'
+import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload, Document } from '@element-plus/icons-vue'
 
 const api = inject('request')
 
@@ -177,10 +168,25 @@ const areaValue = computed(() => areaByCalc.value && areaLen.value && areaWid.va
 // ---- 长度 ----
 const lengthCm = ref(null)         // 试样长度 cm
 // ---- 条重 ----
-const pieceMode = ref('count')     // count(条数) | perDozen(每打条数)
 const pieceCount = ref(12)         // 称重条数(默认 12 = 1打)
-const refreshInterval = ref(1)
-const sid = ref('')
+// ---- 试样编号(五段式, 与 Fiber 报告编号规则一致): 87. + 405./441. + 两位年份. + 4位序号 + .01 ----
+const twoDigitYear = new Date().getFullYear() % 100
+const rep1 = ref('87.')                       // 固定前缀
+const rep2 = ref('405.')                      // 405. | 441.
+const rep3 = ref(`${twoDigitYear}.`)          // 今年/去年
+const rep4 = ref('')                          // 序号(纯数字, blur 补足4位)
+const rep5 = ref('.01')                       // 后缀
+const sid = computed(() => rep1.value + rep2.value + rep3.value + rep4.value + rep5.value)
+const data4Blur = () => {
+  if (!rep4.value) return
+  if (!/^\d+$/.test(rep4.value)) {
+    rep4.value = ''
+    ElMessage.warning('序号请输入纯数字')
+    return
+  }
+  rep4.value = String(Number(rep4.value))
+  if (rep4.value.length < 4) rep4.value = rep4.value.padStart(4, '0')
+}
 const point = ref('')
 const temp = ref(null)
 const humid = ref(null)
@@ -361,25 +367,26 @@ function applyTypeDefaults(v) {
 
 function record() {
   if (weight.value == null || +weight.value <= 0) { ElMessage.warning('重量>0'); return }
-  if (!sid.value.trim()) { ElMessage.warning('试样编号不能为空'); return }
+  if (!rep4.value.trim()) { ElMessage.warning('试样编号序号不能为空'); return }
+  if (!point.value.trim()) { ElMessage.warning('试样测点不能为空'); return }
   const w = +weight.value, t = new Date().toISOString()
   const base = { id: crypto.randomUUID?.() ?? Math.random().toString(36), ri: rows.length + 1, sid: sid.value.trim(), point: point.value.trim(), type: testType.value, w, temp: temp.value, humid: humid.value, t }
   if (testType.value === 'area') {
     const a = areaValue.value
     if (a == null || +a <= 0) { ElMessage.warning('面积>0'); return }
-    const gsm = +(w / a * 10000).toFixed(2), oz = +(gsm / 33.9057).toFixed(2)
+    const gsm = +(w / a * 10000).toFixed(4), oz = +(gsm / 33.9057).toFixed(4)
     rows.push({ ...base, a, gsm, oz })
     ElMessage.success(`g/m²=${gsm}  oz/yd²=${oz}`)
   } else if (testType.value === 'length') {
     const lc = lengthCm.value
     if (lc == null || +lc <= 0) { ElMessage.warning('长度>0'); return }
-    const gm = +(w / lc * 100).toFixed(2), oyd = +(gm / OZ_PER_YD_TO_G_PER_M).toFixed(2)
+    const gm = +(w / lc * 100).toFixed(4), oyd = +(gm / OZ_PER_YD_TO_G_PER_M).toFixed(4)
     rows.push({ ...base, lc, gm, oyd })
     ElMessage.success(`g/m=${gm}  oz/yd=${oyd}`)
   } else {
     const pc = +pieceCount.value || 0
     if (pc <= 0) { ElMessage.warning('条数>0'); return }
-    const gp = +(w / pc).toFixed(2), lbd = +(gp * 12 / LB_TO_G).toFixed(2)
+    const gp = +(w / pc).toFixed(4), lbd = +(gp * 12 / LB_TO_G).toFixed(4)
     rows.push({ ...base, pc, gp, lbd })
     ElMessage.success(`g/piece=${gp}  lb/dozen=${lbd}`)
   }
@@ -406,11 +413,11 @@ async function doExport() {
   const XLSX = await import('xlsx')
   let map
   if (testType.value === 'length') {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '长度(cm)': r.lc?.toFixed(2), 'g/m': r.gm?.toFixed(2), 'oz/yd': r.oyd?.toFixed(2), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '长度(cm)': r.lc?.toFixed(2), 'g/m': r.gm?.toFixed(4), 'oz/yd': r.oyd?.toFixed(4), '测试时间': ts(r.t) })
   } else if (testType.value === 'piece') {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '条数': r.pc, 'g/piece': r.gp?.toFixed(2), 'lb/dozen': r.lbd?.toFixed(2), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '条数': r.pc, 'g/piece': r.gp?.toFixed(4), 'lb/dozen': r.lbd?.toFixed(4), '测试时间': ts(r.t) })
   } else {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(2), 'oz/yd²': r.oz?.toFixed(2), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(4), 'oz/yd²': r.oz?.toFixed(4), '测试时间': ts(r.t) })
   }
   const ws = XLSX.utils.json_to_sheet(rows.map(map))
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PhysicalWeight')
@@ -427,6 +434,8 @@ async function doReport() {
       reportNumber: sid.value.trim(),
       testType: testType.value,
       testMethod: '',
+      environmentTemperature: temp.value,
+      environmentHumidity: humid.value,
       records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a }))
     })
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
@@ -505,4 +514,8 @@ onBeforeUnmount(() => {
 /* 右侧信息栏: 4个输入框一行横排 (容器用内联 flex:row, 保证不折行) */
 .field { font-size: 13px; color: #444; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .tbl-wrap { flex: 1; min-height: 0; background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+/* 清除全局样式 table{margin-bottom:30px} 造成的表头与首行之间的空行 */
+.removeTableGaps :deep(table) {
+  margin-bottom: 0 !important;
+}
 </style>
