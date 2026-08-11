@@ -27,9 +27,9 @@
             style="width: 120px;"
           >
             <el-option label="All" value="" />
-            <el-option label="Ningbo" value="Ningbo" />
-            <el-option label="Shanghai" value="Shanghai" />
-            <el-option label="Shenzhen" value="Shenzhen" />
+            <el-option label="Ningbo" value="NB" />
+            <el-option label="Shanghai" value="SH" />
+            <el-option label="Shenzhen" value="SZ" />
           </el-select>
           <el-select 
             v-model="filterCategory" 
@@ -258,9 +258,9 @@
 
         <el-form-item label="Site" required>
           <el-select v-model="formData.site" placeholder="Select site" style="width: 100%;">
-            <el-option label="Ningbo" value="Ningbo" />
-            <el-option label="Shanghai" value="Shanghai" />
-            <el-option label="Shenzhen" value="Shenzhen" />
+            <el-option label="Ningbo" value="NB" />
+            <el-option label="Shanghai" value="SH" />
+            <el-option label="Shenzhen" value="SZ" />
           </el-select>
         </el-form-item>
 
@@ -333,7 +333,7 @@
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                Supports: .xlsx, .xls (Excel) | .docx, .doc (Word)
+                Supports: .xlsx, .xls (Excel) | .docx, .doc (Docx)
               </div>
             </template>
           </el-upload>
@@ -390,7 +390,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, nextTick } from 'vue'
+import { ref, computed, inject,reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, Refresh, Search, Files, Document, EditPen, 
@@ -411,6 +411,8 @@ const filterCategory = ref('')
 const filterTestType = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+  const request = inject('request');
 
 const templateList = ref([
   // Mock Data
@@ -485,6 +487,7 @@ const uploadRef = ref(null)
     category: '',      // 存储拼接后的最终值
     categoryMode: '',  // 新增：'common' 或 'buyer'
     testType: '',      // DIM/CFR/PFO/CON/STR
+    categroyType: '',
     templateUrl: '',
     version: 1,
     remark: '',
@@ -575,10 +578,10 @@ function handleTableRowClick(row) {
 // --- File Upload ---
   function handleFileChange(file) {
     const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword'
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/msword' // .doc
     ]
 
     if (!validTypes.includes(file.raw.type)) {
@@ -589,18 +592,16 @@ function handleTableRowClick(row) {
     // 获取文件名（不含扩展名）
     const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '')
 
-    // 检测文件类型
+    // ✅ 修改：存储文件扩展名（带点号），而不是 "Excel"/"Word"
     const fileExt = file.name.split('.').pop().toLowerCase()
-    if (['xlsx', 'xls'].includes(fileExt)) {
-      formData.fileType = 'Excel'  // 存储为 Excel
-    } else if (['docx', 'doc'].includes(fileExt)) {
-      formData.fileType = 'Word'   // 存储为 Word
-    }
+    formData.fileType = `.${fileExt}`  // 例如: .xlsx, .docx, .xls, .doc
 
     formData.uploadFile = file
     formData.name = fileNameWithoutExt
 
-    ElMessage.success(`File "${file.name}" selected successfully (${formData.fileType})`)
+    // 显示友好的文件类型名称
+    const fileTypeDisplay = ['.xlsx', '.xls'].includes(formData.fileType) ? 'Excel' : 'Word'
+    ElMessage.success(`File "${file.name}" selected successfully (${fileTypeDisplay})`)
   }
 
 function handleFileRemove() {
@@ -776,64 +777,52 @@ function openCreateDialog() {
       // 构建 Category 值
       let categoryValue = ''
       if (formData.categoryMode === 'common') {
-        categoryValue = `Common_${formData.testType}`
+        categoryValue = `Common_${formData.categroyType}`
       } else if (formData.categoryMode === 'buyer') {
-        categoryValue = `${formData.buyerName}_${formData.testType}`
+        categoryValue = `${formData.buyerName}_${formData.categroyType}`
       }
 
+      // 构建 FormData 匹配后端 DTO
       const submitData = new FormData()
-      submitData.append('name', formData.name)
-      submitData.append('site', formData.site)
-      submitData.append('category', categoryValue)
-      submitData.append('testType', formData.testType)
-      submitData.append('version', formData.version)
-      submitData.append('remark', formData.remark || '')
-      submitData.append('fileType', formData.fileType)  // 新增：Excel/Word
+      submitData.append('TemplateName', formData.name)
+      submitData.append('Site', formData.site)
+      submitData.append('Category', categoryValue)
+      submitData.append('TestType', formData.testType)
+      submitData.append('FileType', formData.fileType)
+      submitData.append('Remark', formData.remark || '')
 
       if (formData.uploadFile) {
-        submitData.append('file', formData.uploadFile.raw)
+        submitData.append('TemplateFile', formData.uploadFile.raw)
       }
 
-      // TODO: Call API
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // ✅ 使用原生 fetch 替代 axios
+      const response = await fetch('http://localhost:5051/api/Template/add', {
+        method: 'POST',
+        body: submitData,
+        // 不要设置 Content-Type，浏览器自动设置 multipart/form-data 和 boundary
+      })
 
-      if (isEdit.value) {
-        const index = templateList.value.findIndex(t => t.id === formData.id)
-        if (index > -1) {
-          templateList.value[index] = {
-            ...templateList.value[index],
-            name: formData.name,
-            site: formData.site,
-            category: categoryValue,
-            testType: formData.testType,
-            version: formData.version,
-            remark: formData.remark,
-            fileType: formData.fileType || templateList.value[index].fileType,
-            updatedAt: new Date().toISOString()
-          }
-        }
-        ElMessage.success('Template updated successfully')
+      // 检查响应状态
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
+      }
+
+      const result = await response.json()
+
+      if (result.isSuccess) {
+        ElMessage.success(isEdit.value ? 'Template updated successfully' : 'Template created successfully')
+        dialogVisible.value = false
+        resetFormData()
+
+        // 刷新列表
+        refreshList()
       } else {
-        const newTemplate = {
-          id: `tpl-${Date.now()}`,
-          name: formData.name,
-          site: formData.site,
-          category: categoryValue,
-          testType: formData.testType,
-          version: formData.version,
-          fileType: formData.fileType || 'docx',
-          templateUrl: URL.createObjectURL(formData.uploadFile.raw),
-          updatedAt: new Date().toISOString(),
-          remark: formData.remark || ''
-        }
-        templateList.value.unshift(newTemplate)
-        ElMessage.success('Template created successfully')
+        ElMessage.error(result.error || 'Operation failed')
       }
-
-      dialogVisible.value = false
-      resetFormData()
     } catch (error) {
-      ElMessage.error('Operation failed: ' + error.message)
+      console.error('Submit error:', error)
+      ElMessage.error(error.message || 'Operation failed')
     } finally {
       submitting.value = false
     }
