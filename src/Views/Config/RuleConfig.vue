@@ -140,7 +140,16 @@
           <el-input v-model="dialogForm.id" placeholder="" :disabled="dialogTitle === 'Edit Rule'"></el-input>
         </el-form-item>
         <el-form-item label="Formula ID">
-          <el-input v-model="dialogForm.formulaId" placeholder=""></el-input>
+          <el-select v-model="dialogForm.formulaId"
+                     filterable
+                     placeholder="Select formula"
+                     style="width: 100%"
+                     @change="onFormulaSelect">
+            <el-option v-for="f in allFormulas"
+                       :key="f.id"
+                       :label="f.id + (f.paramName ? ' - ' + f.paramName : '')"
+                       :value="f.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="Param Structure ID">
           <el-input v-model="dialogForm.paramStructureId" placeholder=""></el-input>
@@ -165,7 +174,7 @@
         </el-form-item>
         <el-form-item v-if="inputMode === 'text'" label="Rule Text">
           <el-input v-model="dialogForm.ruleText" type="textarea" :rows="6"
-                    placeholder="Enter natural language rules..."></el-input>
+                    :placeholder="formulaTemplatePlaceholder"></el-input>
         </el-form-item>
         <el-form-item v-else label="Matches (JSON)">
           <el-input v-model="dialogForm.matchesJson" type="textarea" :rows="6"
@@ -267,6 +276,60 @@ function formulaRowClassName({ row }) {
   return row.id === selectedFormulaId.value ? 'selected-item-row' : '';
 }
 
+// Rule Text 文本框的动态 placeholder（显示所选公式的模板）
+const formulaTemplatePlaceholder = computed(() => {
+  const f = allFormulas.value.find(x => x.id === dialogForm.value.formulaId);
+  return f?.expressionTemplate
+    ? `Template: ${f.expressionTemplate}\nReplace the placeholder values with actual values.`
+    : 'Enter natural language rules...';
+});
+
+// 在 Add Rule 弹窗里选中 Formula → 按模板自动生成 Rule Text 示例（仅 text 模式）
+function onFormulaSelect(formulaId) {
+  if (inputMode.value !== 'text') return;
+  const formula = allFormulas.value.find(f => f.id === formulaId);
+  if (formula) dialogForm.value.ruleText = generateRuleTextFromTemplate(formula.expressionTemplate);
+}
+
+// 根据公式 ExpressionTemplate 生成结构合法的规则文本（占位值用字段名 / >=50 / [字段名]）
+function generateRuleTextFromTemplate(template) {
+  if (!template) return '';
+  const m = template.match(/(.*?)\s*(?:→|->|=>|~|\bto\b)\s*(.*)/i);
+  const left = m ? m[1].trim() : template.trim();
+  const right = m ? m[2].trim() : 'ResultValue';
+  const slots = splitTopLevel(left);
+  const parts = slots.map(slot => {
+    const sm = slot.match(/^\s*(\w+)\s*\{([^}]*)\}\s*$/);
+    if (sm) {
+      const type = sm[1].toLowerCase();
+      const fields = sm[2].split(',').map(f => f.trim()).filter(Boolean);
+      const vals = fields.map(f => {
+        if (type === 'comparer') return f + '>=50';  // Comparer 槽
+        if (type === 'inner') return '[' + f + ']';  // Inner 槽（数组）
+        return f;                                    // Equal / 其他槽
+      });
+      return sm[1] + '{' + vals.join(', ') + '}';
+    }
+    return slot.trim(); // 旧式裸字段：保留字段名
+  });
+  return parts.join(' + ') + ' → ' + right;
+}
+
+// 顶层 '+' 分割（忽略大括号内部的 +）
+function splitTopLevel(s) {
+  const out = [];
+  let cur = '';
+  let depth = 0;
+  for (const ch of s) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    if (ch === '+' && depth === 0) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+
 // Standard Family 过滤变化
 function handleFamilyFilterChange(val) {
   // 只是触发 computed 重新计算
@@ -364,12 +427,19 @@ function confirmAdd() {
 
   if (inputMode.value === 'text') {
     // Text 模式 → add-naturaltext
+    if (!dialogForm.value.ruleText.trim()) {
+      ElMessage.warning('Please enter Rule Text');
+      submitLoading.value = false;
+      return;
+    }
     request.post('/ParamRules/add-naturaltext', {
+      id: dialogForm.value.id,
       text: dialogForm.value.ruleText,
       formulaId: dialogForm.value.formulaId,
       paramStructureId: dialogForm.value.paramStructureId,
       paramName: dialogForm.value.paramName,
-      priority: dialogForm.value.priority
+      priority: dialogForm.value.priority,
+      stopOnMatch: dialogForm.value.stopOnMatch
     }).then(res => {
       if (res.data.isSuccess) {
         ElMessage.success('Rule added');
