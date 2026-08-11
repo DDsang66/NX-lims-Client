@@ -154,9 +154,9 @@
             <el-table-column label="Actions" width="240" fixed="right">
               <template #default="{ row }">
                 <div class="action-buttons">
-                  <el-button size="small" type="primary" @click="loadTemplate(row.id)">
+                  <!--<el-button size="small" type="primary" @click="loadTemplate(row.id)">
                     Load
-                  </el-button>
+                  </el-button>-->
                   <el-button size="small" type="warning" @click="editTemplate(row)">
                     Edit
                   </el-button>
@@ -264,15 +264,36 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="Category" required>
-          <el-select v-model="formData.category" placeholder="Select category" style="width: 100%;">
-            <el-option label="Checklist" value="checklist" />
-            <el-option label="Datasheet" value="datasheet" />
-            <el-option label="Report" value="report" />
+        <el-form-item label="Category Mode" required>
+          <el-select v-model="formData.categoryMode"
+                     placeholder="Select category mode"
+                     style="width: 100%;">
+            <el-option label="Common" value="common" />
+            <el-option label="Buyer" value="buyer" />
+          </el-select>
+          <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+            Common: Common_FLAM, Common_PHY, Common_WET, Common_FIBER<br>
+            Buyer: {BuyerName}_FLAM, {BuyerName}_PHY, etc.
+          </div>
+        </el-form-item>
+
+        <!-- 买家名称 -->
+        <el-form-item v-if="formData.categoryMode === 'buyer'" label="Buyer Name" required>
+          <el-input v-model="formData.buyerName"
+                    placeholder="Enter buyer name (e.g., Apple, Samsung)" />
+        </el-form-item>
+
+        <el-form-item label="Categroy Type" required>
+          <el-select v-model="formData.categroyType" placeholder="Select category type" style="width: 100%;" clearable>
+            <el-option label="PHY" value="PHY" />
+            <el-option label="WET" value="WET" />
+            <el-option label="FLAM" value="FLAM" />
+            <el-option label="FIBER" value="FIBER" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="Test Type">
+        <!-- Test Type -->
+        <el-form-item label="Test Type" required>
           <el-select v-model="formData.testType" placeholder="Select test type" style="width: 100%;" clearable>
             <el-option label="DIM" value="DIM" />
             <el-option label="CFR" value="CFR" />
@@ -282,18 +303,30 @@
           </el-select>
         </el-form-item>
 
+        <!-- 显示最终的 Category 预览 -->
+        <el-form-item v-if="formData.categoryMode && formData.categroyType" label="Category Preview">
+          <el-tag type="primary" size="large">
+            {{ formData.categoryMode === 'common' ? `Common_${formData.categroyType}` : `${formData.buyerName || '?'}_${formData.categroyType}` }}
+          </el-tag>
+        </el-form-item>
+
+        <!-- File Type 显示 -->
+        <el-form-item label="File Type">
+          <el-input v-model="formData.fileType"
+                    placeholder="Auto-detected from file"
+                    disabled />
+        </el-form-item>
+
         <el-form-item label="Upload File" required>
-          <el-upload
-            ref="uploadRef"
-            class="upload-demo"
-            drag
-            action="#"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :on-remove="handleFileRemove"
-            :limit="1"
-            accept=".xlsx,.xls,.docx,.doc"
-          >
+          <el-upload ref="uploadRef"
+                     class="upload-demo"
+                     drag
+                     action="#"
+                     :auto-upload="false"
+                     :on-change="handleFileChange"
+                     :on-remove="handleFileRemove"
+                     :limit="1"
+                     accept=".xlsx,.xls,.docx,.doc">
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
               Drop file here or <em>click to browse</em>
@@ -445,18 +478,20 @@ const submitting = ref(false)
 const dialogTitle = ref('New Template')
 const uploadRef = ref(null)
 
-const formData = reactive({
-  id: '',
-  name: '',
-  site: '',
-  category: '',
-  testType: '',
-  templateUrl: '',
-  version: 1,
-  remark: '',
-  uploadFile: null,
-  fileType: ''
-})
+  const formData = reactive({
+    id: '',
+    name: '',
+    site: '',
+    category: '',      // 存储拼接后的最终值
+    categoryMode: '',  // 新增：'common' 或 'buyer'
+    testType: '',      // DIM/CFR/PFO/CON/STR
+    templateUrl: '',
+    version: 1,
+    remark: '',
+    uploadFile: null,
+    fileType: '',      // 新增：从文件后缀获取 xlsx/docx
+    buyerName: ''      // 新增：买家名称
+  })
 
 // ==================== History ====================
 const historyDialogVisible = ref(false)
@@ -530,31 +565,43 @@ function handleTableRowClick(row) {
   }
 }
 
+  function onCategoryChange(val) {
+    // 切换 Category 时清空买家名称
+    if (val !== 'buyer') {
+      formData.buyerName = ''
+    }
+  }
+
 // --- File Upload ---
-function handleFileChange(file) {
-  const validTypes = [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-    'application/vnd.ms-excel', // .xls
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-    'application/msword' // .doc
-  ]
-  
-  if (!validTypes.includes(file.raw.type)) {
-    ElMessage.warning('Please upload a valid Excel or Word file')
-    return
-  }
+  function handleFileChange(file) {
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword'
+    ]
 
-  // Detect file type
-  const fileExt = file.name.split('.').pop().toLowerCase()
-  if (['xlsx', 'xls'].includes(fileExt)) {
-    formData.fileType = fileExt
-  } else if (['docx', 'doc'].includes(fileExt)) {
-    formData.fileType = fileExt
-  }
+    if (!validTypes.includes(file.raw.type)) {
+      ElMessage.warning('Please upload a valid Excel or Word file')
+      return
+    }
 
-  formData.uploadFile = file
-  ElMessage.success(`File "${file.name}" selected successfully`)
-}
+    // 获取文件名（不含扩展名）
+    const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '')
+
+    // 检测文件类型
+    const fileExt = file.name.split('.').pop().toLowerCase()
+    if (['xlsx', 'xls'].includes(fileExt)) {
+      formData.fileType = 'Excel'  // 存储为 Excel
+    } else if (['docx', 'doc'].includes(fileExt)) {
+      formData.fileType = 'Word'   // 存储为 Word
+    }
+
+    formData.uploadFile = file
+    formData.name = fileNameWithoutExt
+
+    ElMessage.success(`File "${file.name}" selected successfully (${formData.fileType})`)
+  }
 
 function handleFileRemove() {
   formData.uploadFile = null
@@ -665,118 +712,132 @@ function openCreateDialog() {
   dialogVisible.value = true
 }
 
-function editTemplate(row) {
-  isEdit.value = true
-  dialogTitle.value = 'Edit Template'
-  Object.assign(formData, {
-    id: row.id,
-    name: row.name,
-    site: row.site,
-    category: row.category,
-    testType: row.testType,
-    templateUrl: row.templateUrl,
-    version: row.version,
-    remark: row.remark || '',
-    uploadFile: null,
-    fileType: row.fileType || ''
-  })
-  dialogVisible.value = true
-}
-
-function resetFormData() {
-  Object.assign(formData, {
-    id: '',
-    name: '',
-    site: '',
-    category: '',
-    testType: '',
-    templateUrl: '',
-    version: 1,
-    remark: '',
-    uploadFile: null,
-    fileType: ''
-  })
-}
-
-async function submitForm() {
-  // Validation
-  if (!formData.name || !formData.site || !formData.category) {
-    ElMessage.warning('Please fill in all required fields')
-    return
+  function editTemplate(row) {
+    isEdit.value = true
+    dialogTitle.value = 'Edit Template'
+    Object.assign(formData, {
+      id: row.id,
+      name: row.name,
+      site: row.site,
+      category: row.category,
+      testType: row.testType,
+      templateUrl: row.templateUrl,
+      version: row.version,
+      remark: row.remark || '',
+      uploadFile: null,
+      fileType: row.fileType || '',
+      buyerName: '' // 编辑时清空买家名称
+    })
+    dialogVisible.value = true
   }
 
-  if (!isEdit.value && !formData.uploadFile) {
-    ElMessage.warning('Please upload a template file')
-    return
+  function resetFormData() {
+    Object.assign(formData, {
+      id: '',
+      name: '',
+      site: '',
+      category: '',
+      categoryMode: '',
+      testType: '',
+      templateUrl: '',
+      version: 1,
+      remark: '',
+      uploadFile: null,
+      fileType: '',
+      buyerName: ''
+    })
   }
 
-  submitting.value = true
-
-  try {
-    // Build form data for API submission
-    const submitData = new FormData()
-    submitData.append('name', formData.name)
-    submitData.append('site', formData.site)
-    submitData.append('category', formData.category)
-    submitData.append('testType', formData.testType || '')
-    submitData.append('version', formData.version)
-    submitData.append('remark', formData.remark || '')
-    
-    if (formData.uploadFile) {
-      submitData.append('file', formData.uploadFile.raw)
+  async function submitForm() {
+    // Validation
+    if (!formData.name || !formData.site || !formData.categoryMode) {
+      ElMessage.warning('Please fill in all required fields')
+      return
     }
 
-    // TODO: Call API to create/update template
-    // const response = await request.post('/api/templates', submitData, {
-    //   headers: { 'Content-Type': 'multipart/form-data' }
-    // })
+    if (formData.categoryMode === 'buyer' && !formData.buyerName) {
+      ElMessage.warning('Please enter buyer name')
+      return
+    }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!formData.testType) {
+      ElMessage.warning('Please select Test Type')
+      return
+    }
 
-    if (isEdit.value) {
-      // Update existing template
-      const index = templateList.value.findIndex(t => t.id === formData.id)
-      if (index > -1) {
-        templateList.value[index] = {
-          ...templateList.value[index],
+    if (!isEdit.value && !formData.uploadFile) {
+      ElMessage.warning('Please upload a template file')
+      return
+    }
+
+    submitting.value = true
+
+    try {
+      // 构建 Category 值
+      let categoryValue = ''
+      if (formData.categoryMode === 'common') {
+        categoryValue = `Common_${formData.testType}`
+      } else if (formData.categoryMode === 'buyer') {
+        categoryValue = `${formData.buyerName}_${formData.testType}`
+      }
+
+      const submitData = new FormData()
+      submitData.append('name', formData.name)
+      submitData.append('site', formData.site)
+      submitData.append('category', categoryValue)
+      submitData.append('testType', formData.testType)
+      submitData.append('version', formData.version)
+      submitData.append('remark', formData.remark || '')
+      submitData.append('fileType', formData.fileType)  // 新增：Excel/Word
+
+      if (formData.uploadFile) {
+        submitData.append('file', formData.uploadFile.raw)
+      }
+
+      // TODO: Call API
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      if (isEdit.value) {
+        const index = templateList.value.findIndex(t => t.id === formData.id)
+        if (index > -1) {
+          templateList.value[index] = {
+            ...templateList.value[index],
+            name: formData.name,
+            site: formData.site,
+            category: categoryValue,
+            testType: formData.testType,
+            version: formData.version,
+            remark: formData.remark,
+            fileType: formData.fileType || templateList.value[index].fileType,
+            updatedAt: new Date().toISOString()
+          }
+        }
+        ElMessage.success('Template updated successfully')
+      } else {
+        const newTemplate = {
+          id: `tpl-${Date.now()}`,
           name: formData.name,
           site: formData.site,
-          category: formData.category,
+          category: categoryValue,
           testType: formData.testType,
           version: formData.version,
-          remark: formData.remark,
+          fileType: formData.fileType || 'docx',
+          templateUrl: URL.createObjectURL(formData.uploadFile.raw),
           updatedAt: new Date().toISOString(),
-          fileType: formData.fileType || templateList.value[index].fileType
+          remark: formData.remark || ''
         }
+        templateList.value.unshift(newTemplate)
+        ElMessage.success('Template created successfully')
       }
-      ElMessage.success('Template updated successfully')
-    } else {
-      // Create new template
-      const newTemplate = {
-        id: `tpl-${Date.now()}`,
-        name: formData.name,
-        site: formData.site,
-        category: formData.category,
-        testType: formData.testType,
-        version: formData.version,
-        fileType: formData.fileType || 'docx',
-        templateUrl: URL.createObjectURL(formData.uploadFile.raw),
-        updatedAt: new Date().toISOString(),
-        remark: formData.remark || ''
-      }
-      templateList.value.unshift(newTemplate)
-      ElMessage.success('Template created successfully')
-    }
 
-    dialogVisible.value = false
-    resetFormData()
-  } catch (error) {
-    ElMessage.error('Operation failed: ' + error.message)
-  } finally {
-    submitting.value = false
+      dialogVisible.value = false
+      resetFormData()
+    } catch (error) {
+      ElMessage.error('Operation failed: ' + error.message)
+    } finally {
+      submitting.value = false
+    }
   }
-}
 
 async function deleteTemplate(row) {
   try {
