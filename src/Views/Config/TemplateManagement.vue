@@ -67,17 +67,15 @@
 
         <!-- Template Table -->
         <div class="table-wrapper">
-          <el-table 
-            :data="paginatedTemplates" 
-            stripe
-            border
-            highlight-current-row
-            @current-change="handleTableRowClick"
-            style="width: 100%;"
-            max-height="400"
-          >
+          <el-table :data="paginatedTemplates"
+                    stripe
+                    border
+                    highlight-current-row
+                    @current-change="handleTableRowClick"
+                    style="width: 100%;"
+                    max-height="400">
             <el-table-column type="index" width="50" label="#" />
-            
+
             <el-table-column prop="id" label="Template ID" width="220">
               <template #default="{ row }">
                 <el-link type="primary" @click="loadTemplate(row.id)">
@@ -87,7 +85,7 @@
             </el-table-column>
 
             <el-table-column prop="name" label="Template Name" min-width="150" />
-            
+
             <el-table-column prop="site" label="Site" width="100">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.site }}</el-tag>
@@ -96,8 +94,8 @@
 
             <el-table-column prop="category" label="Category" width="120">
               <template #default="{ row }">
-                <el-tag :type="categoryTagType(row.category)" size="small">
-                  {{ categoryLabel(row.category) }}
+                <el-tag type="primary" size="small">
+                  {{ row.category }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -141,11 +139,9 @@
 
             <el-table-column label="History" width="100">
               <template #default="{ row }">
-                <el-button 
-                  size="small" 
-                  type="info" 
-                  @click="showHistory(row)"
-                >
+                <el-button size="small"
+                           type="info"
+                           @click="showHistory(row)">
                   View
                 </el-button>
               </template>
@@ -155,8 +151,8 @@
               <template #default="{ row }">
                 <div class="action-buttons">
                   <!--<el-button size="small" type="primary" @click="loadTemplate(row.id)">
-                    Load
-                  </el-button>-->
+          Load
+        </el-button>-->
                   <el-button size="small" type="warning" @click="editTemplate(row)">
                     Edit
                   </el-button>
@@ -414,57 +410,7 @@ const pageSize = ref(10)
 
   const request = inject('request');
 
-const templateList = ref([
-  // Mock Data
-  {
-    id: 'tpl-001',
-    name: 'Battery Test Checklist',
-    site: 'Ningbo',
-    category: 'checklist',
-    testType: 'DIM',
-    version: 2,
-    fileType: 'xlsx',
-    templateUrl: 'https://example.com/templates/checklist-dim-v2.xlsx',
-    updatedAt: '2026-08-10T10:30:00',
-    remark: 'Battery DIM test standard checklist'
-  },
-  {
-    id: 'tpl-002',
-    name: 'Datasheet Template - CFR',
-    site: 'Shanghai',
-    category: 'datasheet',
-    testType: 'CFR',
-    version: 1,
-    fileType: 'docx',
-    templateUrl: 'https://example.com/templates/datasheet-cfr-v1.docx',
-    updatedAt: '2026-08-09T15:20:00',
-    remark: 'CFR test datasheet template'
-  },
-  {
-    id: 'tpl-003',
-    name: 'Report Template - PFO',
-    site: 'Shenzhen',
-    category: 'report',
-    testType: 'PFO',
-    version: 3,
-    fileType: 'docx',
-    templateUrl: 'https://example.com/templates/report-pfo-v3.docx',
-    updatedAt: '2026-08-08T09:00:00',
-    remark: 'PFO test report template'
-  },
-  {
-    id: 'tpl-004',
-    name: 'Checklist - CON',
-    site: 'Ningbo',
-    category: 'checklist',
-    testType: 'CON',
-    version: 1,
-    fileType: 'xlsx',
-    templateUrl: 'https://example.com/templates/checklist-con-v1.xlsx',
-    updatedAt: '2026-08-07T14:45:00',
-    remark: 'CON test checklist'
-  }
-])
+  const templateList = ref([])
 
 // ==================== Editor State ====================
 const editorMode = ref('excel')
@@ -859,9 +805,51 @@ function showHistory(row) {
 }
 
 // --- Refresh & Pagination ---
-function refreshList() {
-  ElMessage.success('List refreshed')
-}
+  // ==================== Refresh & Pagination ====================
+  async function refreshList() {
+    try {
+      const response = await request.get('/Template/getall')
+
+      // ✅ 修改这里：处理你的后端返回数据
+      if (response && response.isSuccess) {
+        // 假设后端返回的数据在 response.value 或 response.data 中
+        const templates = response.value || response.data || []
+
+        // 如果 templates 是数组，直接映射
+        if (Array.isArray(templates)) {
+          templateList.value = templates.map(item => ({
+            id: item.templateId || item.id || '',
+            name: item.templateName || item.name || 'Unknown',
+            site: item.site || '',
+            // 如果后端返回的是 BusinessCategory，需要拆分
+            category: item.businessCategory ?
+              item.businessCategory.split('_')[1] || item.businessCategory :
+              (item.category || 'Unknown'),
+            testType: item.testType || '',
+            version: item.version || 1,
+            fileType: item.fileType ?
+              item.fileType.toLowerCase().replace(/^\./, '') : '',
+            templateUrl: item.templateUrl || '',
+            updatedAt: item.updateAt || item.updatedAt || new Date().toISOString(),
+            remark: item.remark || ''
+          }))
+
+          ElMessage.success(`Loaded ${templateList.value.length} templates`)
+        } else {
+          ElMessage.warning('No template data found')
+          templateList.value = []
+        }
+      } else {
+        console.log("response:", response)
+        ElMessage.error(response?.error || 'Failed to load templates')
+        templateList.value = []
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+      ElMessage.error('Failed to refresh list: ' + error.message)
+      templateList.value = []
+    }
+  }
 
 function handleSizeChange(val) {
   pageSize.value = val
@@ -873,9 +861,9 @@ function handleCurrentChange(val) {
 }
 
 // ==================== Lifecycle ====================
-onMounted(() => {
-  // Initialization
-})
+  onMounted(async () => {
+    await refreshList()
+  })
 </script>
 
 <style scoped lang="scss">
