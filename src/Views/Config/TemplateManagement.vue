@@ -810,10 +810,12 @@ function showHistory(row) {
     try {
       const response = await request.get('/Template/getall')
 
-      // ✅ 修改这里：处理你的后端返回数据
-      if (response && response.isSuccess) {
-        // 假设后端返回的数据在 response.value 或 response.data 中
-        const templates = response.value || response.data || []
+      // ✅ request 是 axios 实例，返回的是整个 axios response，后端数据在 response.data 中
+      const payload = response?.data
+
+      if (payload && payload.isSuccess) {
+        // 后端 Result<T> 的成功数据在 value 中
+        const templates = payload.value || []
 
         // 如果 templates 是数组，直接映射
         if (Array.isArray(templates)) {
@@ -840,8 +842,8 @@ function showHistory(row) {
           templateList.value = []
         }
       } else {
-        console.log("response:", response)
-        ElMessage.error(response?.error || 'Failed to load templates')
+        console.log("payload:", payload)
+        ElMessage.error(payload?.error || 'Failed to load templates')
         templateList.value = []
       }
     } catch (error) {
