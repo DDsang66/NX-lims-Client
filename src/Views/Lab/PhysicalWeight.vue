@@ -9,6 +9,12 @@
         <div class="card">
           <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
           <div class="row">
+            <span class="lbl">天平品牌</span>
+            <el-select v-model="scaleBrand" size="small" style="width:130px" :disabled="connected || connecting" @change="onBrandChange">
+              <el-option v-for="(b, k) in SCALE_BRANDS" :key="k" :value="k" :label="b.label"/>
+            </el-select>
+          </div>
+          <div class="row">
             <span class="lbl">波特率</span>
             <el-select v-model="baudRate" size="small" style="width:90px" :disabled="connected">
               <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
@@ -149,6 +155,78 @@ const api = inject('request')
 // ---- 状态 ----
 const baudRate = ref(1200)
 const rates = [1200, 2400, 4800, 9600, 19200, 38400]
+// ---- 天平品牌适配 (Sartorius / Mettler Toledo) ----
+// 每种品牌独立: 默认波特率 / 串口配置尝试列表 / DTR-RTS 握手方式 / 重量解析函数。
+// Sartorius 保持与旧逻辑逐字节一致; Mettler 为新增分支, 走标准 9600 8N1 + S/SI 稳定帧。
+const UNIT_TO_G = { g: 1, kg: 1000, mg: 0.001 }
+// 行尾可能带 \r 或 \r\n(startLoop 已按 \n 拆行, 这里兼容仅 \r 结尾的帧)
+const METTLER_STABLE_RE = /^S[DI]?\s+([+-]?\d+\.\d+)\s*(g|kg|mg)?\r?$/i
+const METTLER_BARE_RE = /^([+-]?\d+\.\d+)\s*(g|kg|mg)?\r?$/
+
+// 统一换算到克(页面 weight 语义是克, 避免天平设成 kg/mg 时记错倍数)
+function toGrams(num, unit) {
+  const k = (unit || 'g').toLowerCase()
+  return num * (UNIT_TO_G[k] ?? 1)
+}
+
+// 梅特勒: 1) 优先锚定 S/SI/SD 稳定帧; 2) 回退无前缀完整帧;
+//          3) 带空格状态帧(如 S D 2.560 g — ME403 实测形态, S 与 D 间有空格)取末尾数字;
+//          4) 其它丢弃(保留上次值)
+function matchMettler(line) {
+  // 剥前导 ASCII 空白 + 控制字符(如 ESC)再锚定
+  let i = 0
+  while (i < line.length && (line.charCodeAt(i) <= 32)) i++
+  const s = line.slice(i).trim()
+  let m = s.match(METTLER_STABLE_RE)
+  if (m) return toGrams(parseFloat(m[1]), m[2])
+  m = s.match(METTLER_BARE_RE)
+  if (m) return toGrams(parseFloat(m[1]), m[2])
+  // S 开头的状态帧(无论 S/SI/SD/S D/S I), 取行尾"数字+可选单位"
+  if (/^S[ DI]?\s/i.test(s)) {
+    m = s.match(/([+-]?\d+\.\d+)\s*(g|kg|mg)?\s*$/)
+    if (m) return toGrams(parseFloat(m[1]), m[2])
+  }
+  return null
+}
+
+const SCALE_BRANDS = {
+  sartorius: {
+    label: 'Sartorius',
+    defaultBaud: 1200,
+    signals: 'edge',    // 保留 DTR/RTS 边沿触发(拉低120ms→拉高, 触发天平输出使能)
+    cfgs: [
+      { dataBits: 7, parity: 'odd',  stopBits: 1 },
+      { dataBits: 8, parity: 'odd',  stopBits: 1 },
+      { dataBits: 7, parity: 'even', stopBits: 1 },
+      { dataBits: 8, parity: 'none', stopBits: 1 },
+      { dataBits: 7, parity: 'odd',  stopBits: 1, flowControl: 'hardware' },
+    ],
+    parse(line) {                                       // 与现有行为逐字一致
+      const m = line.trim().match(/([+-]?\d+\.\d+)/)
+      return m ? parseFloat(m[1]) : null
+    },
+  },
+  mettler: {
+    label: 'Mettler Toledo',
+    defaultBaud: 9600,
+    signals: 'none',    // 标准 RS-232 被动输出, 不做 DTR/RTS 操作
+    cfgs: [
+      { dataBits: 8, parity: 'none', stopBits: 1 },     // 8N1 标准默认(命中率最高)
+      { dataBits: 7, parity: 'even', stopBits: 1 },     // 7E1 常见回退
+      { dataBits: 7, parity: 'odd',  stopBits: 1 },
+      { dataBits: 8, parity: 'even', stopBits: 1 },
+      { dataBits: 7, parity: 'none', stopBits: 1 },
+    ],
+    parse: matchMettler,
+  },
+}
+const scaleBrand = ref('sartorius')
+
+// 解析分发(供 startLoop 调用)
+function matchWeight(line) {
+  const brand = SCALE_BRANDS[scaleBrand.value]
+  return brand && typeof brand.parse === 'function' ? brand.parse(line) : null
+}
 const connected = ref(false)
 const connecting = ref(false)
 const cfgInfo = ref('')
@@ -200,19 +278,29 @@ const LB_TO_G = 453.592                 // 1 lb = 453.592 g
 // ---- 串口底层 (Sartorius BSA) ----
 // 注意: USB转串口多数不支持硬件流控, 优先用非流控 + 手动DTR/RTS模拟握手
 async function _open(port, baud) {
-  const cfgs = [
-    { baudRate: baud, dataBits: 7, parity: 'odd',  stopBits: 1 },
-    { baudRate: baud, dataBits: 8, parity: 'odd',  stopBits: 1 },
-    { baudRate: baud, dataBits: 7, parity: 'even', stopBits: 1 },
-    { baudRate: baud, dataBits: 8, parity: 'none', stopBits: 1 },
-    { baudRate: baud, dataBits: 7, parity: 'odd',  stopBits: 1, flowControl: 'hardware' },
-  ]
+  const brand = SCALE_BRANDS[scaleBrand.value]
+  const cfgs = brand.cfgs.map(c => ({ baudRate: baud, ...c }))
   let lastErr
   for (const c of cfgs) {
     try { await port.open(c); return c }
     catch (e) { lastErr = e; try { await port.close() } catch (_) {} }
   }
   throw lastErr || new Error('unable to open')
+}
+
+// 按品牌执行开端口后的信号握手(边沿触发仅 Sartorius 需要)
+async function _applySignals(port) {
+  const brand = SCALE_BRANDS[scaleBrand.value]
+  if (brand.signals === 'edge') {
+    // 复位握手: 先拉低 → 等待 → 拉高, 制造边沿重新触发天平输出使能
+    try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
+    await sleep(120)
+    try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
+  } else if (brand.signals === 'high') {
+    // 预留: 若梅特勒实测需要 DTR 高电平(少数型号把 DTR 当数据请求), 改成 'high' 即可
+    try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
+  }
+  // 'none' → 完全不动 DTR/RTS
 }
 
 // ---- 端口关闭: 先停读取, 再拉低电平, 最后 close (避免驱动崩溃 + 电平残留) ----
@@ -232,20 +320,25 @@ async function connect() {
   try {
     const p = await navigator.serial.requestPort()
     const cfg = await _open(p, baudRate.value)
-    cfgInfo.value = cfg.baudRate + ' ' + cfg.dataBits + cfg.parity.charAt(0) + cfg.stopBits + (cfg.flowControl ? ' hw' : '')
+    cfgInfo.value = SCALE_BRANDS[scaleBrand.value].label + ' | ' + cfg.baudRate + ' ' + cfg.dataBits + cfg.parity.charAt(0) + cfg.stopBits + (cfg.flowControl ? ' hw' : '')
     portObj.value = p
     portCfg.value = cfg
     connected.value = true
     recoverCount = 0        // 重连计数复位
-    // 复位握手: 先拉低 → 等待 → 拉高, 制造边沿重新触发天平输出使能
-    try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
-    await sleep(120)
-    try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
+    await _applySignals(p)  // 按品牌握手(仅 Sartorius 边沿触发, Mettler 跳过)
     startLoop()
-    ElMessage.success('已连接')
+    ElMessage.success('已连接 ' + SCALE_BRANDS[scaleBrand.value].label)
   } catch (e) {
     if (e.name !== 'AbortError') ElMessage.error(e.message || '连接失败')
   } finally { connecting.value = false }
+}
+
+// 切换品牌(仅在未连接时触发, 下拉已 disabled 保护): 重置波特率为该品牌默认, 清旧配置
+function onBrandChange() {
+  baudRate.value = SCALE_BRANDS[scaleBrand.value].defaultBaud
+  cfgInfo.value = ''
+  portCfg.value = null
+  // 不动 weight.value: 未连接时可能是手动输入的重量
 }
 
 async function disconnect() {
@@ -281,17 +374,26 @@ function startLoop() {
         if (done || stopped) break
         if (value && value.length) {
           lastRxTime.value = Date.now()
+          // 【临时】原始串口监听: 只打日志, 不改变任何行为 (定位后删除)
+          {
+            let hex = '', asc = ''
+            for (let i = 0; i < value.length; i++) {
+              const b = value[i]
+              hex += b.toString(16).padStart(2, '0') + ' '
+              asc += (b >= 32 && b < 127) ? String.fromCharCode(b) : '.'
+            }
+            console.log('[SERIAL-RAW]', new Date().toLocaleTimeString('zh-CN', { hour12: false }), 'bytes=' + value.length, 'HEX:', hex.trim(), '| ASCII:', asc)
+          }
           // 剥离校验位 (7-bit 模式)
           if (portCfg.value && portCfg.value.dataBits === 7) { for (let i = 0; i < value.length; i++) value[i] &= 0x7F }
           const dec = new TextDecoder().decode(value)
           buf += dec
-          // 按行拆分, 攒够一行才解析
-          const parts = buf.split('\n')
+          // 按行拆分(兼容 \n 或 \r 行分隔符; 梅特勒 SICS 可能只发 \r), 攒够一行才解析
+          const parts = buf.split(/\r?\n|\r/)
           buf = parts.pop() || ''
           for (const part of parts) {
-            const line = part.replace(/\r$/, '')
-            const m = line.trim().match(/([+-]?\d+\.\d+)/)
-            if (m) weight.value = parseFloat(m[1])
+            const w = matchWeight(part)   // 按当前品牌解析(Sartorius 无锚定 / Mettler 锚定稳定帧)
+            if (w != null) weight.value = w
           }
         }
       }
@@ -327,9 +429,7 @@ async function recover() {
   await sleep(300)
   try {
     await p.open(portCfg.value)                    // 用上次成功的配置重开
-    try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }) } catch (_) {}
-    await sleep(120)
-    try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }) } catch (_) {}
+    await _applySignals(p)                         // 按品牌握手(重连与初连一致)
     startLoop()
   } catch (e) {
     connected.value = false; portObj.value = null
