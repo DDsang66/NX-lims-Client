@@ -158,7 +158,15 @@
           <el-input v-model="dialogForm.paramName" placeholder=""></el-input>
         </el-form-item>
         <el-form-item label="Param Result">
-          <el-input v-model="dialogForm.paramResult" placeholder=""></el-input>
+          <!-- text 模式：结果值由 Rule Text 推导符右侧解析，只读展示（不可手动填） -->
+          <el-input v-if="inputMode === 'text'"
+                    :model-value="paramResultFromText"
+                    placeholder="Auto-parsed from the right side of the arrow in Rule Text"
+                    disabled></el-input>
+          <!-- json 模式：手动填写结果值 -->
+          <el-input v-else
+                    v-model="dialogForm.paramResult"
+                    placeholder="Result value"></el-input>
         </el-form-item>
         <el-form-item label="Priority">
           <el-input-number v-model="dialogForm.priority" :min="1" style="width: 100%"></el-input-number>
@@ -275,6 +283,15 @@ function selectFormula(row) {
 function formulaRowClassName({ row }) {
   return row.id === selectedFormulaId.value ? 'selected-item-row' : '';
 }
+
+// 从 Rule Text 推导符右侧提取结果值（后端就是这么解析的，前端只读预览用）
+const paramResultFromText = computed(() => {
+  const text = dialogForm.value.ruleText;
+  if (!text) return '';
+  // 贪婪 .* 定位到最后一个推导符，右侧到行尾即结果值
+  const m = text.match(/.*(?:→|->|=>|~|\bto\b)\s*([^+]+)\s*$/i);
+  return m ? m[1].trim() : '';
+});
 
 // Rule Text 文本框的动态 placeholder（显示所选公式的模板）
 const formulaTemplatePlaceholder = computed(() => {
@@ -426,29 +443,42 @@ function confirmAdd() {
   submitLoading.value = true;
 
   if (inputMode.value === 'text') {
-    // Text 模式 → add-naturaltext
+    // Text 模式：新增 → add-naturaltext；编辑 → update-naturaltext
     if (!dialogForm.value.ruleText.trim()) {
       ElMessage.warning('Please enter Rule Text');
       submitLoading.value = false;
       return;
     }
-    request.post('/ParamRules/add-naturaltext', {
-      id: dialogForm.value.id,
-      text: dialogForm.value.ruleText,
-      formulaId: dialogForm.value.formulaId,
-      paramStructureId: dialogForm.value.paramStructureId,
-      paramName: dialogForm.value.paramName,
-      priority: dialogForm.value.priority,
-      stopOnMatch: dialogForm.value.stopOnMatch
-    }).then(res => {
+    const isEdit = dialogTitle.value === 'Edit Rule';
+    const url = isEdit ? '/ParamRules/update-naturaltext' : '/ParamRules/add-naturaltext';
+    const method = isEdit ? request.put : request.post;
+    // 新增走 NaturalLanguageRuleRequest（含 formulaId/paramStructureId/paramName）；
+    // 编辑走 UpdateParamRuleTextRequest——后端用 existingRule.FormulaId 重新解析文本，只需 id/text/priority/stopOnMatch
+    const body = isEdit
+      ? {
+          id: dialogForm.value.id,
+          text: dialogForm.value.ruleText,
+          priority: dialogForm.value.priority,
+          stopOnMatch: dialogForm.value.stopOnMatch
+        }
+      : {
+          id: dialogForm.value.id,
+          text: dialogForm.value.ruleText,
+          formulaId: dialogForm.value.formulaId,
+          paramStructureId: dialogForm.value.paramStructureId,
+          paramName: dialogForm.value.paramName,
+          priority: dialogForm.value.priority,
+          stopOnMatch: dialogForm.value.stopOnMatch
+        };
+    method(url, body).then(res => {
       if (res.data.isSuccess) {
-        ElMessage.success('Rule added');
+        ElMessage.success(isEdit ? 'Rule updated' : 'Rule added');
         dialogVisible.value = false;
         fetchAll();
       } else {
-        ElMessage.error(res.data.error || 'Failed to add rule');
+        ElMessage.error(res.data.error || (isEdit ? 'Failed to update rule' : 'Failed to add rule'));
       }
-    }).catch(() => ElMessage.error('Failed to add rule'))
+    }).catch(() => ElMessage.error(isEdit ? 'Failed to update rule' : 'Failed to add rule'))
       .finally(() => submitLoading.value = false);
     return;
   }
@@ -484,7 +514,8 @@ function confirmAdd() {
         formulaId: dialogForm.value.formulaId,
         paramName: dialogForm.value.paramName,
         priority: dialogForm.value.priority,
-        isActive: dialogForm.value.stopOnMatch,
+        // stopOnMatch 用正确字段名传给后端（激活状态不随编辑更新，走独立 active/deactive 按钮）
+        stopOnMatch: dialogForm.value.stopOnMatch,
         resultValue: dialogForm.value.paramResult || undefined,
         resultNotes: undefined,
         ...matches
