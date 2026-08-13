@@ -214,7 +214,17 @@
         </el-form-item>
 
         <el-form-item label="Formula ID" prop="formulaId">
-          <el-input v-model="dialogForm.formulaId" placeholder="Enter Formula ID" />
+          <el-select v-model="dialogForm.formulaId"
+                     filterable
+                     clearable
+                     allow-create
+                     placeholder="Select Formula"
+                     style="width: 100%">
+            <el-option v-for="formula in formulaOptions"
+                       :key="formula.id"
+                       :label="formula.id + (formula.paramName || formula.name ? ' - ' + (formula.paramName || formula.name) : '')"
+                       :value="formula.id" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="Standard Family IDs" prop="standardFamilyIds">
@@ -436,9 +446,10 @@ const dialogVisible = ref(false);
 const dialogTitle = ref('New Param Structure');
 const formRef = ref(null);
 
-// 下拉选项数据（Standard Family / Rule 真实数据）
+// 下拉选项数据（Standard Family / Rule / Formula 真实数据）
 const standardFamilyOptions = ref([]);
 const ruleOptions = ref([]);
+const formulaOptions = ref([]);
 
 const dialogForm = ref({
   id: '',
@@ -595,6 +606,17 @@ function fetchRuleOptions() {
     })
     .catch(() => {
       ruleOptions.value = [];
+    });
+}
+
+// 加载 Formula 列表（用于弹窗下拉）
+function fetchFormulaOptions() {
+  request.get('/ParamFormula/getall')
+    .then(res => {
+      formulaOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+    })
+    .catch(() => {
+      formulaOptions.value = [];
     });
 }
 
@@ -802,6 +824,7 @@ onMounted(() => {
   fetchAll();
   fetchStandardFamilyOptions();
   fetchRuleOptions();
+  fetchFormulaOptions();
 });
 
 // Watch search changes
