@@ -145,9 +145,6 @@
             <el-menu-item index="/main/ExcelTry">
               <span>Work Sheet Edit</span>
             </el-menu-item>
-            <el-menu-item index="/main/FiberWorkSheet">
-              <span>Fiber Analysis</span>
-            </el-menu-item>
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
             </el-menu-item>
@@ -157,8 +154,14 @@
             <el-menu-item index="/main/WashLabel">
               <span>Wash Label</span>
             </el-menu-item>
+            <el-menu-item index="/main/FiberWorkSheet">
+              <span>Fiber Analysis</span>
+            </el-menu-item>
             <el-menu-item index="/main/PhysicalWeight">
               <span>Physical Weight</span>
+            </el-menu-item>
+            <el-menu-item index="/main/AbrasionResistance_RotatingDrum">
+              <span>Abrasion Resistance(FW)</span>
             </el-menu-item>
           </el-sub-menu>
 

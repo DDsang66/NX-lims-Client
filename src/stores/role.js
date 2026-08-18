@@ -29,6 +29,7 @@ import WashLabel from "@/Views/WashLabel/WashLabel.vue";
 import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
 import RuleConfig from "@/Views/Config/RuleConfig.vue";
 import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
+import AbrasionResistance_RotatingDrum from "@/Views/Lab/AbrasionResistance-RotatingDrum.vue";
 import MenuManagement from "@/Views/Config/MenuManagement.vue";
 import StructureConfig from "@/Views/Config/StructureConfig.vue";
 import LogicValidation from "@/Views/Config/LogicValidation.vue";
@@ -64,7 +65,8 @@ const useRoleStore = defineStore('role', {
         { path: 'FiberWorkSheet', name: 'FiberWorkSheet', component: FiberWorkSheet, meta: { title: 'Fiber Team' } },
         { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview, meta: { title: 'Reporting List' } },
         { path: 'WashLabel', name: 'WashLabel', component: WashLabel, meta: { title: 'Wash Label' } },
-        { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight, meta: { title: 'Physical Weight' } }
+        { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight, meta: { title: 'Physical Weight' } },
+        { path: 'AbrasionResistance_RotatingDrum', name: 'AbrasionResistance_RotatingDrum', component: AbrasionResistance_RotatingDrum, meta: { title: 'Abrasion Resistance_Rotating Drum' } },
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },

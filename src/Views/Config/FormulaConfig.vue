@@ -10,9 +10,9 @@
                      clearable
                      @change="handleStandardFamilyChange">
             <el-option v-for="item in standardFamilyOptions"
-                       :key="item.id"
+                       :key="item.standardFamilyId"
                        :label="item.standardFamilyCode"
-                       :value="item.id" />
+                       :value="item.standardFamilyId" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -73,10 +73,9 @@
                :close-on-click-modal="false">
       <el-form :model="formulaForm" :rules="formulaRules" ref="formulaFormRef" label-width="120px">
         <el-form-item label="Formula ID" prop="formulaId">
-          <!-- 改为 prop="formulaId" -->
-          <el-input v-model="formulaForm.formulaId" 
-            :disabled="!isAddMode"
-            :placeholder="isAddMode ? 'Please enter formula ID' : 'Formula ID is read-only'" />
+          <el-input v-model="formulaForm.formulaId"
+                    :disabled="!isAddMode"
+                    :placeholder="isAddMode ? 'Please enter formula ID' : 'Formula ID is read-only'" />
         </el-form-item>
         <el-form-item label="Formula Name" prop="name">
           <el-input v-model="formulaForm.name" placeholder="Please enter formula name" />
@@ -116,15 +115,24 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted, inject } from 'vue';
+  import { ref, reactive, computed, onMounted, inject, watch, nextTick } from 'vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import type { FormInstance } from 'element-plus';
 
   const request = inject('request');
 
   // === Type Definitions ===
+  interface StandardFamily {
+    standardFamilyId: string;
+    standardFamilyCode: string;
+    standardIds?: string[];
+    formulaIds?: string[];
+    paramStructureIds?: string[];
+    [key: string]: any;
+  }
+
   interface AddFormulaDto {
-    formulaId: string;  // 改为 formulaId（后端字段名）
+    formulaId: string;
     name: string;
     paramName: string;
     conditionFields: string[];
@@ -136,6 +144,7 @@
 
   interface FormulaResponseDto {
     id: string;
+    formulaId?: string;
     paramStructureIds: string[];
     standardFamilyIds: string[];
     name: string;
@@ -155,10 +164,8 @@
     expressionTemplate: [{ required: true, message: 'Please enter expression template', trigger: 'blur' }],
   });
 
-
-  // === Mock Data ===
-  const standardFamilyOptions = ref<Array<{ id: string; name: string }>>([]);
-
+  // === Data ===
+  const standardFamilyOptions = ref<StandardFamily[]>([]);
   const paramStructureOptions = ref([
     { id: 'PS001', name: 'Dimension Structure' },
     { id: 'PS002', name: 'Material Structure' },
@@ -171,21 +178,21 @@
   const isAddMode = ref(true);
   const formulaFormRef = ref<FormInstance>();
 
-  const searchForm = reactive({
+  const searchForm = ref({
     standardFamilyId: '',
   });
 
   const formulaList = ref<FormulaResponseDto[]>([]);
 
   const currentFamilyName = computed(() => {
-    const selected = standardFamilyOptions.value?.find(item => item.id === searchForm.standardFamilyId);
+    const selected = standardFamilyOptions.value?.find(item => item.standardFamilyId === searchForm.value.standardFamilyId);
     return selected?.standardFamilyCode || '';
   });
 
   const dialogTitle = computed(() => isAddMode.value ? 'Add Formula' : 'Edit Formula');
 
   const initFormulaForm: AddFormulaDto = {
-    formulaId: '',  // 改为 formulaId
+    formulaId: '',
     name: '',
     paramName: '',
     conditionFields: [],
@@ -201,9 +208,26 @@
 
   const fetchStandardFamilies = async () => {
     try {
+      loading.value = true;
       const res = await request.get('/StandardFamily/getall');
+      console.log('API Response:', res);
+
       if (res.data.isSuccess) {
-        standardFamilyOptions.value = res.data.value || [];
+        const data = res.data.value || [];
+        console.log('Raw data:', data);
+
+        standardFamilyOptions.value = data;
+        console.log('Processed options:', standardFamilyOptions.value);
+
+        // 如果有第一个选项且当前没有选中，自动选中第一个
+        if (data.length > 0 && !searchForm.value.standardFamilyId) {
+          searchForm.value.standardFamilyId = data[0].standardFamilyId;
+          console.log('Auto selected first family:', searchForm.value.standardFamilyId);
+          // 使用 nextTick 确保 DOM 更新后再加载数据
+          await nextTick();
+          // 手动触发加载
+          await loadFormulas(searchForm.value.standardFamilyId);
+        }
       } else {
         ElMessage.error(res.data.error || 'Failed to load standard families');
         standardFamilyOptions.value = [];
@@ -212,6 +236,8 @@
       console.error('Failed to fetch standard families:', error);
       ElMessage.error('Failed to load standard families');
       standardFamilyOptions.value = [];
+    } finally {
+      loading.value = false;
     }
   };
 
@@ -219,27 +245,66 @@
     fetchStandardFamilies();
   });
 
-  const handleStandardFamilyChange = async (val: string) => {
-    if (!val) {
+  const loadFormulas = async (familyId: string) => {
+    console.log('loadFormulas called with familyId:', familyId);
+
+    if (!familyId) {
       formulaList.value = [];
       return;
     }
 
-    const selectedFamily = standardFamilyOptions.value.find(item => item.id === val);
-    if (!selectedFamily || !selectedFamily.formulaIds?.length) {
+    const selectedFamily = standardFamilyOptions.value.find(item => item.standardFamilyId === familyId);
+    console.log('Selected family data:', selectedFamily);
+
+    if (!selectedFamily) {
       formulaList.value = [];
+      ElMessage.warning('Selected family not found');
       return;
     }
 
+    // 检查是否有 formulaIds
+    if (!selectedFamily.formulaIds || selectedFamily.formulaIds.length === 0) {
+      formulaList.value = [];
+      ElMessage.info('No formulas found for this family');
+      return;
+    }
+
+    console.log('Formula IDs to fetch (array):', selectedFamily.formulaIds);
+
+    // 调用 API 获取公式列表 - 使用数组形式
     try {
+      loading.value = true;
+
+      // 方式1: 使用 params 传递数组（如果后端支持数组参数）
       const res = await request.get('/ParamFormula/get-by-ids', {
         params: {
-          ids: selectedFamily.formulaIds
+          ids: selectedFamily.formulaIds  // 直接传递数组
+        },
+        paramsSerializer: {
+          indexes: null // 让 axios 以 id[]=1&id[]=2 格式序列化
         }
       });
 
+      // 方式2: 如果后端使用 POST 方法
+      // const res = await request.post('/ParamFormula/get-by-ids', {
+      //   ids: selectedFamily.formulaIds
+      // });
+
+      // 方式3: 如果后端需要 JSON 字符串
+      // const res = await request.get('/ParamFormula/get-by-ids', {
+      //   params: {
+      //     ids: JSON.stringify(selectedFamily.formulaIds)
+      //   }
+      // });
+
+      console.log('Formula API response:', res);
+
       if (res.data.isSuccess) {
-        formulaList.value = res.data.value;
+        formulaList.value = res.data.value || [];
+        console.log('Formulas loaded:', formulaList.value.length);
+        if (formulaList.value.length === 0) {
+          ElMessage.info('No formula data returned from API');
+        }
       } else {
         ElMessage.error(res.data.error || 'Failed to fetch formulas');
         formulaList.value = [];
@@ -248,20 +313,42 @@
       console.error('Failed to fetch formulas:', error);
       ElMessage.error('Failed to fetch formulas');
       formulaList.value = [];
+    } finally {
+      loading.value = false;
     }
   };
 
+  const handleStandardFamilyChange = (val: string) => {
+    console.log('handleStandardFamilyChange called with val:', val);
+    console.log('searchForm.standardFamilyId:', searchForm.value.standardFamilyId);
+
+    const familyId = val || searchForm.value.standardFamilyId;
+    loadFormulas(familyId);
+  };
+
+  // 监听 standardFamilyId 的变化
+  watch(() => searchForm.value.standardFamilyId, (newVal, oldVal) => {
+    console.log('watch - standardFamilyId changed from', oldVal, 'to', newVal);
+    if (newVal && newVal !== oldVal) {
+      loadFormulas(newVal);
+    } else if (!newVal) {
+      formulaList.value = [];
+    }
+  });
+
   const handleAddFormula = () => {
     isAddMode.value = true;
-    Object.assign(formulaForm, { ...initFormulaForm, standardFamilyIds: [searchForm.standardFamilyId] });
+    Object.assign(formulaForm, {
+      ...initFormulaForm,
+      standardFamilyIds: [searchForm.value.standardFamilyId]
+    });
     dialogVisible.value = true;
   };
 
   const handleEditFormula = (row: FormulaResponseDto) => {
     isAddMode.value = false;
-    // 后端返回的字段名可能是 FormulaId，需要映射
     Object.assign(formulaForm, {
-      formulaId: row.formulaId || row.id,  // 兼容不同字段名
+      formulaId: row.formulaId || row.id,
       name: row.name,
       paramName: row.paramName,
       conditionFields: row.conditionFields || [],
@@ -275,11 +362,10 @@
 
   const handleToggleActive = async (row: FormulaResponseDto) => {
     try {
-      // 调用激活接口
+      loading.value = true;
       const res = await request.put(`/ParamFormula/active/${row.id}`);
 
       if (res.data.isSuccess) {
-        // 更新本地状态
         row.isActive = true;
         ElMessage.success('Formula activated successfully');
       } else {
@@ -288,57 +374,57 @@
     } catch (error) {
       console.error('Failed to activate formula:', error);
       ElMessage.error('Failed to activate formula');
+    } finally {
+      loading.value = false;
     }
   };
 
-
   const submitFormulaForm = async () => {
     if (!formulaFormRef.value) return;
+
     await formulaFormRef.value.validate(async (valid) => {
-      if (valid) {
-        submitLoading.value = true;
-        try {
-          // 构造请求数据
-          const requestData = {
-            formulaId: formulaForm.formulaId,
-            name: formulaForm.name,
-            paramName: formulaForm.paramName,
-            conditionFields: formulaForm.conditionFields,
-            standardFamilyIds: formulaForm.standardFamilyIds || [searchForm.standardFamilyId],
-            paramStructureIds: formulaForm.paramStructureIds || [],
-            expressionTemplate: formulaForm.expressionTemplate,
-            description: formulaForm.description
-          };
+      if (!valid) return;
 
-          if (isAddMode.value) {
-            // 调用新增接口
-            const res = await request.post('/ParamFormula/add', requestData);
-            if (res.data.isSuccess) {
-              ElMessage.success('Formula added successfully');
-            } else {
-              ElMessage.error(res.data.error || 'Failed to add formula');
-              return;
-            }
+      submitLoading.value = true;
+      try {
+        const requestData = {
+          formulaId: formulaForm.formulaId,
+          name: formulaForm.name,
+          paramName: formulaForm.paramName,
+          conditionFields: formulaForm.conditionFields,
+          standardFamilyIds: formulaForm.standardFamilyIds || [searchForm.value.standardFamilyId],
+          paramStructureIds: formulaForm.paramStructureIds || [],
+          expressionTemplate: formulaForm.expressionTemplate,
+          description: formulaForm.description
+        };
+
+        let res;
+        if (isAddMode.value) {
+          res = await request.post('/ParamFormula/add', requestData);
+          if (res.data.isSuccess) {
+            ElMessage.success('Formula added successfully');
           } else {
-            // 编辑模式 - 调用更新接口
-            const res = await request.put('/ParamFormula/update', requestData);
-            if (res.data.isSuccess) {
-              ElMessage.success('Formula updated successfully');
-            } else {
-              ElMessage.error(res.data.error || 'Failed to update formula');
-              return;
-            }
+            ElMessage.error(res.data.error || 'Failed to add formula');
+            return;
           }
-
-          dialogVisible.value = false;
-          // 刷新列表
-          await handleStandardFamilyChange(searchForm.standardFamilyId);
-        } catch (error) {
-          console.error('Operation failed:', error);
-          ElMessage.error('Operation failed');
-        } finally {
-          submitLoading.value = false;
+        } else {
+          res = await request.put('/ParamFormula/update', requestData);
+          if (res.data.isSuccess) {
+            ElMessage.success('Formula updated successfully');
+          } else {
+            ElMessage.error(res.data.error || 'Failed to update formula');
+            return;
+          }
         }
+
+        dialogVisible.value = false;
+        // 刷新列表
+        await loadFormulas(searchForm.value.standardFamilyId);
+      } catch (error) {
+        console.error('Operation failed:', error);
+        ElMessage.error('Operation failed');
+      } finally {
+        submitLoading.value = false;
       }
     });
   };
@@ -350,19 +436,19 @@
       type: 'warning',
     }).then(async () => {
       try {
-         // 调用删除接口（如果后端有提供）
-         const res = await request.delete('/ParamFormula/delete', { params: { id: row.id } });
-         if (res.data.isSuccess) {
-           ElMessage.success('Deleted successfully');
-         } else {
-           ElMessage.error(res.data.error || 'Failed to delete');
-           return;
-         }
-        ElMessage.success('Deleted successfully');
-        await handleStandardFamilyChange(searchForm.standardFamilyId);
+        loading.value = true;
+        const res = await request.delete('/ParamFormula/delete', { params: { id: row.id } });
+        if (res.data.isSuccess) {
+          ElMessage.success('Deleted successfully');
+          await loadFormulas(searchForm.value.standardFamilyId);
+        } else {
+          ElMessage.error(res.data.error || 'Failed to delete');
+        }
       } catch (error) {
         console.error('Failed to delete:', error);
         ElMessage.error('Failed to delete');
+      } finally {
+        loading.value = false;
       }
     }).catch(() => { });
   };
@@ -390,7 +476,6 @@
     padding-top: 4px;
   }
 
-  /* 添加横向滚动样式 */
   .el-table {
     overflow-x: auto;
   }

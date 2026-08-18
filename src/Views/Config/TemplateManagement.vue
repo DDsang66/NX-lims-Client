@@ -108,8 +108,7 @@
                 <span v-else style="color: #ccc;">-</span>
               </template>
             </el-table-column>
-
-            <el-table-column prop="version" label="Version" width="80">
+            <el-table-column prop="version" label="Version" width="85">
               <template #default="{ row }">
                 <el-tag size="small" type="info">v{{ row.version }}</el-tag>
               </template>

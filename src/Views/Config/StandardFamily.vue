@@ -3,7 +3,7 @@
     <div class="domContent">
       <div class="searchParametersContanier">
         <el-form inline style="display: flex">
-          <el-form-item :label="$t('standardFamily')">
+          <el-form-item :label="$t('standardFamilyId')">
             <el-input v-model="form.standardFamilyId" placeholder="" clearable style="width: 200px"></el-input>
           </el-form-item>
           <el-form-item :label="$t('standardFamilyCode')">
@@ -16,7 +16,7 @@
       </div>
 
       <el-table :data="filteredTableData" border class="removeTableGaps" style="width: 100%" v-loading="loading">
-        <el-table-column :label="$t('standardFamily')" prop="id" width="220" show-overflow-tooltip></el-table-column>
+        <el-table-column :label="$t('standardFamilyId')" prop="standardFamilyId" width="220" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('standardFamilyCode')" prop="standardFamilyCode" min-width="180" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('version')" prop="version" width="100" show-overflow-tooltip></el-table-column>
         <el-table-column :label="$t('effectiveDate')" prop="effectiveDate" width="180" show-overflow-tooltip>
@@ -72,8 +72,8 @@
         <el-form :model="dialogForm" label-width="180px">
           <el-row :gutter="20">
             <el-col :span="24">
-              <el-form-item :label="$t('standardFamily')">
-                <el-input v-model="dialogForm.id" placeholder=""
+              <el-form-item :label="$t('standardFamilyId')">
+                <el-input v-model="dialogForm.standardFamilyId" placeholder=""
                           :disabled="dialogTitle === 'editStandardFamily'"></el-input>
               </el-form-item>
             </el-col>
@@ -160,7 +160,7 @@
 
   const filteredTableData = computed(() => {
     return tableData.value.filter(item => {
-      return (!form.standardFamilyId || (item.id || '').toLowerCase().includes(form.standardFamilyId.toLowerCase())) &&
+      return (!form.standardFamilyId || (item.standardFamilyId || '').toLowerCase().includes(form.standardFamilyId.toLowerCase())) &&
         (!form.standardFamilyCode || (item.standardFamilyCode || '').toLowerCase().includes(form.standardFamilyCode.toLowerCase()));
     });
   });
@@ -168,7 +168,7 @@
   const dialogVisible = ref(false);
   const dialogTitle = ref('addStandardFamily');
   const dialogForm = ref({
-    id: '',
+    standardFamilyId: '',
     standardFamilyCode: '',
     version: 1,
     effectiveDate: '',
@@ -227,7 +227,7 @@
     dialogVisible.value = true;
     dialogTitle.value = 'addStandardFamily';
     dialogForm.value = {
-      id: '',
+      standardFamilyId: '',
       standardFamilyCode: '',
       version: 1,
       effectiveDate: '',
@@ -241,7 +241,7 @@
     dialogVisible.value = true;
     dialogTitle.value = 'editStandardFamily';
     dialogForm.value = {
-      id: row.id,
+      standardFamilyId: row.standardFamilyId,
       standardFamilyCode: row.standardFamilyCode,
       version: row.version || 1,
       effectiveDate: row.effectiveDate || '',
@@ -253,7 +253,7 @@
 
   function confirmFamily() {
     const payload = {
-      id: dialogForm.value.id,
+      standardFamilyId: dialogForm.value.standardFamilyId,
       standardFamilyCode: dialogForm.value.standardFamilyCode,
       version: dialogForm.value.version || 1,
       effectiveDate: dialogForm.value.effectiveDate || null,
