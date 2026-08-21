@@ -1336,10 +1336,9 @@
     // ========================================
     const testDensity = avgTestDensity.value
     if (testDensity != null && testDensity > 0) {
-      testDensity = Number(testDensity.toFixed(2))
       const deltaMt = row.massLoss
       const distanceFactor = getAbrasionDistanceFactor(abrasionDistanceSelected.value)
-      row.volLoss = 1000 * deltaMt * 400 / (testDensity * (m1Constant.value + m2Constant.value)) * distanceFactor
+      row.volLoss = 1000 * deltaMt * 400 / (Number(testDensity.toFixed(2)) * (m1Constant.value + m2Constant.value)) * distanceFactor
       row.volLoss = Number(row.volLoss.toFixed(4))
     }
 
