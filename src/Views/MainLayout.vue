@@ -157,15 +157,6 @@
             <el-menu-item index="/main/FiberWorkSheet">
               <span>Fiber Analysis</span>
             </el-menu-item>
-            <el-menu-item index="/main/PhysicalWeight">
-              <span>Physical Weight</span>
-            </el-menu-item>
-            <el-menu-item index="/main/DryingRate">
-              <span>Drying Rate</span>
-            </el-menu-item>
-            <el-menu-item index="/main/AbrasionResistance_RotatingDrum">
-              <span>Abrasion Resistance(FW)</span>
-            </el-menu-item>
           </el-sub-menu>
 
 
@@ -203,6 +194,24 @@
               <span>Logic Validation</span>
             </el-menu-item>
           </el-sub-menu>
+
+          <!-- Equipment 子菜单 -->
+          <el-sub-menu index="6" v-if="hasPower('Lab')">
+            <template #title>
+              <el-icon><Operation /></el-icon>
+              <span>Equipment</span>
+            </template>
+            <el-menu-item index="/main/PhysicalWeight">
+              <span>Physical Weight</span>
+            </el-menu-item>
+            <el-menu-item index="/main/DryingRate">
+              <span>Drying Rate</span>
+            </el-menu-item>
+            <el-menu-item index="/main/AbrasionResistance_RotatingDrum">
+              <span>Abrasion Resistance(FW)</span>
+            </el-menu-item>
+          </el-sub-menu>
+
           <!-- Personal Center -->
           <el-menu-item index="/main/Profile">
             <el-icon><User /></el-icon>
@@ -265,7 +274,7 @@
   import { inject, ref, onMounted, watch } from 'vue'
   import router from "@/router/index.js";
   import { useRoute } from 'vue-router'
-  import { ArrowDown, ArrowUp, Lock, Fold, Expand, HomeFilled, Document, Edit, Files, Setting, User } from "@element-plus/icons-vue";
+  import { ArrowDown, ArrowUp, Lock, Fold, Expand, HomeFilled, Document, Edit, Files, Setting, User, Operation } from "@element-plus/icons-vue";
   import { useI18n } from "vue-i18n";
   import userAuthStore from "@/stores/auth.js";
   import { ElMessage } from "element-plus";
@@ -284,6 +293,7 @@
       Files,
       Setting,
       User,
+      Operation,
       TabBar
     },
     setup() {
