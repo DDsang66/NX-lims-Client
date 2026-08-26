@@ -14,10 +14,10 @@
                        clearable 
                        style="width: 200px; margin-left: 10px;"
                        @change="handleFamilyFilterChange">
-              <el-option v-for="item in standardFamilyOptions" 
-                         :key="item.id" 
-                         :label="item.standardFamilyCode || item.name" 
-                         :value="item.id" />
+              <el-option v-for="item in standardFamilyOptions"
+                         :key="item.standardFamilyId"
+                         :label="item.standardFamilyCode"
+                         :value="item.standardFamilyId" />
             </el-select>
           </div>
           <el-table :data="filteredFormulas" border class="removeTableGaps" height="300" style="width: 100%" table-layout="fixed" :row-class-name="formulaRowClassName" >
@@ -233,7 +233,7 @@ const filteredFormulas = computed(() => {
   
   // 按 Standard Family 过滤
   if (selectedStandardFamilyId.value) {
-    const selectedFamily = standardFamilyOptions.value.find(f => f.id === selectedStandardFamilyId.value);
+    const selectedFamily = standardFamilyOptions.value.find(f => f.standardFamilyId === selectedStandardFamilyId.value);
     if (selectedFamily && selectedFamily.formulaIds) {
       result = result.filter(f => selectedFamily.formulaIds.includes(f.id));
     }
@@ -673,7 +673,7 @@ async function fetchFormulasByFamily(familyId) {
     return;
   }
   
-  const selectedFamily = standardFamilyOptions.value.find(f => f.id === familyId);
+  const selectedFamily = standardFamilyOptions.value.find(f => f.standardFamilyId === familyId);
   if (!selectedFamily || !selectedFamily.formulaIds || selectedFamily.formulaIds.length === 0) {
     allFormulas.value = [];
     return;
