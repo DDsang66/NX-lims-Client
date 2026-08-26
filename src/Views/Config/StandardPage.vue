@@ -51,7 +51,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item :label="$t('standardFamily')">
-                <el-select v-model="dialogForm.standardFamilyId"
+                <el-select v-model="dialogForm.standardFamilyCode"
                            :placeholder="$t('pleaseSelect')"
                            style="width: 100%"
                            filterable
@@ -153,14 +153,17 @@
 
   // 根据标准族ID获取对应的Code（用于显示）
   function getStandardFamilyCodeById(id) {
-    const found = standardFamilyOptions.value.find(item => item.id === id);
+    if (!id) return '';
+    // ✅ 使用 String() 统一类型比较
+    const found = standardFamilyOptions.value.find(item => String(item.id) === String(id));
     return found ? found.standardFamilyCode : '';
   }
 
   // 根据标准族Code获取对应的ID
   function getStandardFamilyIdByCode(code) {
+    if (!code) return '';
     const found = standardFamilyOptions.value.find(item => item.standardFamilyCode === code);
-    return found ? found.id : '';
+    return found ? String(found.id) : '';  // ✅ 返回字符串
   }
 
   // ==================== 对话框 ====================
@@ -174,7 +177,7 @@
     standardCodeNameEn: '',
     standardCodeNameChn: '',
     status: 'Draft',
-    standardFamilyId: ''  // 存储选中的标准族ID
+    standardFamilyCode: ''  // 存储选中的标准族ID
   });
 
   function statusTagType(status) {
@@ -235,17 +238,18 @@
   }
 
   // ==================== API 方法 ====================
-
-  // 获取标准族列表（独立接口）
   function fetchStandardFamilies() {
-    // 假设接口路径是 /StandardFamily/getall，请根据实际情况修改
     request.get('/StandardFamily/getall').then(res => {
       if (res.data.isSuccess) {
         const data = res.data.value || [];
         standardFamilyOptions.value = data.map(item => ({
-          id: item.id,
-          standardFamilyCode: item.standardFamilyCode
+          id: String(item.standardFamilyId),  // ✅ 注意：C# 序列化后是小写开头 standardFamilyId
+          standardFamilyCode: item.standardFamilyCode || item.StandardFamilyCode || ''  // ✅ 兼容两种写法
         }));
+        console.log('标准族选项加载成功:', standardFamilyOptions.value);
+      } else {
+        console.error('标准族接口返回失败:', res.data);
+        ElMessage.error(res.data.error || 'Failed to load standard families');
       }
     }).catch(err => {
       console.error('Failed to fetch standard families:', err);
@@ -257,12 +261,12 @@
   watch(standardFamilyOptions, (newVal) => {
     if (newVal.length > 0 && tableData.value.length > 0) {
       tableData.value = tableData.value.map(item => {
+        // ✅ 如果 item.standardFamilyCode 是 ID，则转换为 Code
         const name = getStandardFamilyCodeById(item.standardFamilyCode);
         return {
           ...item,
           standardFamilyCode: name || item.standardFamilyCode || ''
         };
-
       });
     }
   });
@@ -274,7 +278,6 @@
       if (res.data.isSuccess) {
         tableData.value = (res.data.value || []).map(item => ({
           ...item,
-          // 如果 standardFamilyOptions 已经加载完成，直接转换
           standardFamilyCode: standardFamilyOptions.value.length > 0
             ? getStandardFamilyCodeById(item.standardFamilyCode) || item.standardFamilyCode || ''
             : item.standardFamilyCode || ''
@@ -304,17 +307,25 @@
       standardCodeNameEn: '',
       standardCodeNameChn: '',
       status: 'Draft',
-      standardFamilyId: ''
+      standardFamilyCode: ''
     };
   }
+
 
   function editOpen(row) {
     dialogVisible.value = true;
     dialogTitle.value = 'editStandard';
     parseStandardId(row.standardId);
 
-    // 根据标准族Code查找对应的ID
-    const familyId = getStandardFamilyIdByCode(row.standardFamilyCode || '');
+    // ✅ 根据标准族Code查找对应的ID（如果能找到就用，否则直接用原值）
+    let familyId = '';
+    if (row.standardFamilyCode) {
+      familyId = getStandardFamilyIdByCode(row.standardFamilyCode);
+      // 如果找不到（比如 standardFamilyOptions 还没加载完），直接使用原值作为ID
+      if (!familyId) {
+        familyId = row.standardFamilyCode;
+      }
+    }
 
     dialogForm.value = {
       standardId: row.standardId,
@@ -322,14 +333,12 @@
       standardCodeNameEn: row.standardCodeNameEn,
       standardCodeNameChn: row.standardCodeNameChn,
       status: row.status || 'Draft',
-      standardFamilyId: familyId
+      standardFamilyCode: familyId || ''  // ✅ 存储的是 ID
     };
   }
 
   function confirmStandard() {
-    // 根据选中的标准族ID获取对应的Code
-    const familyCode = getStandardFamilyCodeById(dialogForm.value.standardFamilyId);
-
+    // ✅ 根据选中的标准族ID获取对应的Code（用于显示，但 payload 中传 ID）
     const payload = {
       standardId: dialogForm.value.standardId,
       standardCode: dialogForm.value.standardCode,
@@ -338,9 +347,9 @@
       status: dialogForm.value.status || 'Draft'
     };
 
-    // 如果选择了标准族，添加标准族相关字段
-    if (dialogForm.value.standardFamilyId) {
-      payload.standardFamilyCode = dialogForm.value.standardFamilyId;
+    // ✅ 如果选择了标准族，传标准族ID（后端期望的标准族关联）
+    if (dialogForm.value.standardFamilyCode) {
+      payload.standardFamilyId = dialogForm.value.standardFamilyCode;  // 传 ID
     }
 
     if (dialogTitle.value === 'addStandard') {
@@ -348,7 +357,6 @@
         if (res.data.isSuccess) {
           ElMessage.success('Standard added');
           dialogVisible.value = false;
-          // 重新获取数据，保持一致性
           fetchAllStandards();
         } else {
           ElMessage.error(res.data.error || 'Failed to add standard');
@@ -359,7 +367,6 @@
         if (res.data.isSuccess) {
           ElMessage.success('Standard updated');
           dialogVisible.value = false;
-          // 重新获取数据，保持一致性
           fetchAllStandards();
         } else {
           ElMessage.error(res.data.error || 'Failed to update standard');

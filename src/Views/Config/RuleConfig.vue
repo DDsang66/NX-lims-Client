@@ -168,6 +168,9 @@
                     v-model="dialogForm.paramResult"
                     placeholder="Result value"></el-input>
         </el-form-item>
+        <el-form-item label="Engine Layer">
+          <el-input v-model="dialogForm.EngineLayer" placeholder=""></el-input>
+        </el-form-item>
         <el-form-item label="Priority">
           <el-input-number v-model="dialogForm.priority" :min="1" style="width: 100%"></el-input-number>
         </el-form-item>
@@ -387,6 +390,7 @@ const dialogForm = ref({
   paramName: '',
   paramResult: '',
   priority: 1,
+  engineLayer:'Standard',
   stopOnMatch: true,
   matchesJson: '',
   ruleText: ''
@@ -407,6 +411,7 @@ function addOpen() {
     paramStructureId: '',
     paramName: '',
     paramResult: '',
+    engineLayer: 'Standard',
     priority: 1,
     stopOnMatch: true,
     matchesJson: '',
@@ -426,6 +431,7 @@ function editOpen(row) {
     paramStructureId: row.paramStructureId || '',
     paramName: row.paramName || '',
     paramResult: row.resultValue != null ? String(row.resultValue) : '',
+    engineLayer: row.engineLayer || 'Standard',
     priority: row.priority || 1,
     stopOnMatch: row.stopOnMatch !== false,
     matchesJson: JSON.stringify({
@@ -459,6 +465,7 @@ function confirmAdd() {
           id: dialogForm.value.id,
           text: dialogForm.value.ruleText,
           priority: dialogForm.value.priority,
+          engineLayer: dialogForm.value.engineLayer,
           stopOnMatch: dialogForm.value.stopOnMatch
         }
       : {
@@ -467,6 +474,7 @@ function confirmAdd() {
           formulaId: dialogForm.value.formulaId,
           paramStructureId: dialogForm.value.paramStructureId,
           paramName: dialogForm.value.paramName,
+          engineLayer: dialogForm.value.engineLayer,
           priority: dialogForm.value.priority,
           stopOnMatch: dialogForm.value.stopOnMatch
         };
@@ -516,6 +524,7 @@ function confirmAdd() {
         priority: dialogForm.value.priority,
         // stopOnMatch 用正确字段名传给后端（激活状态不随编辑更新，走独立 active/deactive 按钮）
         stopOnMatch: dialogForm.value.stopOnMatch,
+        engineLayer: dialogForm.value.engineLayer,
         resultValue: dialogForm.value.paramResult || undefined,
         resultNotes: undefined,
         ...matches
@@ -527,6 +536,7 @@ function confirmAdd() {
         paramName: dialogForm.value.paramName,
         paramResult: dialogForm.value.paramResult,
         priority: dialogForm.value.priority,
+        engineLayer: dialogForm.value.engineLayer,
         stopOnMatch: dialogForm.value.stopOnMatch,
         ...matches
       };
