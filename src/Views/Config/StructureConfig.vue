@@ -308,9 +308,9 @@
                      placeholder="Select Standard Families"
                      style="width: 100%">
             <el-option v-for="fam in standardFamilyOptions"
-                       :key="fam.id"
-                       :label="fam.standardFamilyCode || fam.id"
-                       :value="fam.id" />
+                       :key="fam.standardFamilyId"
+                       :label="fam.standardFamilyCode || fam.standardFamilyId"
+                       :value="fam.standardFamilyId" />
           </el-select>
         </el-form-item>
 
