@@ -1,23 +1,48 @@
 <template>
   <div class="formula-management-container">
-    <!--  Top: Standard Family Search Area-->
+    <!-- Top: Standard Family Search Area -->
     <el-card shadow="never" class="search-card">
-      <el-form :inline="true" :model="searchForm">
+      <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="Standard Family">
           <el-select v-model="searchForm.standardFamilyId"
                      placeholder="Please select a standard family"
                      filterable
                      clearable
-                     @change="handleStandardFamilyChange">
+                     @change="handleSearchChange">
             <el-option v-for="item in standardFamilyOptions"
                        :key="item.standardFamilyId"
                        :label="item.standardFamilyCode"
                        :value="item.standardFamilyId" />
           </el-select>
         </el-form-item>
+        <el-form-item label="Contact Buyer">
+          <el-select v-model="searchForm.contactBuyerId"
+                     placeholder="Please select a contact buyer"
+                     filterable
+                     clearable
+                     @change="handleSearchChange">
+            <el-option v-for="item in buyerOptions"
+                       :key="item.buyerCode"
+                       :label="item.buyerName || item.buyerCode"
+                       :value="item.buyerCode" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Engine Layer" style="min-width: 180px;">
+          <el-select v-model="searchForm.engineLayer"
+                     placeholder="Please select engine layer"
+                     clearable
+                     @change="handleSearchChange"
+                     style="width: 160px;">
+            <el-option v-for="item in engineLayerOptions"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value" />
+          </el-select>
+        </el-form-item>
       </el-form>
     </el-card>
-    <!-- Bottom: Formula List Area-->
+
+    <!-- Bottom: Formula List Area -->
     <el-card shadow="never" class="table-card" v-loading="loading">
       <template #header>
         <div class="card-header">
@@ -31,9 +56,9 @@
       </template>
 
       <el-table :data="formulaList" border style="width: 100%" empty-text="Please select a standard family first, or no formulas found under the current family">
-        <!--  固定ID列-->
+        <!-- 固定ID列 -->
         <el-table-column prop="id" label="Formula ID" width="180" fixed="left" />
-        <!--  其他列-->
+        <!-- 其他列 -->
         <el-table-column prop="name" label="Formula Name" width="150" />
         <el-table-column prop="paramName" label="Param Name" width="150" />
         <el-table-column prop="expressionTemplate" label="Expression Template" min-width="250" show-overflow-tooltip />
@@ -44,6 +69,23 @@
             </el-tag>
           </template>
         </el-table-column>
+        <!-- EngineLayer 列 -->
+        <el-table-column prop="engineLayer" label="Engine Layer" width="120">
+          <template #default="{ row }">
+            <el-tag :type="row.engineLayer === 'Buyer' ? 'primary' : 'warning'" size="small">
+              {{ row.engineLayer || '-' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <!-- Contact Buyer 列 - 修复：使用 buyerCodes 并显示名称 -->
+        <el-table-column label="Contact Buyer" width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.buyerCodes && row.buyerCodes.length > 0">
+              {{ getBuyerNames(row.buyerCodes) }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="description" label="Description" width="200" show-overflow-tooltip />
         <el-table-column label="Status" width="100">
           <template #default="{ row }">
@@ -52,7 +94,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <!-- 操作列-->
+        <!-- 操作列 -->
         <el-table-column label="Actions" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="handleEditFormula(row)">Edit</el-button>
@@ -66,12 +108,13 @@
         </el-table-column>
       </el-table>
     </el-card>
-    <!-- Add/Edit Formula Dialog-->
+
+    <!-- Add/Edit Formula Dialog -->
     <el-dialog v-model="dialogVisible"
                :title="dialogTitle"
-               width="600px"
+               width="650px"
                :close-on-click-modal="false">
-      <el-form :model="formulaForm" :rules="formulaRules" ref="formulaFormRef" label-width="120px">
+      <el-form :model="formulaForm" :rules="formulaRules" ref="formulaFormRef" label-width="140px">
         <el-form-item label="Formula ID" prop="formulaId">
           <el-input v-model="formulaForm.formulaId"
                     :disabled="!isAddMode"
@@ -93,6 +136,31 @@
         <el-form-item label="Param Structures" prop="paramStructureIds">
           <el-select v-model="formulaForm.paramStructureIds" multiple filterable placeholder="Please select param structure">
             <el-option v-for="item in paramStructureOptions" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <!-- Contact Buyer (多选) -->
+        <el-form-item label="Contact Buyer" prop="buyerCodes">
+          <el-select v-model="formulaForm.buyerCodes"
+                     multiple
+                     filterable
+                     collapse-tags
+                     collapse-tags-tooltip
+                     placeholder="Please select contact buyers">
+            <el-option v-for="item in buyerOptions"
+                       :key="item.buyerCode"
+                       :label="item.buyerName || item.buyerCode"
+                       :value="item.buyerCode" />
+          </el-select>
+        </el-form-item>
+        <!-- Engine Layer -->
+        <el-form-item label="Engine Layer" prop="engineLayer">
+          <el-select v-model="formulaForm.engineLayer"
+                     placeholder="Please select engine layer"
+                     clearable>
+            <el-option v-for="item in engineLayerOptions"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="Description" prop="description">
@@ -131,6 +199,11 @@
     [key: string]: any;
   }
 
+  interface BuyerListDto {
+    buyerCode: string;
+    buyerName?: string;
+  }
+
   interface AddFormulaDto {
     formulaId: string;
     name: string;
@@ -140,6 +213,8 @@
     paramStructureIds?: string[];
     expressionTemplate: string;
     description: string;
+    buyerCodes: string[];
+    engineLayer?: string;
   }
 
   interface FormulaResponseDto {
@@ -155,6 +230,8 @@
     version: number;
     effectiveDate: string;
     isActive: boolean;
+    buyerCodes?: string[];
+    engineLayer?: string;
   }
 
   const formulaRules = reactive({
@@ -166,9 +243,15 @@
 
   // === Data ===
   const standardFamilyOptions = ref<StandardFamily[]>([]);
+  const buyerOptions = ref<BuyerListDto[]>([]);
   const paramStructureOptions = ref([
     { id: 'PS001', name: 'Dimension Structure' },
     { id: 'PS002', name: 'Material Structure' },
+  ]);
+
+  const engineLayerOptions = ref([
+    { value: 'Buyer', label: 'Buyer' },
+    { value: 'Standard', label: 'Standard' },
   ]);
 
   // === Core State ===
@@ -180,8 +263,13 @@
 
   const searchForm = ref({
     standardFamilyId: '',
+    contactBuyerId: '',
+    engineLayer: '',
   });
 
+  // 存储所有原始数据（未筛选）
+  const allFormulas = ref<FormulaResponseDto[]>([]);
+  // 显示的数据（经过筛选）
   const formulaList = ref<FormulaResponseDto[]>([]);
 
   const currentFamilyName = computed(() => {
@@ -200,11 +288,75 @@
     paramStructureIds: [],
     expressionTemplate: '',
     description: '',
+    buyerCodes: [],
+    engineLayer: '',
   };
 
   const formulaForm = reactive<AddFormulaDto>({ ...initFormulaForm });
 
+  // === Helper Functions ===
+
+  // 根据 buyerCodes 获取买家名称列表（用于表格显示）
+  const getBuyerNames = (buyerCodes: string[] | undefined): string => {
+    if (!buyerCodes || buyerCodes.length === 0) return '-';
+    return buyerCodes
+      .map(code => {
+        const buyer = buyerOptions.value.find(b => b.buyerCode === code);
+        return buyer?.buyerName || code;
+      })
+      .join(', ');
+  };
+
+  // === 前端筛选逻辑 ===
+  const applyFilters = () => {
+    let filtered = [...allFormulas.value];
+
+    // 按 Contact Buyer 筛选
+    if (searchForm.value.contactBuyerId) {
+      filtered = filtered.filter(f =>
+        f.buyerCodes && f.buyerCodes.includes(searchForm.value.contactBuyerId)
+      );
+    }
+
+    // 按 Engine Layer 筛选
+    if (searchForm.value.engineLayer) {
+      filtered = filtered.filter(f =>
+        f.engineLayer === searchForm.value.engineLayer
+      );
+    }
+
+    formulaList.value = filtered;
+    console.log('Filtered formulas:', formulaList.value.length);
+
+    // 如果筛选后没有数据，显示提示
+    if (formulaList.value.length === 0 && (searchForm.value.contactBuyerId || searchForm.value.engineLayer)) {
+      ElMessage.info('No formulas match the current filter criteria');
+    }
+  };
+
   // === Business Logic ===
+
+  const fetchBuyerList = async () => {
+    try {
+      const res = await request.get('/buyer/buyer-list');
+      console.log('Buyer API Response:', res);
+
+      if (res.data.isSuccess) {
+        buyerOptions.value = (res.data.value || []).map((item: any) => ({
+          buyerCode: item.buyerCode || item.BuyerCode,
+          buyerName: item.buyerName || item.BuyerName
+        }));
+        console.log('Buyer options loaded:', buyerOptions.value.length);
+      } else {
+        ElMessage.error(res.data.error || 'Failed to load buyer list');
+        buyerOptions.value = [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch buyer list:', error);
+      ElMessage.error('Failed to load buyer list');
+      buyerOptions.value = [];
+    }
+  };
 
   const fetchStandardFamilies = async () => {
     try {
@@ -214,18 +366,11 @@
 
       if (res.data.isSuccess) {
         const data = res.data.value || [];
-        console.log('Raw data:', data);
-
         standardFamilyOptions.value = data;
-        console.log('Processed options:', standardFamilyOptions.value);
 
-        // 如果有第一个选项且当前没有选中，自动选中第一个
         if (data.length > 0 && !searchForm.value.standardFamilyId) {
           searchForm.value.standardFamilyId = data[0].standardFamilyId;
-          console.log('Auto selected first family:', searchForm.value.standardFamilyId);
-          // 使用 nextTick 确保 DOM 更新后再加载数据
           await nextTick();
-          // 手动触发加载
           await loadFormulas(searchForm.value.standardFamilyId);
         }
       } else {
@@ -242,99 +387,130 @@
   };
 
   onMounted(() => {
-    fetchStandardFamilies();
+    Promise.all([
+      fetchStandardFamilies(),
+      fetchBuyerList()
+    ]);
   });
 
   const loadFormulas = async (familyId: string) => {
     console.log('loadFormulas called with familyId:', familyId);
 
     if (!familyId) {
+      allFormulas.value = [];
       formulaList.value = [];
       return;
     }
 
     const selectedFamily = standardFamilyOptions.value.find(item => item.standardFamilyId === familyId);
-    console.log('Selected family data:', selectedFamily);
 
     if (!selectedFamily) {
+      allFormulas.value = [];
       formulaList.value = [];
       ElMessage.warning('Selected family not found');
       return;
     }
 
-    // 检查是否有 formulaIds
     if (!selectedFamily.formulaIds || selectedFamily.formulaIds.length === 0) {
+      allFormulas.value = [];
       formulaList.value = [];
       ElMessage.info('No formulas found for this family');
       return;
     }
 
-    console.log('Formula IDs to fetch (array):', selectedFamily.formulaIds);
-
-    // 调用 API 获取公式列表 - 使用数组形式
     try {
       loading.value = true;
 
-      // 方式1: 使用 params 传递数组（如果后端支持数组参数）
+      // 只传 ids，不传筛选参数（筛选在前端做）
+      const params: any = {
+        ids: selectedFamily.formulaIds
+      };
+
+      console.log('Request params:', params);
+
       const res = await request.get('/ParamFormula/get-by-ids', {
-        params: {
-          ids: selectedFamily.formulaIds  // 直接传递数组
-        },
+        params: params,
         paramsSerializer: {
-          indexes: null // 让 axios 以 id[]=1&id[]=2 格式序列化
+          indexes: null
         }
       });
-
-      // 方式2: 如果后端使用 POST 方法
-      // const res = await request.post('/ParamFormula/get-by-ids', {
-      //   ids: selectedFamily.formulaIds
-      // });
-
-      // 方式3: 如果后端需要 JSON 字符串
-      // const res = await request.get('/ParamFormula/get-by-ids', {
-      //   params: {
-      //     ids: JSON.stringify(selectedFamily.formulaIds)
-      //   }
-      // });
 
       console.log('Formula API response:', res);
 
       if (res.data.isSuccess) {
-        formulaList.value = res.data.value || [];
-        console.log('Formulas loaded:', formulaList.value.length);
-        if (formulaList.value.length === 0) {
-          ElMessage.info('No formula data returned from API');
-        }
+        const rawData = res.data.value || [];
+        // 映射后端字段到前端
+        allFormulas.value = rawData.map((item: any) => ({
+          id: item.id || item.Id || '',
+          formulaId: item.formulaId || item.FormulaId || item.id || item.Id || '',
+          paramStructureIds: item.paramStructureIds || item.ParamStrurctureIds || [],
+          standardFamilyIds: item.standardFamilyIds || item.StandardFamilyIds || [],
+          name: item.name || item.Name || '',
+          paramName: item.paramName || item.ParamName || '',
+          conditionFields: item.conditionFields || item.ConditionFields || [],
+          expressionTemplate: item.expressionTemplate || item.ExpressionTemplate || '',
+          description: item.description || item.Description || '',
+          version: item.version || item.Version || 0,
+          effectiveDate: item.effectiveDate || item.EffectiveDate || '',
+          isActive: item.isActive ?? item.IsActive ?? false,
+          buyerCodes: item.buyerCodes || item.BuyerCodes || [],
+          engineLayer: item.engineLayer || item.EngineLayer || ''
+        }));
+        console.log('All formulas loaded:', allFormulas.value.length);
+
+        // 应用前端筛选
+        applyFilters();
       } else {
         ElMessage.error(res.data.error || 'Failed to fetch formulas');
+        allFormulas.value = [];
         formulaList.value = [];
       }
     } catch (error) {
       console.error('Failed to fetch formulas:', error);
       ElMessage.error('Failed to fetch formulas');
+      allFormulas.value = [];
       formulaList.value = [];
     } finally {
       loading.value = false;
     }
   };
 
-  const handleStandardFamilyChange = (val: string) => {
-    console.log('handleStandardFamilyChange called with val:', val);
-    console.log('searchForm.standardFamilyId:', searchForm.value.standardFamilyId);
-
-    const familyId = val || searchForm.value.standardFamilyId;
-    loadFormulas(familyId);
+  // 统一的搜索变更处理
+  const handleSearchChange = () => {
+    console.log('Search changed:', searchForm.value);
+    if (searchForm.value.standardFamilyId) {
+      // 重新加载数据（会清空筛选条件重新获取）
+      loadFormulas(searchForm.value.standardFamilyId);
+    }
   };
 
   // 监听 standardFamilyId 的变化
   watch(() => searchForm.value.standardFamilyId, (newVal, oldVal) => {
     console.log('watch - standardFamilyId changed from', oldVal, 'to', newVal);
     if (newVal && newVal !== oldVal) {
+      // 切换标准族时，重置筛选条件
+      searchForm.value.contactBuyerId = '';
+      searchForm.value.engineLayer = '';
       loadFormulas(newVal);
     } else if (!newVal) {
+      allFormulas.value = [];
       formulaList.value = [];
     }
   });
+
+  // 监听 Contact Buyer 和 Engine Layer 筛选条件变化（只做前端筛选，不调接口）
+  watch(
+    () => [searchForm.value.contactBuyerId, searchForm.value.engineLayer],
+    () => {
+      console.log('Filter conditions changed (frontend only):', {
+        contactBuyerId: searchForm.value.contactBuyerId,
+        engineLayer: searchForm.value.engineLayer
+      });
+      // 直接在前端筛选，不调接口
+      applyFilters();
+    },
+    { deep: true }
+  );
 
   const handleAddFormula = () => {
     isAddMode.value = true;
@@ -355,7 +531,9 @@
       standardFamilyIds: row.standardFamilyIds || [],
       paramStructureIds: row.paramStructureIds || [],
       expressionTemplate: row.expressionTemplate,
-      description: row.description || ''
+      description: row.description || '',
+      buyerCodes: row.buyerCodes || [],
+      engineLayer: row.engineLayer || ''
     });
     dialogVisible.value = true;
   };
@@ -368,6 +546,11 @@
       if (res.data.isSuccess) {
         row.isActive = true;
         ElMessage.success('Formula activated successfully');
+        // 更新原始数据
+        const original = allFormulas.value.find(f => f.id === row.id);
+        if (original) {
+          original.isActive = true;
+        }
       } else {
         ElMessage.error(res.data.error || 'Failed to activate formula');
       }
@@ -395,7 +578,9 @@
           standardFamilyIds: formulaForm.standardFamilyIds || [searchForm.value.standardFamilyId],
           paramStructureIds: formulaForm.paramStructureIds || [],
           expressionTemplate: formulaForm.expressionTemplate,
-          description: formulaForm.description
+          description: formulaForm.description,
+          buyerCodes: formulaForm.buyerCodes || [],
+          engineLayer: formulaForm.engineLayer || ''
         };
 
         let res;
@@ -418,7 +603,7 @@
         }
 
         dialogVisible.value = false;
-        // 刷新列表
+        // 重新加载数据
         await loadFormulas(searchForm.value.standardFamilyId);
       } catch (error) {
         console.error('Operation failed:', error);
@@ -462,6 +647,22 @@
   .search-card {
     margin-bottom: 20px;
   }
+
+  .search-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
+
+    .search-form .el-form-item {
+      margin-bottom: 0;
+      margin-right: 18px;
+    }
+
+      .search-form .el-form-item:last-child {
+        margin-right: 0;
+      }
 
   .card-header {
     display: flex;

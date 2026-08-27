@@ -139,9 +139,9 @@
                 >
                   <el-option 
                     v-for="item in standardFamilyOptions" 
-                    :key="item.id" 
+                    :key="item.standardFamilyId" 
                     :label="item.standardFamilyCode" 
-                    :value="item.id" 
+                    :value="item.standardFamilyId" 
                   />
                 </el-select>
               </el-form-item>
@@ -508,7 +508,7 @@ async function handleFormulaSearch() {
     return
   }
 
-  const selectedFamily = standardFamilyOptions.value.find(item => item.id === familyId)
+  const selectedFamily = standardFamilyOptions.value.find(item => item.standardFamilyId === familyId)
   if (!selectedFamily || !selectedFamily.formulaIds || selectedFamily.formulaIds.length === 0) {
     formulaList.value = []
     formulaSearched.value = true

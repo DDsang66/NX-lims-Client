@@ -2,62 +2,58 @@
   <div class="paramsContainer thisBlock">
     <div class="sharedParametersContainer">
       <div class="pieceContainer">
-        <!-- Care Label 框体 -->
-        <div class="thisPiece careLabelContainer">
-          <span class="paramTitle">{{$t('careLabel')}}</span>
-          <div class="careLabelWrapper">
-            <!-- 左侧：洗标选择 -->
-            <div class="careLabelLeft">
-              <CareLabelSelect class="pieceContent" v-model="careLabelData" />
-            </div>
+        <!-- Care Label 和 Sample Composition 左右并排 -->
+        <div class="oneLinePiece">
+          <!-- Care Label 框体 -->
+          <div class="thisPiece careLabelContainer">
+            <span class="paramTitle">{{$t('careLabel')}}</span>
+            <div class="careLabelWrapper">
+              <!-- 洗标选择 -->
+              <div class="careLabelLeft">
+                <CareLabelSelect class="pieceContent" v-model="careLabelData" />
 
-            <!-- 右侧：Special Care Instruction -->
-            <div class="careLabelRight">
-              <span class="subTitle">{{$t('General Care Instruction')}}</span>
-              <div class="specialCareContent">
-                <div class="careInstructionItem">
-                  <span class="instructionLabel">{{$t('afterWashing')}}</span>
-                  <AfterWashingSelect class="pieceContent" :afterWashItems="afterWashItems" :sampleSummary="allSample" />
-                </div>
-                <div class="careInstructionItem">
-                  <span class="instructionLabel">{{$t('detergent')}}</span>
-                  <DetergentSelect class="pieceContent" :detergentItems="detergentItems" :sampleSummary="allSample" />
-                </div>
-                <div class="careInstructionItem">
-                  <span class="instructionLabel">{{$t('afterIron')}}</span>
-                  <el-select v-model="afterIronValue" placeholder="" style="width: 200px">
-                    <el-option v-for="option in afterIronOptions"
-                               :key="option.value"
-                               :value="option.value"
-                               :label="option.label" />
-                  </el-select>
+                <div class="specialCareContent">
+                  <div class="careInstructionItem">
+                    <span class="instructionLabel">{{$t('AfterWashing')}}</span>
+                    <AfterWashingSelect class="pieceContent" :afterWashItems="afterWashItems" :sampleSummary="allSample" />
+                  </div>
+                  <div class="careInstructionItem">
+                    <span class="instructionLabel">{{$t('Detergent')}}</span>
+                    <DetergentSelect class="pieceContent" :detergentItems="detergentItems" :sampleSummary="allSample" />
+                  </div>
+                  <!-- Special Care Instruction + After Iron 同一行 -->
+                  <div class="careInstructionItem combinedCareRow">
+                    <span class="instructionLabel">{{$t('After Iron')}}</span>
+                    <el-select v-model="afterIronValue" placeholder="" style="width: 200px">
+                      <el-option v-for="option in afterIronOptions"
+                                 :key="option.value"
+                                 :value="option.value"
+                                 :label="option.label" />
+                    </el-select>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 样品成分 & 样品描述 -->
-        <div class="oneLinePiece">
+          <!-- Sample Composition 独立框体（与 CareLabel 同级） -->
           <div class="thisPiece compositionPiece">
             <span class="paramTitle">{{$t('sampleComposition')}}</span>
-            <SampleSpecificComposition
-              class="pieceContent"
-              @confirm="handleRowsSingle"
-              :sampleSummary="allSample"
-            />
-          </div>
-          <div class="thisPiece descriptionPiece">
-            <span class="paramTitle">{{$t('sampleDescription')}}</span>
-            <SampleSpecificDescrip
-              class="pieceContent"
-              :sampleSummary="allSample"
-              :buyerNameDto="buyerNameDto"
-              ref="sampleSpecificDescripDoM"
-            />
+            <SampleSpecificComposition class="pieceContent"
+                                       @confirm="handleRowsSingle"
+                                       :sampleSummary="allSample" />
           </div>
         </div>
-        
+
+        <!-- Sample Description 独立一行 -->
+        <div class="thisPiece descriptionPiece">
+          <span class="paramTitle">{{$t('sampleDescription')}}</span>
+          <SampleSpecificDescrip class="pieceContent"
+                                 :sampleSummary="allSample"
+                                 :buyerNameDto="buyerNameDto"
+                                 ref="sampleSpecificDescripDoM" />
+        </div>
+
         <!-- 其他参数 -->
         <div class="thisPiece otherParamsPiece">
           <span class="paramTitle">{{$t('otherParameters')}}</span>
@@ -80,7 +76,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 接缝参数 -->
         <div class="thisPiece seamPiece" v-if="seamSamples.length>0">
           <span class="paramTitle">{{$t('seamParameter')}}</span>
@@ -108,7 +104,7 @@ const props=defineProps({
 const afterWashItems=ref(["item1","item2"])
 const detergentItems=ref(["item1","item2"])
 
-// AfterIron 数据
+// AfterIron 数据（现在作为 Special Care Instruction 的值）
 const afterIronValue = ref('')
 const afterIronOptions = [
   { label:'After Iron', value:'After Iron' },
@@ -214,47 +210,61 @@ const handleRowsSingle = (fiberCom) => {
 .paramsContainer {
   @include column-left-flex-container;
   align-items: stretch;
-  padding: 5px;
-  --h1-color: #111827;
+  padding: 8px 12px;
+  --h1-color: #1a2332;
   --border-first-level: none;
   --border-second-level: none;
-  gap: 15px;
+  gap: 20px;
 }
 
 .paramsContainer > div {
-  padding: 5px;
+  padding: 4px 6px;
 }
 
 .thisBlock {
   border: 1px solid var(--el-border-color);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 16px 20px 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .blockTitle {
-  font-size: 26px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 600;
   color: var(--h1-color);
+  letter-spacing: 0.3px;
 }
 
 /* ========== 主标题样式 ========== */
 .paramTitle {
-  font-size: 22px;
-  font-weight: bold;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--h1-color);
   align-self: flex-start;
   position: relative;
-  
-  /* 添加下划线装饰，让标题更突出 */
+  padding-bottom: 6px;
+  letter-spacing: 0.2px;
+
   &::after {
     content: '';
     position: absolute;
-    bottom: -4px;
+    bottom: 0;
     left: 0;
-    width: 40px;
+    width: 32px;
     height: 3px;
     background: var(--el-color-primary);
     border-radius: 2px;
+    transition: width 0.25s ease;
+  }
+
+  &:hover::after {
+    width: 48px;
   }
 }
 
@@ -262,110 +272,134 @@ const handleRowsSingle = (fiberCom) => {
 .thisPiece {
   @include column-up-flex-container;
   align-items: stretch;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
-  padding: 15px 20px;
-  background-color: #fafbfc;
+  padding: 16px 20px;
+  background-color: #f8fafc;
   width: 100%;
-  transition: all 0.2s ease;
-  
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: visible;  /* 改为 visible，防止溢出被裁剪 */
+
   &:hover {
-    border-color: var(--el-border-color);
-    background-color: #f8f9fa;
+    border-color: #c8d2e0;
+    background-color: #f6f9fe;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
   }
 }
 
 /* ========== 一行两列布局 ========== */
 .oneLinePiece {
   @include line-stretch-flex-container;
-  gap: 15px;
+  gap: 18px;
   border: none;
   border-radius: 0;
   width: 100%;
   padding: 0;
-  
+
   .thisPiece {
     flex: 1;
-    min-width: 250px;
+    min-width: 260px;
   }
 }
 
 /* ========== Care Label 区域 ========== */
-.careLabelContainer {
-  @include column-left-flex-container;
-  gap: 0;
-  background: #f8faff;
-  border-color: #d4e0f0;
-}
+  .careLabelContainer {
+    @include column-left-flex-container;
+    gap: 2px;
+    background: #f7f8f8;
+    border-color: #d0ddee;
+    overflow: visible;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
+    }
+  }
 
 .careLabelWrapper {
-  @include line-stretch-flex-container;
-  gap: 25px;
-  align-items: stretch;
+  @include column-stretch-flex-container;
+  gap: 8px;
   width: 100%;
-  padding-top: 5px;
+  padding-top: 4px;
+  overflow: visible;
 }
 
 .careLabelLeft {
-  flex: 1;
-  min-width: 300px;
-  padding: 10px 15px;
-  background: white;
+  width: 100%;
+  padding: 14px 18px;
+  background: #ffffff;
   border-radius: 8px;
   border: 1px solid var(--el-border-color-lighter);
-  
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  overflow: visible;
+
   .pieceContent {
-    padding: 0;
+    padding: 2px 0;
   }
 }
 
-.careLabelRight {
-  flex: 1;
-  min-width: 300px;
-  @include column-stretch-flex-container;
-  gap: 10px;
-  padding: 10px 15px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
-}
+/* ========== Composition 独立样式 ========== */
+  .compositionPiece {
+    background: #f7f8f8;
+    border-color: #d0ddee;
+    overflow: visible;
+
+    &:hover {
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.06);
+    }
+  }
+
+  .descriptionPiece {
+    background: #f7f8f8;
+    border-color: #d0e4d0;
+
+    &:hover {
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.06);
+    }
+  }
 
 /* ========== 子标题 ========== */
 .subTitle {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--h1-color);
   align-self: flex-start;
-  padding-bottom: 6px;
-  border-bottom: 2px solid var(--el-color-primary-light-8);
+  padding-bottom: 8px;
+  margin-top: 4px;
+  border-bottom: 2px solid var(--el-color-primary-light-7);
   width: 100%;
+  letter-spacing: 0.2px;
 }
 
 /* ========== Special Care 内容 ========== */
 .specialCareContent {
   @include column-stretch-flex-container;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 2px;
 }
 
 .careInstructionItem {
   @include line-left-flex-container;
-  gap: 15px;
+  gap: 16px;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #f8f9fc;
-  transition: background 0.15s ease;
-  
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #f8fafd;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
   &:hover {
-    background: #f0f2f7;
+    background: #f0f4fe;
+    border-color: var(--el-color-primary-light-7);
   }
 
   .instructionLabel {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
-    min-width: 100px;
+    min-width: 120px;
     color: #374151;
+    letter-spacing: 0.1px;
   }
 
   .pieceContent {
@@ -374,55 +408,60 @@ const handleRowsSingle = (fiberCom) => {
   }
 }
 
+/* 合并行样式 - Special Care Instruction + After Iron 同一行 */
+.combinedCareRow {
+  .instructionLabel {
+    min-width: 160px;
+  }
+}
+
 /* ========== 其他参数 ========== */
 .otherParamsPiece {
-  background: #fafcfe;
-  border-color: #dce4ec;
+  background: #f7faff;
+  border-color: #dbe2ec;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.06);
+  }
 }
 
 .otherParamsContainer {
   @include line-left-flex-container;
   flex-wrap: wrap;
-  gap: 15px 30px;
-  padding: 5px 0;
-  
+  gap: 12px 28px;
+  padding: 6px 2px;
+
   .line-flex-container {
     @include line-left-flex-container;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
-    padding: 4px 0;
-    
+    padding: 6px 0;
+
     label {
       font-size: 14px;
       font-weight: 500;
       color: #4b5563;
-      min-width: 80px;
+      min-width: 88px;
+      letter-spacing: 0.1px;
     }
   }
 }
 
 /* ========== 接缝参数 ========== */
 .seamPiece {
-  background: #fafff8;
-  border-color: #d4e8d4;
-}
+  background: #f8fdf8;
+  border-color: #d0e4d0;
 
-/* ========== 组成和描述特殊样式 ========== */
-.compositionPiece {
-  background: #f8faff;
-  border-color: #d4e0f0;
-}
-
-.descriptionPiece {
-  background: #fafffa;
-  border-color: #d4e8d4;
+  &:hover {
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.06);
+  }
 }
 
 /* ========== 通用内容容器 ========== */
 .pieceContent {
   background-color: transparent;
-  border-radius: 5px;
-  padding: 5px 0;
+  border-radius: 6px;
+  padding: 4px 0;
 }
 
 .pieceContainer {
@@ -431,40 +470,127 @@ const handleRowsSingle = (fiberCom) => {
 }
 
 /* ========== 响应式适配 ========== */
-@media (max-width: 992px) {
-  .careLabelWrapper {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .careLabelLeft,
-  .careLabelRight {
-    min-width: unset;
-  }
-  
+
+/* 平板及以下：两列变一列 */
+@media (max-width: 1024px) {
   .oneLinePiece {
     flex-direction: column;
+    gap: 14px;
+  }
+
+  .oneLinePiece .thisPiece {
+    min-width: unset;
+    width: 100%;
   }
 }
 
+/* 小屏设备 */
 @media (max-width: 768px) {
-  .thisPiece {
-    padding: 12px 15px;
+  .paramsContainer {
+    padding: 4px 8px;
+    gap: 16px;
   }
-  
-  .careInstructionItem {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    
-    .instructionLabel {
-      min-width: unset;
+
+  .thisBlock {
+    padding: 12px 14px 16px;
+    border-radius: 10px;
+  }
+
+  .thisPiece {
+    padding: 14px 14px;
+    gap: 12px;
+    border-radius: 8px;
+  }
+
+  .paramTitle {
+    font-size: 16px;
+    padding-bottom: 4px;
+
+    &::after {
+      width: 24px;
+      height: 2.5px;
     }
   }
-  
+
+  .subTitle {
+    font-size: 14px;
+    padding-bottom: 6px;
+  }
+
+  .careLabelLeft {
+    padding: 12px 14px;
+  }
+
+  .careInstructionItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 10px 12px;
+
+    .instructionLabel {
+      min-width: unset;
+      font-size: 13px;
+      font-weight: 600;
+    }
+  }
+
+  .otherParamsContainer {
+    gap: 8px 16px;
+
+    .line-flex-container {
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+
+      label {
+        min-width: 70px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .pieceContainer {
+    gap: 14px;
+  }
+}
+
+/* 手机端 */
+@media (max-width: 480px) {
+  .thisBlock {
+    padding: 10px 10px 14px;
+    border-radius: 8px;
+  }
+
+  .thisPiece {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .paramTitle {
+    font-size: 15px;
+  }
+
+  .careLabelLeft {
+    padding: 10px 10px;
+  }
+
+  .specialCareContent {
+    gap: 8px;
+  }
+
+  .careInstructionItem {
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+
   .otherParamsContainer .line-flex-container {
-    flex-wrap: wrap;
-    gap: 5px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+
+    label {
+      min-width: unset;
+    }
   }
 }
 </style>

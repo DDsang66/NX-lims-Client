@@ -349,7 +349,7 @@
 
     // ✅ 如果选择了标准族，传标准族ID（后端期望的标准族关联）
     if (dialogForm.value.standardFamilyCode) {
-      payload.standardFamilyId = dialogForm.value.standardFamilyCode;  // 传 ID
+      payload.standardFamilyCode = dialogForm.value.standardFamilyCode;  // 传 ID
     }
 
     if (dialogTitle.value === 'addStandard') {

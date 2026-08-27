@@ -25,6 +25,34 @@
               <el-option label="Active" value="true" />
               <el-option label="Inactive" value="false" />
             </el-select>
+            <!-- 新增 Engine Layer 筛选 -->
+            <el-select 
+              v-model="searchEngineLayer" 
+              placeholder="Engine Layer" 
+              clearable 
+              style="width: 160px; margin-left: 10px;"
+              @change="handleSearch"
+            >
+              <el-option label="All" value="" />
+              <el-option label="Buyer" value="Buyer" />
+              <el-option label="Standard" value="Standard" />
+            </el-select>
+            <!-- 新增 Contact Buyer 筛选 -->
+            <el-select 
+              v-model="searchContactBuyer" 
+              placeholder="Contact Buyer" 
+              clearable 
+              filterable
+              style="width: 200px; margin-left: 10px;"
+              @change="handleSearch"
+            >
+              <el-option 
+                v-for="item in buyerOptions" 
+                :key="item.buyerCode" 
+                :label="item.buyerName || item.buyerCode" 
+                :value="item.buyerCode" 
+              />
+            </el-select>
             <el-button type="primary" @click="openAddDialog" style="margin-left: 10px;">
               <el-icon><Plus /></el-icon>
               New Param Structure
@@ -63,6 +91,8 @@
                           {{ row.isActive ? 'Active' : 'Inactive' }}
                         </el-tag>
                       </div>
+                      <div><b>Engine Layer:</b> {{ row.engineLayer || '-' }}</div>
+                      <div><b>Contact Buyer:</b> {{ getBuyerNames(row.buyerCodes) }}</div>
                       <div><b>Created:</b> {{ formatDate(row.createdTime) }}</div>
                       <div><b>Updated:</b> {{ formatDate(row.lastModifiedTime) }}</div>
                     </div>
@@ -108,6 +138,22 @@
             <el-table-column prop="id" label="ID" width="180" fixed="left" show-overflow-tooltip />
             <el-table-column prop="name" label="Name" min-width="150" show-overflow-tooltip />
             <el-table-column prop="description" label="Description" min-width="220" show-overflow-tooltip />
+            
+            <!-- 新增 Engine Layer 列 -->
+            <el-table-column label="Engine Layer" width="120" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.engineLayer === 'Buyer' ? 'primary' : 'warning'" size="small">
+                  {{ row.engineLayer || '-' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            
+            <!-- 新增 Contact Buyer 列 -->
+            <el-table-column label="Contact Buyer" width="150" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ getBuyerNames(row.buyerCodes) }}
+              </template>
+            </el-table-column>
             
             <!-- Association Statistics -->
             <el-table-column label="Formulas" width="120" align="center">
@@ -211,6 +257,33 @@
                     type="textarea"
                     :rows="3"
                     placeholder="Enter description" />
+        </el-form-item>
+
+        <!-- 新增 Engine Layer -->
+        <el-form-item label="Engine Layer" prop="engineLayer">
+          <el-select v-model="dialogForm.engineLayer"
+                     placeholder="Please select engine layer"
+                     clearable
+                     style="width: 100%">
+            <el-option label="Buyer" value="Buyer" />
+            <el-option label="Standard" value="Standard" />
+          </el-select>
+        </el-form-item>
+
+        <!-- 新增 Contact Buyer (多选) -->
+        <el-form-item label="Contact Buyer" prop="buyerCodes">
+          <el-select v-model="dialogForm.buyerCodes"
+                     multiple
+                     filterable
+                     collapse-tags
+                     collapse-tags-tooltip
+                     placeholder="Please select contact buyers"
+                     style="width: 100%">
+            <el-option v-for="item in buyerOptions"
+                       :key="item.buyerCode"
+                       :label="item.buyerName || item.buyerCode"
+                       :value="item.buyerCode" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="Formula ID" prop="formulaId">
@@ -435,7 +508,12 @@ const allData = ref([]);
 // Search and Filter
 const searchKeyword = ref('');
 const searchStatus = ref('');
+const searchEngineLayer = ref('');        // 新增 Engine Layer 筛选
+const searchContactBuyer = ref('');      // 新增 Contact Buyer 筛选
 const filteredData = ref([]);
+
+// Buyer Options
+const buyerOptions = ref([]);
 
 // Pagination
 const currentPage = ref(1);
@@ -455,6 +533,8 @@ const dialogForm = ref({
   id: '',
   name: '',
   description: '',
+  engineLayer: '',           // 新增
+  buyerCodes: [],            // 新增
   requiredParam: {
     name: '',
     valueType: 'System.String',
@@ -489,6 +569,33 @@ const pagedData = computed(() => {
 
 // ==================== Core Methods ====================
 
+// 获取买家列表
+function fetchBuyerList() {
+  request.get('/buyer/buyer-list')
+    .then(res => {
+      if (res.data.isSuccess) {
+        buyerOptions.value = (res.data.value || []).map((item) => ({
+          buyerCode: item.buyerCode || item.BuyerCode,
+          buyerName: item.buyerName || item.BuyerName
+        }));
+      }
+    })
+    .catch(() => {
+      buyerOptions.value = [];
+    });
+}
+
+// 根据 buyerCodes 获取买家名称列表
+function getBuyerNames(buyerCodes) {
+  if (!buyerCodes || buyerCodes.length === 0) return '-';
+  return buyerCodes
+    .map(code => {
+      const buyer = buyerOptions.value.find(b => b.buyerCode === code);
+      return buyer?.buyerName || code;
+    })
+    .join(', ');
+}
+
 // Search Handler
 function handleSearch() {
   currentPage.value = 1;
@@ -498,6 +605,7 @@ function handleSearch() {
 function applyFilters() {
   let result = allData.value;
   
+  // 关键字搜索
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.trim().toLowerCase();
     result = result.filter(item => 
@@ -507,9 +615,22 @@ function applyFilters() {
     );
   }
   
+  // 状态筛选
   if (searchStatus.value !== '') {
     const isActive = searchStatus.value === 'true';
     result = result.filter(item => item.isActive === isActive);
+  }
+  
+  // Engine Layer 筛选
+  if (searchEngineLayer.value) {
+    result = result.filter(item => item.engineLayer === searchEngineLayer.value);
+  }
+  
+  // Contact Buyer 筛选
+  if (searchContactBuyer.value) {
+    result = result.filter(item => 
+      item.buyerCodes && item.buyerCodes.includes(searchContactBuyer.value)
+    );
   }
   
   filteredData.value = result;
@@ -530,7 +651,9 @@ function mapParamStructureResponse(item) {
     formulaId: item.formulaId,
     standardFamilyIds: item.standardFamilyIds || [],
     ruleIds: item.ruleIds || [],
-    effectiveDate: item.effectiveDate
+    effectiveDate: item.effectiveDate,
+    engineLayer: item.engineLayer || '',      // 新增
+    buyerCodes: item.buyerCodes || []        // 新增
   };
 }
 
@@ -627,6 +750,8 @@ function openAddDialog() {
     id: '',
     name: '',
     description: '',
+    engineLayer: '',           // 新增
+    buyerCodes: [],            // 新增
     requiredParam: {
       name: '',
       valueType: 'System.String',
@@ -651,6 +776,8 @@ function openEditDialog(row) {
     id: row.id,
     name: row.name,
     description: row.description || '',
+    engineLayer: row.engineLayer || '',      // 新增
+    buyerCodes: row.buyerCodes || [],        // 新增
     requiredParam: row.paramSchema?.requiredParam || {
       name: '',
       valueType: 'System.String',
@@ -659,7 +786,6 @@ function openEditDialog(row) {
       defaultValue: null
     },
     conditionRequirements: row.paramSchema?.conditionRequirements || [],
-    // limitations 字典 → 取主参数名那条作为单条 limitation
     limitation: pickMainLimitation(row.paramSchema?.limitations, row.name)
       || { valueType: 'System.String', allowedValues: [], min: null, max: null },
     formulaId: row.formulaId || '',
@@ -680,6 +806,8 @@ function confirmSubmit() {
     const requestData = {
       paramStructureId: dialogForm.value.id,
       paramName: dialogForm.value.name,
+      engineLayer: dialogForm.value.engineLayer || '',      // 新增
+      buyerCodes: dialogForm.value.buyerCodes || [],        // 新增
       formulaId: dialogForm.value.formulaId,
       standardFamilyIds: dialogForm.value.standardFamilyIds,
       ruleIds: dialogForm.value.ruleIds,
@@ -687,7 +815,6 @@ function confirmSubmit() {
       paramSchema: {
         requiredParam: dialogForm.value.requiredParam,
         conditionRequirements: dialogForm.value.conditionRequirements,
-        // 单条 limitation → 用主参数名作为 key（自动绑定主参数，通过后端 ValidateLimitations）
         limitations: dialogForm.value.limitation
           ? { [dialogForm.value.requiredParam.name]: dialogForm.value.limitation }
           : {}
@@ -796,12 +923,12 @@ function removeCondition(index) {
 }
 
 // ==================== Utility Methods ====================
-// 从 limitations 字典中取主参数名对应的那条限制（兼容 key 大小写差异）
 function pickMainLimitation(limitations, mainName) {
   if (!limitations || !mainName) return null;
   const key = Object.keys(limitations).find(k => k.toLowerCase() === String(mainName).toLowerCase());
   return key ? limitations[key] : null;
 }
+
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
@@ -825,10 +952,11 @@ onMounted(() => {
   fetchStandardFamilyOptions();
   fetchRuleOptions();
   fetchFormulaOptions();
+  fetchBuyerList();  // 新增：获取买家列表
 });
 
 // Watch search changes
-watch([searchKeyword, searchStatus], () => {
+watch([searchKeyword, searchStatus, searchEngineLayer, searchContactBuyer], () => {
   handleSearch();
 });
 </script>
