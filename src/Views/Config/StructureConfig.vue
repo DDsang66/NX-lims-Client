@@ -199,11 +199,10 @@
                     </el-icon>
                   </el-button>
                 </el-tooltip>
-                <el-button 
-                  type="danger" 
-                  size="small" 
+                <el-button
+                  type="danger"
+                  size="small"
                   @click.stop="deleteParamStructure(row)"
-                  :disabled="hasRelatedData(row)"
                 >
                   <el-icon><Delete /></el-icon>
                 </el-button>
@@ -936,17 +935,13 @@
 
   // Delete Param Structure
   function deleteParamStructure(row) {
-    if (hasRelatedData(row)) {
-      ElMessage.warning('This param structure has associated data and cannot be deleted');
-      return;
-    }
-
-    ElMessageBox.confirm(`Are you sure you want to delete param structure "${row.name}"? This action cannot be undone!`, 'Warning', {
+    // 后端 RemoveAsync 会级联删除关联的标准族/规则/买家记录，前端不再按关联数据拦截
+    ElMessageBox.confirm(`Are you sure you want to delete param structure "${row.name}"? Its associated rules will also be deleted. This action cannot be undone!`, 'Warning', {
       confirmButtonText: 'Delete',
       cancelButtonText: 'Cancel',
       type: 'error'
     }).then(() => {
-      request.delete(`/ParamStructure/delete/${row.id}`)
+      request.delete(`/ParamStructure/remove/${row.id}`)
         .then(res => {
           if (res.data.isSuccess) {
             ElMessage.success('Deleted successfully');
@@ -959,12 +954,6 @@
           ElMessage.error('Delete failed');
         });
     }).catch(() => { });
-  }
-
-  // Check if has related data
-  function hasRelatedData(row) {
-    return (row.formulas && row.formulas.length > 0) ||
-      (row.rules && row.rules.length > 0);
   }
 
   // Condition Requirements Management
