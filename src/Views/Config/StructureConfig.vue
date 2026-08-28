@@ -227,12 +227,10 @@
     </div>
 
     <!-- ==================== Add/Edit Dialog ==================== -->
-    <el-dialog 
-      :title="dialogTitle" 
-      v-model="dialogVisible" 
-      width="65%"
-      :close-on-click-modal="false"
-    >
+    <el-dialog :title="dialogTitle"
+               v-model="dialogVisible"
+               width="65%"
+               :close-on-click-modal="false">
       <el-form :model="dialogForm" label-width="180px" :rules="formRules" ref="formRef">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -485,273 +483,64 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="confirmSubmit" :loading="submitLoading">
-          {{ dialogTitle === 'Edit Param Structure' ? 'Update' : 'Create' }}
-        </el-button>
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <el-button @click="handleCancel">Cancel</el-button>
+          <div>
+            <el-button @click="saveDraft" :loading="submitLoading">
+              <el-icon><Document /></el-icon>
+              Save as Draft
+            </el-button>
+            <el-button type="primary" @click="confirmSubmit" :loading="submitLoading">
+              {{ dialogTitle === 'Edit Param Structure' ? 'Update' : 'Create' }}
+            </el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, inject, onMounted, ref, watch } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Edit, Delete, CircleCheck, VideoPause } from '@element-plus/icons-vue';
+  import { computed, inject, onMounted, ref, watch, nextTick } from 'vue';
+  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { Plus, Edit, Delete, CircleCheck, VideoPause, Document } from '@element-plus/icons-vue';
 
-// ==================== Inject and Reactive Data ====================
-const request = inject('request');
-const loading = ref(false);
-const submitLoading = ref(false);
-const allData = ref([]);
+  // ==================== Inject and Reactive Data ====================
+  const request = inject('request');
+  const loading = ref(false);
+  const submitLoading = ref(false);
+  const allData = ref([]);
 
-// Search and Filter
-const searchKeyword = ref('');
-const searchStatus = ref('');
-const searchEngineLayer = ref('');        // 新增 Engine Layer 筛选
-const searchContactBuyer = ref('');      // 新增 Contact Buyer 筛选
-const filteredData = ref([]);
+  // Search and Filter
+  const searchKeyword = ref('');
+  const searchStatus = ref('');
+  const searchEngineLayer = ref('');
+  const searchContactBuyer = ref('');
+  const filteredData = ref([]);
 
-// Buyer Options
-const buyerOptions = ref([]);
+  // Buyer Options
+  const buyerOptions = ref([]);
 
-// Pagination
-const currentPage = ref(1);
-const pageSize = ref(20);
+  // Pagination
+  const currentPage = ref(1);
+  const pageSize = ref(20);
 
-// ==================== Dialog Related ====================
-const dialogVisible = ref(false);
-const dialogTitle = ref('New Param Structure');
-const formRef = ref(null);
+  // ==================== Dialog Related ====================
+  const dialogVisible = ref(false);
+  const dialogTitle = ref('New Param Structure');
+  const formRef = ref(null);
 
-// 下拉选项数据（Standard Family / Rule / Formula 真实数据）
-const standardFamilyOptions = ref([]);
-const ruleOptions = ref([]);
-const formulaOptions = ref([]);
+  // 下拉选项数据（Standard Family / Rule / Formula 真实数据）
+  const standardFamilyOptions = ref([]);
+  const ruleOptions = ref([]);
+  const formulaOptions = ref([]);
 
-const dialogForm = ref({
-  id: '',
-  name: '',
-  description: '',
-  engineLayer: '',           // 新增
-  buyerCodes: [],            // 新增
-  requiredParam: {
-    name: '',
-    valueType: 'System.String',
-    description: '',
-    isNullable: false,
-    defaultValue: null
-  },
-  conditionRequirements: [],
-  limitation: { valueType: 'System.String', allowedValues: [], min: null, max: null },
-  formulaId: '',
-  standardFamilyIds: [],
-  ruleIds: [],
-  effectiveDate: new Date().toISOString()
-});
-
-// Form Validation Rules
-const formRules = {
-  id: [
-    { required: true, message: 'Please enter Param Structure ID', trigger: 'blur' },
-    { pattern: /^[A-Za-z0-9_-]+$/, message: 'ID can only contain letters, numbers, underscores and hyphens', trigger: 'blur' }
-  ],
-  name: [
-    { required: true, message: 'Please enter name', trigger: 'blur' }
-  ]
-};
-
-// ==================== Computed Properties ====================
-const pagedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
-
-// ==================== Core Methods ====================
-
-// 获取买家列表
-function fetchBuyerList() {
-  request.get('/buyer/buyer-list')
-    .then(res => {
-      if (res.data.isSuccess) {
-        buyerOptions.value = (res.data.value || []).map((item) => ({
-          buyerCode: item.buyerCode || item.BuyerCode,
-          buyerName: item.buyerName || item.BuyerName
-        }));
-      }
-    })
-    .catch(() => {
-      buyerOptions.value = [];
-    });
-}
-
-// 根据 buyerCodes 获取买家名称列表
-function getBuyerNames(buyerCodes) {
-  if (!buyerCodes || buyerCodes.length === 0) return '-';
-  return buyerCodes
-    .map(code => {
-      const buyer = buyerOptions.value.find(b => b.buyerCode === code);
-      return buyer?.buyerName || code;
-    })
-    .join(', ');
-}
-
-// Search Handler
-function handleSearch() {
-  currentPage.value = 1;
-  applyFilters();
-}
-
-function applyFilters() {
-  let result = allData.value;
-  
-  // 关键字搜索
-  if (searchKeyword.value.trim()) {
-    const keyword = searchKeyword.value.trim().toLowerCase();
-    result = result.filter(item => 
-      (item.id || '').toLowerCase().includes(keyword) ||
-      (item.name || '').toLowerCase().includes(keyword) ||
-      (item.description || '').toLowerCase().includes(keyword)
-    );
-  }
-  
-  // 状态筛选
-  if (searchStatus.value !== '') {
-    const isActive = searchStatus.value === 'true';
-    result = result.filter(item => item.isActive === isActive);
-  }
-  
-  // Engine Layer 筛选
-  if (searchEngineLayer.value) {
-    result = result.filter(item => item.engineLayer === searchEngineLayer.value);
-  }
-  
-  // Contact Buyer 筛选
-  if (searchContactBuyer.value) {
-    result = result.filter(item => 
-      item.buyerCodes && item.buyerCodes.includes(searchContactBuyer.value)
-    );
-  }
-  
-  filteredData.value = result;
-}
-
-// 数据映射适配器
-function mapParamStructureResponse(item) {
-  return {
-    id: item.paramStructureId,
-    name: item.paramName,
-    description: item.paramSchema?.requiredParam?.description || '',
-    isActive: true,
-    createdTime: item.effectiveDate,
-    lastModifiedTime: item.effectiveDate,
-    formulas: [],
-    rules: [],
-    paramSchema: item.paramSchema,
-    formulaId: item.formulaId,
-    standardFamilyIds: item.standardFamilyIds || [],
-    ruleIds: item.ruleIds || [],
-    effectiveDate: item.effectiveDate,
-    engineLayer: item.engineLayer || '',      // 新增
-    buyerCodes: item.buyerCodes || []        // 新增
-  };
-}
-
-// Fetch All Data
-function fetchAll() {
-  loading.value = true;
-  request.get('/ParamStructure/getall')
-    .then(res => {
-      if (res.data.isSuccess) {
-        allData.value = (res.data.value || []).map(item => mapParamStructureResponse(item));
-        loadAllRelatedData(allData.value);
-        applyFilters();
-      } else {
-        ElMessage.error(res.data.error || 'Failed to load data');
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      ElMessage.error('Failed to load data');
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-}
-
-async function loadAllRelatedData(items) {
-  const promises = [];
-  items.forEach(item => {
-    if (item.formulaId) {
-      promises.push(
-        request.get(`/ParamFormula/get/${item.formulaId}`)
-          .then(res => {
-            if (res.data.isSuccess) {
-              item.formulas = [res.data.value];
-            }
-          })
-          .catch(() => {})
-      );
-    }
-    if (item.ruleIds && item.ruleIds.length > 0) {
-      promises.push(
-        request.get('/ParamRules/get-by-ids', {
-          params: { ids: item.ruleIds }
-        })
-          .then(res => {
-            if (res.data.isSuccess) {
-              item.rules = res.data.value || [];
-            }
-          })
-          .catch(() => {})
-      );
-    }
-  });
-  await Promise.allSettled(promises);
-}
-
-// 加载 Standard Family 列表（用于弹窗下拉）
-function fetchStandardFamilyOptions() {
-  request.get('/StandardFamily/getall')
-    .then(res => {
-      standardFamilyOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
-    })
-    .catch(() => {
-      standardFamilyOptions.value = [];
-    });
-}
-
-// 加载 Rule 列表（用于弹窗下拉）
-function fetchRuleOptions() {
-  request.get('/ParamRules/getall')
-    .then(res => {
-      ruleOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
-    })
-    .catch(() => {
-      ruleOptions.value = [];
-    });
-}
-
-// 加载 Formula 列表（用于弹窗下拉）
-function fetchFormulaOptions() {
-  request.get('/ParamFormula/getall')
-    .then(res => {
-      formulaOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
-    })
-    .catch(() => {
-      formulaOptions.value = [];
-    });
-}
-
-// Open Add Dialog
-function openAddDialog() {
-  dialogTitle.value = 'New Param Structure';
-  dialogForm.value = {
+  const dialogForm = ref({
     id: '',
     name: '',
     description: '',
-    engineLayer: '',           // 新增
-    buyerCodes: [],            // 新增
+    engineLayer: '',
+    buyerCodes: [],
     requiredParam: {
       name: '',
       valueType: 'System.String',
@@ -765,200 +554,481 @@ function openAddDialog() {
     standardFamilyIds: [],
     ruleIds: [],
     effectiveDate: new Date().toISOString()
-  };
-  dialogVisible.value = true;
-}
+  });
 
-// Open Edit Dialog
-function openEditDialog(row) {
-  dialogTitle.value = 'Edit Param Structure';
-  dialogForm.value = {
-    id: row.id,
-    name: row.name,
-    description: row.description || '',
-    engineLayer: row.engineLayer || '',      // 新增
-    buyerCodes: row.buyerCodes || [],        // 新增
-    requiredParam: row.paramSchema?.requiredParam || {
+  // Form Validation Rules
+  const formRules = {
+    id: [
+      { required: true, message: 'Please enter Param Structure ID', trigger: 'blur' },
+      { pattern: /^[A-Za-z0-9_-]+$/, message: 'ID can only contain letters, numbers, underscores and hyphens', trigger: 'blur' }
+    ],
+    name: [
+      { required: true, message: 'Please enter name', trigger: 'blur' }
+    ]
+  };
+
+  // ==================== Draft Management ====================
+  const draftData = ref(null);
+
+  // 保存草稿
+  function saveDraft() {
+    draftData.value = JSON.parse(JSON.stringify(dialogForm.value));
+    dialogVisible.value = false;
+    nextTick(() => {
+      ElMessage.success('Draft saved successfully');
+    });
+  }
+
+  // 清除草稿
+  function clearDraft() {
+    draftData.value = null;
+  }
+
+  // 重置表单为初始状态
+  function resetDialogForm() {
+    dialogForm.value = {
+      id: '',
       name: '',
-      valueType: 'System.String',
       description: '',
-      isNullable: false,
-      defaultValue: null
-    },
-    conditionRequirements: row.paramSchema?.conditionRequirements || [],
-    limitation: pickMainLimitation(row.paramSchema?.limitations, row.name)
-      || { valueType: 'System.String', allowedValues: [], min: null, max: null },
-    formulaId: row.formulaId || '',
-    standardFamilyIds: row.standardFamilyIds || [],
-    ruleIds: row.ruleIds || [],
-    effectiveDate: row.effectiveDate || new Date().toISOString()
-  };
-  dialogVisible.value = true;
-}
-
-// Confirm Submit
-function confirmSubmit() {
-  formRef.value?.validate((valid) => {
-    if (!valid) return;
-
-    submitLoading.value = true;
-
-    const requestData = {
-      paramStructureId: dialogForm.value.id,
-      paramName: dialogForm.value.name,
-      engineLayer: dialogForm.value.engineLayer || '',      // 新增
-      buyerCodes: dialogForm.value.buyerCodes || [],        // 新增
-      formulaId: dialogForm.value.formulaId,
-      standardFamilyIds: dialogForm.value.standardFamilyIds,
-      ruleIds: dialogForm.value.ruleIds,
-      effectiveDate: dialogForm.value.effectiveDate || new Date().toISOString(),
-      paramSchema: {
-        requiredParam: dialogForm.value.requiredParam,
-        conditionRequirements: dialogForm.value.conditionRequirements,
-        limitations: dialogForm.value.limitation
-          ? { [dialogForm.value.requiredParam.name]: dialogForm.value.limitation }
-          : {}
-      }
+      engineLayer: '',
+      buyerCodes: [],
+      requiredParam: {
+        name: '',
+        valueType: 'System.String',
+        description: '',
+        isNullable: false,
+        defaultValue: null
+      },
+      conditionRequirements: [],
+      limitation: { valueType: 'System.String', allowedValues: [], min: null, max: null },
+      formulaId: '',
+      standardFamilyIds: [],
+      ruleIds: [],
+      effectiveDate: new Date().toISOString()
     };
+  }
 
-    const isEdit = dialogTitle.value === 'Edit Param Structure';
-    const url = isEdit ? '/ParamStructure/update' : '/ParamStructure/add';
-    const method = isEdit ? request.put : request.post;
+  // 取消处理（清除草稿并关闭）
+  function handleCancel() {
+    clearDraft();
+    dialogVisible.value = false;
+  }
 
-    method(url, requestData)
+  // 对话框关闭事件（点击 X 或遮罩）
+  function handleDialogClose() {
+    clearDraft();
+  }
+
+  // ==================== Computed Properties ====================
+  const pagedData = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value;
+    return filteredData.value.slice(start, start + pageSize.value);
+  });
+
+  // ==================== Core Methods ====================
+
+  // 获取买家列表
+  function fetchBuyerList() {
+    request.get('/buyer/buyer-list')
       .then(res => {
         if (res.data.isSuccess) {
-          ElMessage.success(isEdit ? 'Updated successfully' : 'Created successfully');
-          dialogVisible.value = false;
-          fetchAll();
-        } else {
-          ElMessage.error(res.data.error || 'Operation failed');
+          buyerOptions.value = (res.data.value || []).map((item) => ({
+            buyerCode: item.buyerCode || item.BuyerCode,
+            buyerName: item.buyerName || item.BuyerName
+          }));
         }
       })
       .catch(() => {
-        ElMessage.error('Operation failed');
+        buyerOptions.value = [];
+      });
+  }
+
+  // 根据 buyerCodes 获取买家名称列表
+  function getBuyerNames(buyerCodes) {
+    if (!buyerCodes || buyerCodes.length === 0) return '-';
+    return buyerCodes
+      .map(code => {
+        const buyer = buyerOptions.value.find(b => b.buyerCode === code);
+        return buyer?.buyerName || code;
+      })
+      .join(', ');
+  }
+
+  // Search Handler
+  function handleSearch() {
+    currentPage.value = 1;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    let result = allData.value;
+
+    // 关键字搜索
+    if (searchKeyword.value.trim()) {
+      const keyword = searchKeyword.value.trim().toLowerCase();
+      result = result.filter(item =>
+        (item.id || '').toLowerCase().includes(keyword) ||
+        (item.name || '').toLowerCase().includes(keyword) ||
+        (item.description || '').toLowerCase().includes(keyword)
+      );
+    }
+
+    // 状态筛选
+    if (searchStatus.value !== '') {
+      const isActive = searchStatus.value === 'true';
+      result = result.filter(item => item.isActive === isActive);
+    }
+
+    // Engine Layer 筛选
+    if (searchEngineLayer.value) {
+      result = result.filter(item => item.engineLayer === searchEngineLayer.value);
+    }
+
+    // Contact Buyer 筛选
+    if (searchContactBuyer.value) {
+      result = result.filter(item =>
+        item.buyerCodes && item.buyerCodes.includes(searchContactBuyer.value)
+      );
+    }
+
+    filteredData.value = result;
+  }
+
+  // 数据映射适配器
+  function mapParamStructureResponse(item) {
+    return {
+      id: item.paramStructureId,
+      name: item.paramName,
+      description: item.paramSchema?.requiredParam?.description || '',
+      isActive: item.status === 'Active',
+      createdTime: item.effectiveDate,
+      lastModifiedTime: item.effectiveDate,
+      formulas: [],
+      rules: [],
+      paramSchema: item.paramSchema,
+      formulaId: item.formulaId,
+      standardFamilyIds: item.standardFamilyIds || [],
+      ruleIds: item.ruleIds || [],
+      effectiveDate: item.effectiveDate,
+      engineLayer: item.engineLayer || '',
+      buyerCodes: item.buyerCodes || []
+    };
+  }
+
+  // Fetch All Data
+  function fetchAll() {
+    loading.value = true;
+    request.get('/ParamStructure/getall')
+      .then(res => {
+        if (res.data.isSuccess) {
+          allData.value = (res.data.value || []).map(item => mapParamStructureResponse(item));
+          loadAllRelatedData(allData.value);
+          applyFilters();
+        } else {
+          ElMessage.error(res.data.error || 'Failed to load data');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        ElMessage.error('Failed to load data');
       })
       .finally(() => {
-        submitLoading.value = false;
+        loading.value = false;
       });
-  });
-}
-
-// Toggle Status
-function toggleStatus(row) {
-  const action = row.isActive ? 'deactivate' : 'activate';
-  const confirmText = row.isActive 
-    ? `Are you sure you want to deactivate param structure "${row.name}"?`
-    : `Are you sure you want to activate param structure "${row.name}"?`;
-  
-  ElMessageBox.confirm(confirmText, 'Confirmation', {
-    confirmButtonText: 'Confirm',
-    cancelButtonText: 'Cancel',
-    type: 'warning'
-  }).then(() => {
-    const url = row.isActive 
-      ? `/ParamStructure/deactive/${row.id}`
-      : `/ParamStructure/active/${row.id}`;
-    
-    request.put(url)
-      .then(res => {
-        if (res.data.isSuccess) {
-          row.isActive = !row.isActive;
-          ElMessage.success(`${action}d successfully`);
-        } else {
-          ElMessage.error(res.data.error || `${action} failed`);
-        }
-      })
-      .catch(() => {
-        ElMessage.error(`${action} failed`);
-      });
-  }).catch(() => {});
-}
-
-// Delete Param Structure
-function deleteParamStructure(row) {
-  if (hasRelatedData(row)) {
-    ElMessage.warning('This param structure has associated data and cannot be deleted');
-    return;
   }
-  
-  ElMessageBox.confirm(`Are you sure you want to delete param structure "${row.name}"? This action cannot be undone!`, 'Warning', {
-    confirmButtonText: 'Delete',
-    cancelButtonText: 'Cancel',
-    type: 'error'
-  }).then(() => {
-    request.delete(`/ParamStructure/delete/${row.id}`)
-      .then(res => {
-        if (res.data.isSuccess) {
-          ElMessage.success('Deleted successfully');
-          fetchAll();
-        } else {
-          ElMessage.error(res.data.error || 'Delete failed');
-        }
-      })
-      .catch(() => {
-        ElMessage.error('Delete failed');
-      });
-  }).catch(() => {});
-}
 
-// Check if has related data
-function hasRelatedData(row) {
-  return (row.formulas && row.formulas.length > 0) || 
-         (row.rules && row.rules.length > 0);
-}
-
-// Condition Requirements Management
-function addCondition() {
-  dialogForm.value.conditionRequirements.push({
-    fieldName: '',
-    fieldType: 'System.String',
-    isRequired: false,
-    allowedValues: []
-  });
-}
-
-function removeCondition(index) {
-  dialogForm.value.conditionRequirements.splice(index, 1);
-}
-
-// ==================== Utility Methods ====================
-function pickMainLimitation(limitations, mainName) {
-  if (!limitations || !mainName) return null;
-  const key = Object.keys(limitations).find(k => k.toLowerCase() === String(mainName).toLowerCase());
-  return key ? limitations[key] : null;
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+  async function loadAllRelatedData(items) {
+    const promises = [];
+    items.forEach(item => {
+      if (item.formulaId) {
+        promises.push(
+          request.get(`/ParamFormula/get/${item.formulaId}`)
+            .then(res => {
+              if (res.data.isSuccess) {
+                item.formulas = [res.data.value];
+              }
+            })
+            .catch(() => { })
+        );
+      }
+      if (item.ruleIds && item.ruleIds.length > 0) {
+        promises.push(
+          request.get('/ParamRules/get-by-ids', {
+            params: { ids: item.ruleIds }
+          })
+            .then(res => {
+              if (res.data.isSuccess) {
+                item.rules = res.data.value || [];
+              }
+            })
+            .catch(() => { })
+        );
+      }
     });
-  } catch {
-    return dateStr;
+    await Promise.allSettled(promises);
   }
-}
 
-// ==================== Lifecycle ====================
-onMounted(() => {
-  fetchAll();
-  fetchStandardFamilyOptions();
-  fetchRuleOptions();
-  fetchFormulaOptions();
-  fetchBuyerList();  // 新增：获取买家列表
-});
+  // 加载 Standard Family 列表（用于弹窗下拉）
+  function fetchStandardFamilyOptions() {
+    request.get('/StandardFamily/getall')
+      .then(res => {
+        standardFamilyOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+      })
+      .catch(() => {
+        standardFamilyOptions.value = [];
+      });
+  }
 
-// Watch search changes
-watch([searchKeyword, searchStatus, searchEngineLayer, searchContactBuyer], () => {
-  handleSearch();
-});
+  // 加载 Rule 列表（用于弹窗下拉）
+  function fetchRuleOptions() {
+    request.get('/ParamRules/getall')
+      .then(res => {
+        ruleOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+      })
+      .catch(() => {
+        ruleOptions.value = [];
+      });
+  }
+
+  // 加载 Formula 列表（用于弹窗下拉）
+  function fetchFormulaOptions() {
+    request.get('/ParamFormula/getall')
+      .then(res => {
+        formulaOptions.value = res.data.isSuccess ? (res.data.value || []) : [];
+      })
+      .catch(() => {
+        formulaOptions.value = [];
+      });
+  }
+
+  // Open Add Dialog
+  function openAddDialog() {
+    dialogTitle.value = 'New Param Structure';
+
+    if (draftData.value) {
+      // 有草稿 → 恢复草稿
+      dialogForm.value = JSON.parse(JSON.stringify(draftData.value));
+      // 先打开弹窗，在 nextTick 中提示，确保提示在弹窗内部可见
+      dialogVisible.value = true;
+      nextTick(() => {
+        ElMessage.info('Draft restored');
+      });
+    } else {
+      // 无草稿 → 重置表单
+      resetDialogForm();
+      dialogVisible.value = true;
+    }
+  }
+
+  // Open Edit Dialog
+  function openEditDialog(row) {
+    // 编辑时清除草稿（避免干扰）
+    clearDraft();
+
+    dialogTitle.value = 'Edit Param Structure';
+    dialogForm.value = {
+      id: row.id,
+      name: row.name,
+      description: row.description || '',
+      engineLayer: row.engineLayer || '',
+      buyerCodes: row.buyerCodes || [],
+      requiredParam: row.paramSchema?.requiredParam || {
+        name: '',
+        valueType: 'System.String',
+        description: '',
+        isNullable: false,
+        defaultValue: null
+      },
+      conditionRequirements: row.paramSchema?.conditionRequirements || [],
+      limitation: pickMainLimitation(row.paramSchema?.limitations, row.name)
+        || { valueType: 'System.String', allowedValues: [], min: null, max: null },
+      formulaId: row.formulaId || '',
+      standardFamilyIds: row.standardFamilyIds || [],
+      ruleIds: row.ruleIds || [],
+      effectiveDate: row.effectiveDate || new Date().toISOString()
+    };
+    dialogVisible.value = true;
+  }
+
+  // Confirm Submit
+  function confirmSubmit() {
+    formRef.value?.validate((valid) => {
+      if (!valid) return;
+
+      submitLoading.value = true;
+
+      const requestData = {
+        paramStructureId: dialogForm.value.id,
+        paramName: dialogForm.value.name,
+        engineLayer: dialogForm.value.engineLayer || '',
+        buyerCodes: dialogForm.value.buyerCodes || [],
+        formulaId: dialogForm.value.formulaId,
+        standardFamilyIds: dialogForm.value.standardFamilyIds,
+        ruleIds: dialogForm.value.ruleIds,
+        effectiveDate: dialogForm.value.effectiveDate || new Date().toISOString(),
+        paramSchema: {
+          requiredParam: dialogForm.value.requiredParam,
+          conditionRequirements: dialogForm.value.conditionRequirements,
+          limitations: dialogForm.value.limitation
+            ? { [dialogForm.value.requiredParam.name]: dialogForm.value.limitation }
+            : {}
+        }
+      };
+
+      const isEdit = dialogTitle.value === 'Edit Param Structure';
+      const url = isEdit ? '/ParamStructure/update' : '/ParamStructure/add';
+      const method = isEdit ? request.put : request.post;
+
+      method(url, requestData)
+        .then(res => {
+          if (res.data.isSuccess) {
+            ElMessage.success(isEdit ? 'Updated successfully' : 'Created successfully');
+            clearDraft(); // 提交成功后清除草稿
+            dialogVisible.value = false;
+            fetchAll();
+          } else {
+            ElMessage.error(res.data.error || 'Operation failed');
+          }
+        })
+        .catch(() => {
+          ElMessage.error('Operation failed');
+        })
+        .finally(() => {
+          submitLoading.value = false;
+        });
+    });
+  }
+
+  // Toggle Status
+  function toggleStatus(row) {
+    const action = row.isActive ? 'deactivate' : 'activate';
+    const confirmText = row.isActive
+      ? `Are you sure you want to deactivate param structure "${row.name}"?`
+      : `Are you sure you want to activate param structure "${row.name}"?`;
+
+    ElMessageBox.confirm(confirmText, 'Confirmation', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      type: 'warning'
+    }).then(() => {
+      const url = row.isActive
+        ? `/ParamStructure/deactive/${row.id}`
+        : `/ParamStructure/active/${row.id}`;
+
+      console.log('请求URL:', url); // 👈 添加日志查看 URL
+
+      request.put(url)
+        .then(res => {
+          console.log('响应数据:', res.data); // 👈 查看后端返回
+          if (res.data.isSuccess) {
+            row.isActive = !row.isActive;
+            ElMessage.success(`${action}d successfully`);
+          } else {
+            ElMessage.error(res.data.error || `${action} failed`);
+          }
+        })
+        .catch(err => {
+          console.error('请求失败:', err); // 👈 查看错误
+          ElMessage.error(`${action} failed`);
+        });
+    }).catch(() => { });
+  }
+
+  // Delete Param Structure
+  function deleteParamStructure(row) {
+    if (hasRelatedData(row)) {
+      ElMessage.warning('This param structure has associated data and cannot be deleted');
+      return;
+    }
+
+    ElMessageBox.confirm(`Are you sure you want to delete param structure "${row.name}"? This action cannot be undone!`, 'Warning', {
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      type: 'error'
+    }).then(() => {
+      request.delete(`/ParamStructure/delete/${row.id}`)
+        .then(res => {
+          if (res.data.isSuccess) {
+            ElMessage.success('Deleted successfully');
+            fetchAll();
+          } else {
+            ElMessage.error(res.data.error || 'Delete failed');
+          }
+        })
+        .catch(() => {
+          ElMessage.error('Delete failed');
+        });
+    }).catch(() => { });
+  }
+
+  // Check if has related data
+  function hasRelatedData(row) {
+    return (row.formulas && row.formulas.length > 0) ||
+      (row.rules && row.rules.length > 0);
+  }
+
+  // Condition Requirements Management
+  function addCondition() {
+    dialogForm.value.conditionRequirements.push({
+      fieldName: '',
+      fieldType: 'System.String',
+      isRequired: false,
+      allowedValues: []
+    });
+  }
+
+  function removeCondition(index) {
+    dialogForm.value.conditionRequirements.splice(index, 1);
+  }
+
+  // ==================== Utility Methods ====================
+  function getStatusTagType(status) {
+    const map = {
+      'Active': 'success',
+      'Draft': 'info',
+      'Pending': 'warning',
+      'Deprecated': 'danger',
+      'Superseded': 'danger'
+    };
+    return map[status] || 'info';
+  }
+
+  function pickMainLimitation(limitations, mainName) {
+    if (!limitations || !mainName) return null;
+    const key = Object.keys(limitations).find(k => k.toLowerCase() === String(mainName).toLowerCase());
+    return key ? limitations[key] : null;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  // ==================== Lifecycle ====================
+  onMounted(() => {
+    fetchAll();
+    fetchStandardFamilyOptions();
+    fetchRuleOptions();
+    fetchFormulaOptions();
+    fetchBuyerList();
+  });
+
+  // Watch search changes
+  watch([searchKeyword, searchStatus, searchEngineLayer, searchContactBuyer], () => {
+    handleSearch();
+  });
 </script>
 
 <style scoped lang="scss">
