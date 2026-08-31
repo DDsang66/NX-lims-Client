@@ -68,14 +68,12 @@
           </div>
 
           <!-- Table -->
-          <el-table 
-            :data="pagedData" 
-            border 
-            class="removeTableGaps" 
-            height="350" 
-            style="width: 100%" 
-            v-loading="loading"
-          >
+          <el-table :data="pagedData"
+                    border
+                    class="removeTableGaps"
+                    height="350"
+                    style="width: 100%"
+                    v-loading="loading">
             <el-table-column type="expand">
               <template #default="{ row }">
                 <div style="margin-left: 30px; padding: 10px 0;">
@@ -86,7 +84,8 @@
                       <div><b>ID:</b> {{ row.id }}</div>
                       <div><b>Param Name:</b> {{ row.name }}</div>
                       <div><b>Description:</b> {{ row.description || '-' }}</div>
-                      <div><b>Status:</b> 
+                      <div>
+                        <b>Status:</b>
                         <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
                           {{ row.isActive ? 'Active' : 'Inactive' }}
                         </el-tag>
@@ -101,13 +100,11 @@
                     <div style="min-width: 200px;">
                       <h4>Associated Formulas</h4>
                       <div v-if="row.formulas && row.formulas.length > 0">
-                        <el-tag 
-                          v-for="formula in row.formulas" 
-                          :key="formula.id" 
-                          size="small" 
-                          style="margin: 2px;"
-                          type="info"
-                        >
+                        <el-tag v-for="formula in row.formulas"
+                                :key="formula.id"
+                                size="small"
+                                style="margin: 2px;"
+                                type="info">
                           {{ formula.id }} - {{ formula.name }}
                         </el-tag>
                       </div>
@@ -118,13 +115,11 @@
                     <div style="min-width: 200px;">
                       <h4>Associated Rules</h4>
                       <div v-if="row.rules && row.rules.length > 0">
-                        <el-tag 
-                          v-for="rule in row.rules" 
-                          :key="rule.id" 
-                          size="small" 
-                          style="margin: 2px;"
-                          type="warning"
-                        >
+                        <el-tag v-for="rule in row.rules"
+                                :key="rule.id"
+                                size="small"
+                                style="margin: 2px;"
+                                type="warning">
                           {{ rule.id }} - {{ rule.paramName }}
                         </el-tag>
                       </div>
@@ -134,11 +129,11 @@
                 </div>
               </template>
             </el-table-column>
-            
+
             <el-table-column prop="id" label="ID" width="180" fixed="left" show-overflow-tooltip />
             <el-table-column prop="name" label="Name" min-width="150" show-overflow-tooltip />
             <el-table-column prop="description" label="Description" min-width="220" show-overflow-tooltip />
-            
+
             <!-- 新增 Engine Layer 列 -->
             <el-table-column label="Engine Layer" width="120" align="center">
               <template #default="{ row }">
@@ -147,14 +142,22 @@
                 </el-tag>
               </template>
             </el-table-column>
-            
+
+            <el-table-column label="IsEligibleAsCondition" width="120" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.isEligibleAsCondition === 'True' ? 'success' : 'danger'" size="small">
+                  {{ row.isEligibleAsCondition === 'True' ? 'Yes' : (row.isEligibleAsCondition === 'False' ? 'No' : '-') }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
             <!-- 新增 Contact Buyer 列 -->
             <el-table-column label="Contact Buyer" width="150" show-overflow-tooltip>
               <template #default="{ row }">
                 {{ getBuyerNames(row.buyerCodes) }}
               </template>
             </el-table-column>
-            
+
             <!-- Association Statistics -->
             <el-table-column label="Formulas" width="120" align="center">
               <template #default="{ row }">
@@ -166,7 +169,7 @@
                 <el-tag size="small" type="warning">{{ row.rules?.length || 0 }}</el-tag>
               </template>
             </el-table-column>
-            
+
             <el-table-column label="Status" width="120" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
@@ -174,13 +177,13 @@
                 </el-tag>
               </template>
             </el-table-column>
-            
+
             <el-table-column prop="lastModifiedTime" label="Updated" width="180" show-overflow-tooltip>
               <template #default="{ row }">
                 {{ formatDate(row.lastModifiedTime) }}
               </template>
             </el-table-column>
-            
+
             <el-table-column label="Actions" width="250" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click.stop="openEditDialog(row)">
@@ -188,22 +191,18 @@
                   Edit
                 </el-button>
                 <el-tooltip :content="row.isActive ? 'Deactivate' : 'Activate'" placement="top">
-                  <el-button 
-                    :type="row.isActive ? 'danger' : 'success'" 
-                    size="small"
-                    @click.stop="toggleStatus(row)"
-                  >
+                  <el-button :type="row.isActive ? 'danger' : 'success'"
+                             size="small"
+                             @click.stop="toggleStatus(row)">
                     <el-icon>
                       <CircleCheck v-if="!row.isActive" />
                       <VideoPause v-else />
                     </el-icon>
                   </el-button>
                 </el-tooltip>
-                <el-button
-                  type="danger"
-                  size="small"
-                  @click.stop="deleteParamStructure(row)"
-                >
+                <el-button type="danger"
+                           size="small"
+                           @click.stop="deleteParamStructure(row)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </template>
@@ -264,6 +263,16 @@
                      style="width: 100%">
             <el-option label="Buyer" value="Buyer" />
             <el-option label="Standard" value="Standard" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="IsEligibleAsCondition" prop="isEligibleAsCondition">
+          <el-select v-model="dialogForm.isEligibleAsCondition"
+                     placeholder="Please select Yes or No"
+                     clearable
+                     style="width: 100%">
+            <el-option label="Yes" :value="true" />
+            <el-option label="No" :value="false" />
           </el-select>
         </el-form-item>
 
@@ -539,6 +548,7 @@
     name: '',
     description: '',
     engineLayer: '',
+    isEligibleAsCondition:null,
     buyerCodes: [],
     requiredParam: {
       name: '',
@@ -590,6 +600,7 @@
       name: '',
       description: '',
       engineLayer: '',
+      isEligibleAsCondition:null,
       buyerCodes: [],
       requiredParam: {
         name: '',
@@ -710,7 +721,8 @@
       ruleIds: item.ruleIds || [],
       effectiveDate: item.effectiveDate,
       engineLayer: item.engineLayer || '',
-      buyerCodes: item.buyerCodes || []
+      buyerCodes: item.buyerCodes || [],
+      isEligibleAsCondition: item.isEligibleAsCondition
     };
   }
 
@@ -830,6 +842,7 @@
       name: row.name,
       description: row.description || '',
       engineLayer: row.engineLayer || '',
+      isEligibleAsCondition: row.isEligibleAsCondition,
       buyerCodes: row.buyerCodes || [],
       requiredParam: row.paramSchema?.requiredParam || {
         name: '',
@@ -860,6 +873,7 @@
         paramStructureId: dialogForm.value.id,
         paramName: dialogForm.value.name,
         engineLayer: dialogForm.value.engineLayer || '',
+        isEligibleAsCondition: dialogForm.value.isEligibleAsCondition, 
         buyerCodes: dialogForm.value.buyerCodes || [],
         formulaId: dialogForm.value.formulaId,
         standardFamilyIds: dialogForm.value.standardFamilyIds,
