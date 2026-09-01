@@ -253,7 +253,11 @@ import request from "@/utils/request.js";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from 'element-plus'; 
 
-  const emit = defineEmits(['update:buyerNameDto', 'update:step1Data'])
+  const emit = defineEmits([
+    'update:buyerNameDto',
+    'update:step1Data',
+    'update:buyerCode',
+    'update:buyerIsIndividualTraveler'])
 
 const { t } = useI18n()
 const props=defineProps({
@@ -380,7 +384,8 @@ let rules2=computed(()=>{
       buyerOptions.value = res.data.value.map(buyer => ({
         name: buyer.buyerName || buyer.name || buyer.buyerCode || 'Unknown',
         buyerCode: buyer.buyerCode || buyer.code || '',
-        code: buyer.buyerCode || buyer.code || ''  // 保留两种命名方式以便兼容
+        code: buyer.buyerCode || buyer.code || '' , // 保留两种命名方式以便兼容
+        isIndividualTraveler: buyer.isIndividualTraveler ?? buyer.buyerIsIndividualTraveler ?? false
       }))
 
       // 如果之前有选中的买家，尝试重新匹配
@@ -426,6 +431,8 @@ function removeMenuHandler(tagValue){
     const matched = buyerOptions.value.find(b => b.name === buyerName.value)
     // 兼容多种字段名
     selectedBuyerCode.value = matched?.buyerCode || matched?.code || ''
+    emit('update:buyerCode', selectedBuyerCode.value)
+    emit('update:buyerIsIndividualTraveler', matched?.isIndividualTraveler ?? false)
     loadMenus(selectedBuyerCode.value)
   }
 

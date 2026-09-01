@@ -51,7 +51,7 @@
           <SampleSpecificDescrip class="pieceContent"
                                  :sampleSummary="allSample"
                                  :buyerNameDto="buyerNameDto"
-                                 ref="sampleSpecificDescripDoM" />
+                                @descrip-change="handleDescripChange"/>
         </div>
 
         <!-- 其他参数 -->
@@ -88,121 +88,275 @@
 </template>
 
 <script setup>
-import CareLabelSelect from "@/components/review/CareLabelSelect.vue";
-import {computed, reactive, ref} from "vue";
-import SampleSpecificComposition from "@/components/review/SampleSpecificComposition.vue";
-import SampleSpecificDescrip from "@/components/review/SampleSpecificDescrip.vue";
-import SeamRequire from "@/components/review/ItemRequire/SeamRequire.vue";
-import AfterWashingSelect from "@/components/review/ItemRequire/AfterWashingSelect.vue";
-import DetergentSelect from "@/components/review/ItemRequire/DetergentSelect.vue";
+  import CareLabelSelect from "@/components/review/CareLabelSelect.vue";
+  import { computed, reactive, ref, watch } from "vue";
+  import SampleSpecificComposition from "@/components/review/SampleSpecificComposition.vue";
+  import SampleSpecificDescrip from "@/components/review/SampleSpecificDescrip.vue";
+  import SeamRequire from "@/components/review/ItemRequire/SeamRequire.vue";
+  import AfterWashingSelect from "@/components/review/ItemRequire/AfterWashingSelect.vue";
+  import DetergentSelect from "@/components/review/ItemRequire/DetergentSelect.vue";
+  import { isEqual } from 'lodash-es';
 
-const props=defineProps({
-  step1Dom: Object,
-  buyerNameDto: String,
-})
+  const conditionsGroups = ref([]);
+  //和样品绑定的成分
+  const fiberCompositionSingle = ref([])
+  //订单参数 (移除 afterIron，因为它已移到 Care Label 中)
+  const orderParams = ref([
+    // 可以在这里添加其他参数
+  ])
+  const sampleSpecificDescripDoM = ref(null);
+  const props = defineProps({
+    step1Dom: Object,
+    buyerNameDto: String,
+    buyerCode: { type: String, default: null },
+    buyerIsIndividualTraveler: { type: Boolean, default: false },
+  })
 
-const afterWashItems=ref(["item1","item2"])
-const detergentItems=ref(["item1","item2"])
+  defineExpose({ conditionsGroups });
 
-// AfterIron 数据（现在作为 Special Care Instruction 的值）
-const afterIronValue = ref('')
-const afterIronOptions = [
-  { label:'After Iron', value:'After Iron' },
-  { label:'Before and After Iron', value:'Before and After Iron' },
-  { label:'Do Not Iron', value:'' }
-]
+  const afterWashItems = ref(["item1", "item2"])
+  const detergentItems = ref(["item1", "item2"])
 
-//洗标数据
-const careLabelData=ref({
-  selectedWashingProcedure:{
-    value:'',
-    label: '',
-    src:[new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
-  },
-  selectedDryProcedure:{
-    value:'',
-    label: '',
-    src:[new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
-  },
-  selectedDCProcedure:{
-    value:'',
-    label: '',
-    src:[new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
-  },
-  selectedIronMethod:{
-    value:'',
-    label: '',
-    src:[new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
-  },
-  selectedBleachProcedure:{
-    value:'',
-    label: '',
-    src:[new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
-  }
-})
+  // AfterIron 数据（现在作为 Special Care Instruction 的值）
+  const afterIronValue = ref('')
+  const afterIronOptions = [
+    { label: 'After Iron', value: 'After Iron' },
+    { label: 'Before and After Iron', value: 'Before and After Iron' },
+    { label: 'Do Not Iron', value: '' }
+  ]
 
-//根据menus获取所有smaple
-let allSample=computed(()=>{
-  let samples=new Set()
-  props.step1Dom?.menus?.forEach(menu=>{
-    //分组
-    if(menu.groups){
-      menu.groups.forEach(group=>{
-        group.items.forEach(item=>{
-          item.samples.forEach(sample=>{
+  //洗标数据
+  const careLabelData = ref({
+    washLabelRegionDefault: "Europe",
+    MachineType: 'Type A',
+    Temperature: '',
+    WashingProcess: '',
+    WashingProcedure: {
+      value: '',
+      label: '',
+      src: [new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
+    },
+    DryProcedure: {
+      value: '',
+      label: '',
+      src: [new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
+    },
+    DryCleanProcedure: {
+      value: '',
+      label: '',
+      src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
+    },
+    IronMethod: {
+      value: '',
+      label: '',
+      src: [new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
+    },
+    BleachProcedure: {
+      value: '',
+      label: '',
+      src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
+    }
+  })
+
+  //---------------------------------------------------------------------------------------------------------------------------------------------------
+
+  //根据menus获取所有smaple
+  let allSample = computed(() => {
+    let samples = new Set()
+    props.step1Dom?.menus?.forEach(menu => {
+      //分组
+      if (menu.groups) {
+        menu.groups.forEach(group => {
+          group.items.forEach(item => {
+            item.samples.forEach(sample => {
+              samples.add(sample)
+            })
+          })
+        })
+      } else {
+        menu.items.forEach(item => {
+          item.samples.forEach(sample => {
             samples.add(sample)
           })
         })
-      })
-    }else{
-      menu.items.forEach(item=>{
-        item.samples.forEach(sample=>{
-          samples.add(sample)
-        })
-      })
-    }
+      }
+    })
+    return Array.from(samples).sort()
   })
-  return Array.from(samples).sort()
-})
 
-//订单参数 (移除 afterIron，因为它已移到 Care Label 中)
-const orderParams = ref([
-  // 可以在这里添加其他参数
-])
+  watch(allSample, (samples) => {
+    conditionsGroups.value = samples.map(sample => ({
+      testPoints: [sample],
+      conditions: {
+        BuyerCode: null, // 或从 props 获取
+        BuyerIsIndividualTraveler: false,
+      }
+    }));
+    console.log('初始化 conditionsGroups:', conditionsGroups.value);
+  }, { immediate: true });
 
-//和样品绑定的成分
-const fiberCompositionSingle=ref([])
+  // 监听 fiberCompositionSingle 变化（Composition 组件数据）
+  watch(fiberCompositionSingle, (newFiberCom) => {
+    // newFiberCom 是 [{sample, composition: [...]}]
+    newFiberCom.forEach(item => {
+      const group = conditionsGroups.value.find(g => g.testPoints.includes(item.sample));
+      if (group) {
+        // 如果 conditions 对象还没有 composition 键，则初始化
+        if (!group.conditions.composition) {
+          group.conditions.composition = {};
+        }
+        // 更新 composition 数据（可能结构是数组）
+        group.conditions.composition = item.composition;
+      }
+    });
+    // 可选：触发合并相同 conditions 的操作
+    // mergeGroupsWithSameConditions();
+  }, { deep: true });
 
-//接缝样品
-const seamSamples = computed(() => {
-  let seamSamplesSet = new Set()
-  props.step1Dom?.menus?.forEach(menu=>{
-    //如果有groups
-    if(menu.groups){
-      menu.groups.forEach(group=>{
-        group.items.forEach(item => {
+  // 监听 descripGroups 变化（通过 ref 访问）
+  watch(
+    () => sampleSpecificDescripDoM.value?.descripGroups?.value,  // 注意加了 .value
+    (newDescripGroups) => {
+      console.log('descripGroups changed:', newDescripGroups);
+      if (!newDescripGroups) return;
+      // 清空之前所有 group 的 description，避免残留
+      conditionsGroups.value.forEach(g => {
+        if (g.conditions.description) delete g.conditions.description;
+      });
+      // 遍历每个 descrip group
+      newDescripGroups.forEach(dg => {
+        dg.samples.forEach(sample => {
+          const group = conditionsGroups.value.find(g => g.testPoints.includes(sample));
+          if (group) {
+            group.conditions.description = dg.propertyTable;
+          }
+        });
+      });
+    },
+    { deep: true, immediate: true }
+  );
+
+  // 3. 同步共享参数（CareLabel、AfterIron、OtherParams 等）
+  // 定义计算属性，提取需要放入 conditions 的字段
+  const sharedConditions = computed(() => ({
+    washLabelRegionDefault: careLabelData.value.washLabelRegionDefault,
+    MachineType: careLabelData.value.MachineType,
+    Temperature: careLabelData.value.Temperature,
+    WashingProcess: careLabelData.value.WashingProcess,
+    WashingProcedure: careLabelData.value.WashingProcedure?.value,
+    DryProcedure: careLabelData.value.DryProcedure?.value,
+    DryCleanProcedure: careLabelData.value.DryCleanProcedure?.value,
+    IronMethod: careLabelData.value.IronMethod?.value,
+    BleachProcedure: careLabelData.value.BleachProcedure?.value,
+    afterIron: afterIronValue.value,
+    otherParams: Object.fromEntries(orderParams.value.map(p => [p.name, p.value])),
+  }));
+
+  //处理样描信息的更新
+  function handleDescripChange(newDescripGroups) {
+    if (!newDescripGroups) return;
+
+    // 1. 收集所有当前样描组中的属性名，用于清除旧键
+    const allPropertyNames = new Set();
+    newDescripGroups.forEach(dg => {
+      dg.propertyTable.forEach(prop => {
+        if (prop.propertyName) allPropertyNames.add(prop.propertyName);
+      });
+    });
+
+    // 2. 删除所有 group 中这些旧键
+    conditionsGroups.value.forEach(group => {
+      allPropertyNames.forEach(propName => {
+        if (group.conditions.hasOwnProperty(propName)) {
+          delete group.conditions[propName];
+        }
+      });
+    });
+
+    // 3. 重新设置属性值
+    newDescripGroups.forEach(dg => {
+      dg.samples.forEach(sample => {
+        const group = conditionsGroups.value.find(g => g.testPoints.includes(sample));
+        if (group) {
+          dg.propertyTable.forEach(prop => {
+            if (prop.propertyName) {
+              group.conditions[prop.propertyName] = prop.value;
+            }
+          });
+        }
+      });
+    });
+  }
+
+  // 当共享参数变化时，将其合并到所有 group 的 conditions 中
+  watch(sharedConditions, (newShared) => {
+    conditionsGroups.value.forEach(group => {
+      // 注意：不要覆盖 composition 和 description，采用合并方式
+      group.conditions = {
+        ...group.conditions,
+        ...newShared,
+      };
+    });
+  }, { deep: true, immediate: true });
+
+  watch(conditionsGroups, (val) => {
+    console.log('conditionsGroups updated:', JSON.parse(JSON.stringify(val)));
+  }, { deep: true });
+  //---------------------------------------------------------------------------------------------------------------------------------------------------
+
+  //用户在 step2 中修改某个测点的条件时，需要更新对应 group 的 conditions
+  function updateGroupConditions(sample, newConditions) {
+    const group = conditionsGroups.value.find(g => g.testPoints.includes(sample));
+    if (group) {
+      // 合并或直接替换，根据业务需求决定
+      group.conditions = { ...group.conditions, ...newConditions };
+    }
+  }
+
+  function mergeGroupsWithSameConditions() {
+    const merged = [];
+    conditionsGroups.value.forEach(group => {
+      const existing = merged.find(g => isEqual(g.conditions, group.conditions));
+      if (existing) {
+        existing.testPoints.push(...group.testPoints);
+      } else {
+        merged.push({ ...group, testPoints: [...group.testPoints] });
+      }
+    });
+    conditionsGroups.value = merged;
+  }
+
+
+  //接缝样品
+  const seamSamples = computed(() => {
+    let seamSamplesSet = new Set()
+    props.step1Dom?.menus?.forEach(menu => {
+      //如果有groups
+      if (menu.groups) {
+        menu.groups.forEach(group => {
+          group.items.forEach(item => {
+            if (item.itemName.includes('Seam'))
+              item.samples.forEach(sample => {
+                seamSamplesSet.add(sample)
+              })
+          })
+        })
+      } else {
+        menu.items.forEach(item => {
           if (item.itemName.includes('Seam'))
             item.samples.forEach(sample => {
               seamSamplesSet.add(sample)
             })
         })
-      })
-    }else {
-      menu.items.forEach(item => {
-        if (item.itemName.includes('Seam'))
-          item.samples.forEach(sample => {
-            seamSamplesSet.add(sample)
-          })
-      })
-    }
+      }
+    })
+    return [...seamSamplesSet].sort()
   })
-  return [...seamSamplesSet].sort()
-})
 
-//获取成分
-const handleRowsSingle = (fiberCom) => {
-  fiberCompositionSingle.value = fiberCom;
-};
+  //获取成分
+  const handleRowsSingle = (fiberCom) => {
+    fiberCompositionSingle.value = fiberCom;
+  };
 
 </script>
 

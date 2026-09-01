@@ -22,7 +22,9 @@
              :allDom="allDom"
              v-model:buyerNameDto="buyerNameDto"
              :size="size"
-             @update:step1Data="handleStep1Data"/>
+             @update:step1Data="handleStep1Data"
+             @update:buyerCode="buyerCode = $event"
+             @update:buyerIsIndividualTraveler="buyerIsIndividualTraveler = $event"/>
       <!-- Step1 末尾：下一步 → 校验并挂载 Step2 -->
       <div class="moduleFooter" v-if="steps[0].status !== 'success'">
         <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
@@ -32,6 +34,8 @@
       <Step2
              :step1Dom="step1Dom"
              :buyerNameDto="buyerNameDto"
+             :buyerCode="buyerCode"
+             :buyerIsIndividualTraveler ="buyerIsIndividualTraveler"
              :step1Data ="step1Data"/>
       <!-- Step2 末尾：下一步 → 挂载 Step3 -->
       <div class="moduleFooter" v-if="steps[0].status==='success' && steps[1].status !== 'success'">
@@ -75,8 +79,10 @@ const steps=reactive([
 //整个组件（滚动容器，Step1 通过 props.allDom 自动滚动，必须保持）
 const allDom=ref(null)
 const size = 'default'
-//dto买家名
-const buyerNameDto = ref('')
+  //dto买家名
+  const buyerNameDto = ref('')
+  const buyerCode = ref('')
+  const buyerIsIndividualTraveler = ref(false)
 const step1Dom=ref(null)
 // v-for 内用函数 ref 固定引用 Step1 组件实例（字符串 ref 在 v-for 内会收集成数组）
 function setStep1Dom(el){

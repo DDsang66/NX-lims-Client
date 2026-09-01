@@ -14,40 +14,39 @@
         <div class="labelSelect" v-for="(item, index) in labelItems" :key="index">
           <label>{{ $t(item.labelKey) }}</label>
           <div>
-            <el-popover
-              placement="bottom-start"
-              :width="item.popoverWidth"
-              :visible="item.visible.value"
-            >
+            <el-popover placement="bottom-start"
+                        :width="item.popoverWidth"
+                        :visible="item.visible.value">
               <template #reference>
                 <div class="procedureSelect"
-                     :ref="(el) => item.selectRef = el"
+                     :ref="(el) => { if(el) item.selectRef.value = el }"
                      @click="item.visible.value=!item.visible.value;">
-                  <div style="height: 100%; display: flex; align-items: center; gap: 2px;" 
-                       v-for="(src,idx) in item.selectedValue.src" :key="src">
+                  <div style="height: 100%; display: flex; align-items: center; gap: 2px;"
+                       v-for="(src,idx) in getSelectedValue(item.key).src" :key="src + idx">
                     <span v-if="idx>0" style="font-size: 12px;">&</span>
                     <img class="labelImg" :src="src" />
                   </div>
                 </div>
               </template>
-              <div :ref="(el) => item.popoverRef = el" class="popoverSon">
-                <!-- 移除 :append-to，让它默认渲染在 body -->
+              <div :ref="(el) => { if(el) item.popoverRef.value = el }" class="popoverSon">
                 <el-select v-model="item.standard.value"
                            class="procedureStandardSelect">
-                  <el-option v-for="standard in item.standardOptions.value" :key="standard" :value="standard">
+                  <el-option v-for="standard in item.standardOptions.value"
+                             :key="standard"
+                             :value="standard">
                   </el-option>
                 </el-select>
                 <div class="procedureGroupContainer">
                   <div class="procedureGroup">
                     <div class="head">{{ washLabelRegion + ' ' + item.standard.value }}</div>
                     <div class="optionsContainer">
-                      <div class="procedureOption" 
+                      <div class="procedureOption"
                            v-for="label in item.labelOptions.value"
-                           @click="item.selectLabel(label); item.visible.value=false" 
+                           @click="selectLabel(label, washLabelRegion, item.key)"
                            :key="label.value">
                         <div class="optionLabelsContainer">
-                          <div style="height: 100%; display: flex; align-items: center; gap: 2px;" 
-                               v-for="(src,idx) in label.src" :key="src">
+                          <div style="height: 100%; display: flex; align-items: center; gap: 2px;"
+                               v-for="(src,idx) in label.src" :key="src + idx">
                             <span v-if="idx>0" style="font-size: 12px;">&</span>
                             <img class="labelImg" :src="src" />
                           </div>
@@ -68,7 +67,7 @@
     <div class="specialCareInstructionContainer">
       <label>{{ $t('specialCareInstruction') }}</label>
       <el-select v-model="modelValue.specialCareInstruction" multiple style="flex: 1; min-width: 100px;" clearable>
-        <el-option v-for="instruction in specialCareInstructionOptions" :key="instruction.value" 
+        <el-option v-for="instruction in specialCareInstructionOptions" :key="instruction.value"
                    :value="instruction.value" :label="instruction.label">
         </el-option>
       </el-select>
@@ -77,7 +76,7 @@
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, ref, watch, computed, reactive} from 'vue';
+import {onMounted, onUnmounted, ref, watch, computed} from 'vue';
 
 import noWashEuropeImg from '@/assets/img/wet Care Label/Europe/Washing/No Wash.jpg'
 import N3Img from '@/assets/img/wet Care Label/Europe/Washing/3N.jpg'
@@ -122,46 +121,40 @@ import HandWashImg from '@/assets/img/wet Care Label/USA/Washing/Hand Wash.jpg'
 import HandWashColdImg from '@/assets/img/wet Care Label/USA/Washing/Hand Wash Cold.jpg'
 
 const props = defineProps({
-  washLabelRegionDefault: {
-    type: String,
-    default: 'Europe'
-  },
   modelValue: {
     type: Object,
-    default: function (){
-      return {
-        selectedWashingProcedure:{
-          value:'',
-          label: '',
-          src:[new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
-        },
-        selectedDryProcedure:{
-          value:'',
-          label: '',
-          src:[new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
-        },
-        selectedDCProcedure:{
-          value:'',
-          label: '',
-          src:[new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
-        },
-        selectedIronMethod:{
-          value:'',
-          label: '',
-          src:[new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
-        },
-        selectedBleachProcedure:{
-          value:'',
-          label: '',
-          src:[new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
-        },
-        specialCareInstruction: []
-      }
-    }
+    default: () => ({
+      washLabelRegionDefault: "Europe",
+      MachineType: 'Type A',
+      Temperature: '',
+      WashingProcess: '',
+      WashingProcedure: '',
+      DryProcedure: {
+        value: '',
+        label: '',
+        src: [new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
+      },
+      DryCleanProcedure: {
+        value: '',
+        label: '',
+        src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
+      },
+      IronMethod: {
+        value: '',
+        label: '',
+        src: [new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
+      },
+      BleachProcedure: {
+        value: '',
+        label: '',
+        src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
+      },
+      specialCareInstruction: []
+    })
   }
 });
 
-const emit = defineEmits(['updateData']);
+const emit = defineEmits(['updateData', 'update:modelValue']);
 
 // 特殊洗语选项
 const specialCareInstructionOptions = [
@@ -180,7 +173,7 @@ const DCProcedureVisible = ref(false);
 const ironProcedureVisible = ref(false);
 const bleachProcedureVisible = ref(false);
 
-// DOM - 使用 ref 对象存储
+// DOM - 使用 ref 对象存储（修复：改为 ref(null) 而不是直接赋值）
 const washingProcedureSelect = ref(null);
 const dryProcedureSelect = ref(null);
 const DCProcedureSelect = ref(null);
@@ -232,6 +225,25 @@ const washingProceduresEurope = ref([
   { value: '6M', label: '6M', src:[M6Img]},
   { value: '7N', label: '7N', src:[N7Img]},
   { value: '9N', label: '9N', src:[N9Img]},
+]);
+
+const washingProceduresJapan = ref([
+  { value: '', label: 'No Wash', src: [noWashEuropeImg] },
+  { value: 'default', label: 'default', src: [new URL('../../assets/img/wet Care Label/default/washingDefault.png', import.meta.url).href] },
+  { value: '3N', label: '3N', src: [N3Img] },
+  { value: '3M', label: '3M', src: [M3Img] },
+  { value: '3G', label: '3G', src: [G3Img] },
+  { value: '3H', label: '3H', src: [H3Img] },
+  { value: '4N', label: '4N', src: [N4Img] },
+  { value: '4M', label: '4M', src: [M4Img] },
+  { value: '4G', label: '4G', src: [G4Img] },
+  { value: '4H', label: '4H', src: [H4Img] },
+  { value: '5N', label: '5N', src: [N5Img] },
+  { value: '5M', label: '5M', src: [M5Img] },
+  { value: '6N', label: '6N', src: [N6Img] },
+  { value: '6M', label: '6M', src: [M6Img] },
+  { value: '7N', label: '7N', src: [N7Img] },
+  { value: '9N', label: '9N', src: [N9Img] },
 ]);
 
 const washingProceduresUSA = ref([
@@ -295,36 +307,64 @@ const bleachProceduresEurope = ref([
 ]);
 
 // 洗标地区
-const washLabelRegion = ref(props.washLabelRegionDefault)
-const washLabelRegionOptions = ['Europe', 'USA'];
+const washLabelRegion = ref(props.modelValue.washLabelRegionDefault || 'Europe')
+const washLabelRegionOptions = ['Europe', 'USA','Japan'];
 
-// 汇总数据
-const washingProcedureses = ref([{region:'Europe', standard:'ISO 3758:2023(E)', value:washingProceduresEurope.value},
-  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:washingProceduresUSA.value}
+// 汇总数据 - 所有地区统一用欧标格式返回（修复：Japan 也使用 Europe 的数据）
+const washingProcedureses = ref([
+  {region:'Europe', standard:'ISO 3758:2023(E)', value:washingProceduresEurope.value},
+  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:washingProceduresUSA.value},
+  { region: 'Japan', standard:'JIS L 0217:2015', value:washingProceduresEurope.value}  // 修复：Japan 也指向 Europe 数据
 ]);
 const washingProcedureStandardses = ref([
   {region:'Europe', value:['ISO 3758:2023(E)']},
-  {region:'USA', value:['ASTM_D5489-2018(R2023)']}
+  { region: 'USA', value: ['ASTM_D5489-2018(R2023)'] },
+  { region: 'Japan', value: ['JIS L 0217:2015'] }  // 修复：统一用欧标
 ]);
 
-const dryProcedureses = ref([{region:'Europe', standard:'ISO 3758:2023(E)', value:dryProceduresEurope.value},
-  {region:'USA', standard: 'ASTM_D5489-2018(R2023)', value: dryProceduresUSA.value}]);
+const dryProcedureses = ref([
+  {region:'Europe', standard:'ISO 3758:2023(E)', value:dryProceduresEurope.value},
+  {region:'USA', standard: 'ASTM_D5489-2018(R2023)', value: dryProceduresUSA.value},
+  { region: 'Japan', standard:'JIS L 0217:2015', value:dryProceduresEurope.value}  // 修复
+]);
 const dryProcedureStandardses = ref([
   {region:'Europe', value:['ISO 3758:2023(E)']},
-  {region:'USA', value:['ASTM_D5489-2018(R2023)']}
+  { region: 'USA', value: ['ASTM_D5489-2018(R2023)'] },
+  { region: 'Japan', value: ['JIS L 0217:2015'] }  // 修复
 ]);
 
-const DCProcedureses = ref([{region:'Europe', standard:'ISO 3758:2023(E)', value:DCProceduresEurope.value},
-  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:DCProceduresEurope.value}]);
-const DCProcedureStandardses = ref([{region:'Europe', value:['ISO 3758:2023(E)']},{region:'USA', value:['ASTM_D5489-2018(R2023)']}]);
+const DCProcedureses = ref([
+  {region:'Europe', standard:'ISO 3758:2023(E)', value:DCProceduresEurope.value},
+  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:DCProceduresEurope.value},  // USA 也先用欧标
+  { region: 'Japan', standard:'JIS L 0217:2015', value:DCProceduresEurope.value}  // 修复
+]);
+const DCProcedureStandardses = ref([
+  { region: 'Europe', value: ['ISO 3758:2023(E)'] }, 
+  { region: 'USA', value: ['ISO 3758:2023(E)'] },  // 修复：统一欧标
+  { region: 'Japan', value: ['JIS L 0217:2015'] }  // 修复
+]);
 
-const ironProcedureses = ref([{region:'Europe', standard:'ISO 3758:2023(E)', value:ironProceduresEurope.value},
-  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:ironProceduresEurope.value}]);
-const ironProcedureStandardses = ref([{region:'Europe', value:['ISO 3758:2023(E)']},{region:'USA', value:['ASTM_D5489-2018(R2023)']}]);
+const ironProcedureses = ref([
+  {region:'Europe', standard:'ISO 3758:2023(E)', value:ironProceduresEurope.value},
+  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:ironProceduresEurope.value},  // 统一欧标
+  { region: 'Japan', standard:'JIS L 0217:2015', value:ironProceduresEurope.value}  // 修复
+]);
+const ironProcedureStandardses = ref([
+  { region: 'Europe', value: ['ISO 3758:2023(E)'] }, 
+  { region: 'USA', value: ['ISO 3758:2023(E)'] },  // 修复
+  { region: 'Japan', value: ['JIS L 0217:2015'] }  // 修复
+]);
 
-const bleachProcedureses = ref([{region:'Europe', standard:'ISO 3758:2023(E)', value:bleachProceduresEurope.value},
-  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:bleachProceduresEurope.value}]);
-const bleachProcedureStandardses = ref([{region:'Europe', value:['ISO 3758:2023(E)']},{region:'USA', value:['ASTM_D5489-2018(R2023)']}]);
+const bleachProcedureses = ref([
+  {region:'Europe', standard:'ISO 3758:2023(E)', value:bleachProceduresEurope.value},
+  {region:'USA', standard:'ASTM_D5489-2018(R2023)', value:bleachProceduresEurope.value},  // 统一欧标
+  { region: 'Japan', standard:'JIS L 0217:2015', value:bleachProceduresEurope.value}  // 修复
+]);
+const bleachProcedureStandardses = ref([
+  { region: 'Europe', value: ['ISO 3758:2023(E)'] }, 
+  { region: 'USA', value: ['ISO 3758:2023(E)'] },  // 修复
+  { region: 'Japan', value: ['JIS L 0217:2015'] }  // 修复
+]);
 
 // 创建 label items 的映射关系
 const labelItemsMap = {
@@ -337,7 +377,7 @@ const labelItemsMap = {
     standard: washingProcedureStandard,
     standardOptions: washingLabelStandardOptions,
     labelOptions: washingLabelOptions,
-    selectedKey: 'selectedWashingProcedure',
+    selectedKey: 'WashingProcedure',
     procedureses: washingProcedureses,
     standardOptionses: washingProcedureStandardses,
   },
@@ -350,7 +390,7 @@ const labelItemsMap = {
     standard: dryProcedureStandard,
     standardOptions: dryLabelStandardOptions,
     labelOptions: dryLabelOptions,
-    selectedKey: 'selectedDryProcedure',
+    selectedKey: 'DryProcedure',
     procedureses: dryProcedureses,
     standardOptionses: dryProcedureStandardses,
   },
@@ -363,7 +403,7 @@ const labelItemsMap = {
     standard: DCProcedureStandard,
     standardOptions: DCLabelStandardOptions,
     labelOptions: DCLabelOptions,
-    selectedKey: 'selectedDCProcedure',
+    selectedKey: 'DryCleanProcedure',
     procedureses: DCProcedureses,
     standardOptionses: DCProcedureStandardses,
   },
@@ -376,7 +416,7 @@ const labelItemsMap = {
     standard: ironProcedureStandard,
     standardOptions: ironLabelStandardOptions,
     labelOptions: ironLabelOptions,
-    selectedKey: 'selectedIronMethod',
+    selectedKey: 'IronMethod',
     procedureses: ironProcedureses,
     standardOptionses: ironProcedureStandardses,
   },
@@ -389,42 +429,151 @@ const labelItemsMap = {
     standard: bleachProcedureStandard,
     standardOptions: bleachLabelStandardOptions,
     labelOptions: bleachLabelOptions,
-    selectedKey: 'selectedBleachProcedure',
+    selectedKey: 'BleachProcedure',
     procedureses: bleachProcedureses,
     standardOptionses: bleachProcedureStandardses,
   }
 };
 
-// 使用 computed 生成 labelItems 数组，并添加 selectLabel 方法
+// 修复：getSelectedValue 直接读取 props.modelValue，确保响应式
+function getSelectedValue(key) {
+  const itemConfig = labelItemsMap[key];
+  if (!itemConfig) return { value: '', label: '', src: [] };
+
+  const value = props.modelValue[itemConfig.selectedKey];
+  return value ? {
+    value: value.value || '',
+    label: value.label || '',
+    src: Array.isArray(value.src) ? value.src : []
+  } : { value: '', label: '', src: [] };
+}
+
+// labelItems - 使用 computed 确保响应式更新（修复：不再缓存 selectedValue，改用函数获取）
 const labelItems = computed(() => {
-  return Object.values(labelItemsMap).map(item => ({
-    ...item,
-    get selectedValue() {
-      return props.modelValue[item.selectedKey];
-    },
-    selectLabel: (label) => {
-      props.modelValue[item.selectedKey] = label;
-    }
-  }));
+  return Object.entries(labelItemsMap).map(([key, item]) => {
+    return {
+      ...item,
+      key: key,
+      // 修复：不再在这里计算 selectedValue，模板中直接调用 getSelectedValue
+    };
+  });
 });
+
+function convertToEuropeFormat(washingProcedure, region) {
+  if (!washingProcedure) return { Temperature: '', WashingProcess: '' };
+
+  if (region === 'Europe' || region === 'Japan') {  // 修复：Japan 也用欧标格式
+    const tempMap = { '3': 30, '4': 40, '5': 50, '6': 60, '7': 70, '9': 95 };
+    const processMap = { 'N': 'Normal', 'M': 'Mild', 'G': 'Gentle', 'H': 'Hand' };
+
+    const temp = tempMap[washingProcedure[0]] || '';
+    const process = processMap[washingProcedure[1]] || '';
+
+    return { Temperature: temp, WashingProcess: process };
+  } else {
+    const tempMap = { 'Cold': 30, 'Warm': 40, 'Hot': 50, 'Very Hot': 60 };
+    const processMap = { 'Normal': 'Normal', 'Permanent Press': 'Mild', 'Gentle': 'Gentle', 'Hand Wash': 'Hand' };
+
+    let temperature = '';
+    let process = '';
+
+    for (const [key, value] of Object.entries(tempMap)) {
+      if (washingProcedure.includes(key)) {
+        temperature = value;
+        break;
+      }
+    }
+
+    for (const [key, value] of Object.entries(processMap)) {
+      if (washingProcedure.includes(key)) {
+        process = value;
+        break;
+      }
+    }
+
+    return { Temperature: temperature, WashingProcess: process };
+  }
+}
+
+function convertFromEuropeFormat(Temperature, WashingProcess, region) {
+  if (!Temperature || !WashingProcess) return '';
+
+  const tempMap = { 30: '3', 40: '4', 50: '5', 60: '6', 70: '7', 95: '9' };
+  const processMap = { 'Normal': 'N', 'Mild': 'M', 'Gentle': 'G', 'Hand': 'H' };
+
+  if (region === 'Europe' || region === 'Japan') {  // 修复：Japan 也用欧标格式
+    const tempCode = tempMap[Temperature] || '';
+    const processCode = processMap[WashingProcess] || '';
+    return tempCode + processCode;
+  } else {
+    const tempText = Object.entries(tempMap).find(([key, value]) => value === tempMap[Temperature])?.[0] || '';
+    const processText = Object.entries(processMap).find(([key, value]) => value === processMap[WashingProcess])?.[0] || '';
+    return processText + ' ' + tempText;
+  }
+}
+
+const selectLabel = (label, region, itemKey) => {
+  if (!label) return;
+
+  const itemConfig = labelItemsMap[itemKey];
+  if (!itemConfig) return;
+
+  const updateData = {
+    ...props.modelValue,
+    [itemConfig.selectedKey]: {
+      value: label.value,
+      label: label.label,
+      src: label.src
+    }
+  };
+
+  if (itemConfig.selectedKey === 'WashingProcedure') {
+    const { Temperature, WashingProcess } = convertToEuropeFormat(label.value, region);
+    updateData.Temperature = Temperature;
+    updateData.WashingProcess = WashingProcess;
+/*    updateData.WashingProcedure = label.value;*/
+  }
+
+  emit('update:modelValue', updateData);
+  itemConfig.visible.value = false;
+};
+
+function mapRegionToMachineType(region) {
+  const regionMap = {
+    'Europe': 'Type A',
+    'USA': 'Type B',
+    'Japan': 'Type C'
+  };
+  return regionMap[region] || 'Type A';
+}
 
 // 切换洗标地区
 function washLabelRegionChange() {
+  const updateData = {
+    ...props.modelValue,
+    MachineType: mapRegionToMachineType(washLabelRegion.value)
+  };
+
   const items = Object.values(labelItemsMap);
   items.forEach((item) => {
-    // 刷新 standard 选项列表
     const standardOpts = item.standardOptionses.value.find(s => s.region === washLabelRegion.value);
     item.standardOptions.value = standardOpts?.value || item.standardOptionses.value[0]?.value || [];
-    // standard 默认选第一个
     item.standard.value = item.standardOptions.value[0] || '';
-    // 刷新图标列表
+
     const labelOpts = item.procedureses.value.find(p => p.region === washLabelRegion.value && p.standard === item.standard.value);
     item.labelOptions.value = labelOpts?.value || item.procedureses.value[0]?.value || [];
-    // 所有已选值切换成图标列表第一个
+
     if (item.labelOptions.value.length > 0) {
-      props.modelValue[item.selectedKey] = item.labelOptions.value[0];
+      const selectedLabel = item.labelOptions.value[0];
+      updateData[item.selectedKey] = {
+        value: selectedLabel.value,
+        label: selectedLabel.label,
+        src: selectedLabel.src
+      };
     }
   });
+
+  emit('update:modelValue', updateData);
 }
 
 // 关闭选择器的下拉框
@@ -433,7 +582,6 @@ function closeSelectPopover(e) {
   items.forEach((item) => {
     const popoverEl = item.popoverRef.value;
     const selectEl = item.selectRef.value;
-    // 检查 popoverEl 是否是有效的 DOM 元素
     if (popoverEl && selectEl && popoverEl.contains && selectEl.contains) {
       if (!popoverEl.contains(e.target) && !selectEl.contains(e.target)) {
         item.visible.value = false;
@@ -442,12 +590,9 @@ function closeSelectPopover(e) {
   });
 }
 
-// 监听 modelValue 变化，触发更新
-watch(() => props.modelValue, (newVal) => {
-  emit('updateData', newVal);
-}, { deep: true });
 
 onMounted(() => {
+  props.modelValue.MachineType = mapRegionToMachineType(washLabelRegion.value);
   washLabelRegionChange();
   document.addEventListener('mousedown', closeSelectPopover);
 });
@@ -455,7 +600,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('mousedown', closeSelectPopover);
 });
-
 </script>
 
 <style lang="scss" scoped>
@@ -497,7 +641,7 @@ onUnmounted(() => {
   flex: 0 1 auto;
   min-width: 100px;
   max-width: 180px;
-  
+
   label {
     font-size: 13px;
     white-space: nowrap;
@@ -519,7 +663,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 130px;
   overflow: hidden;
-  
+
   &:hover {
     cursor: pointer;
   }
@@ -717,5 +861,4 @@ onUnmounted(() => {
     min-width: 0; /* 防止溢出 */
     max-width: 100%;
   }
-
 </style>

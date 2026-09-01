@@ -167,6 +167,7 @@ const props=defineProps({
   }
 })
 
+ const emit = defineEmits(['descrip-change']);
 //remainSample是否全选
 const remainSampleCheckAll = ref(false)
 //remainSample是否半选
@@ -369,9 +370,11 @@ async function getPropertys() {
 //   })
 // })
 //监听
-watch(descripGroups,()=>{
-  checkAllDuplicateSamples()
-},{deep:true})
+  watch(descripGroups, () => {
+    checkAllDuplicateSamples();
+    // 将最新的 descripGroups 数组传递给父组件
+    emit('descrip-change', descripGroups.value);
+  }, { deep: true });
 
 //监听newSampleGroup
 watch(newSampleGroup, (val) => {
