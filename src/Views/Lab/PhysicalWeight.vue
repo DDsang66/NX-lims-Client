@@ -69,7 +69,7 @@
               <span class="lbl">宽</span>
               <el-input-number v-model="areaWid" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
             </div>
-            <span v-if="areaLen>0 && areaWid>0" class="hint">= {{ area }} cm²</span>
+            <span v-if="areaLen>0 && areaWid>0" class="hint">= {{ areaValue }} cm²</span>
           </template>
           <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
         </div>
@@ -153,7 +153,7 @@ import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, Refr
 const api = inject('request')
 
 // ---- 状态 ----
-const baudRate = ref(1200)
+const baudRate = ref(19200)
 const rates = [1200, 2400, 4800, 9600, 19200, 38400]
 // ---- 天平品牌适配 (Sartorius / Mettler Toledo) ----
 // 每种品牌独立: 默认波特率 / 串口配置尝试列表 / DTR-RTS 握手方式 / 重量解析函数。
@@ -475,7 +475,9 @@ function record() {
     const a = areaValue.value
     if (a == null || +a <= 0) { ElMessage.warning('面积>0'); return }
     const gsm = +(w / a * 10000).toFixed(4), oz = +(gsm / 33.9057).toFixed(4)
-    rows.push({ ...base, a, gsm, oz })
+    // 长×宽模式: 记录尺寸文本供报告 Measure 列直填(如 "5×5"); 直填模式无尺寸, dim=null
+    const dim = areaByCalc.value && areaLen.value && areaWid.value ? `${areaLen.value}×${areaWid.value}` : null
+    rows.push({ ...base, a, dim, gsm, oz })
     ElMessage.success(`g/m²=${gsm}  oz/yd²=${oz}`)
   } else if (testType.value === 'length') {
     const lc = lengthCm.value
@@ -536,7 +538,7 @@ async function doReport() {
       testMethod: '',
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a }))
+      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null }))
     })
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
     const { downloadUrl, fileName } = res.data.value
