@@ -888,11 +888,12 @@ function globalMouseDown(e) {
     try {
       const payload = {
         sourceId: reportNo.value,
+        buyerCode: selectedBuyerCode.value,
         items: items,
         remark: '' // 暂无备注
       }
 
-      const res = await request.post('/checklist/add', payload)
+      const res = await request.post('/review/generate-checklist', payload)
 
       if (res.data.isSuccess) {
         ElMessage.success(t('message.sampleSubmitSuccess') || 'Sample data submitted successfully')

@@ -184,16 +184,44 @@
     return Array.from(samples).sort()
   })
 
+  //ConditionPool初始化
   watch(allSample, (samples) => {
-    conditionsGroups.value = samples.map(sample => ({
-      testPoints: [sample],
-      conditions: {
-        BuyerCode: null, // 或从 props 获取
-        BuyerIsIndividualTraveler: false,
+    const oldGroups = conditionsGroups.value;
+    const newGroups = [];
+
+    oldGroups.forEach(group => {
+      const remainingTestPoints = group.testPoints.filter(tp => samples.includes(tp));
+      if (remainingTestPoints.length > 0) {
+        newGroups.push({ ...group, testPoints: remainingTestPoints });
       }
-    }));
-    console.log('初始化 conditionsGroups:', conditionsGroups.value);
+    });
+
+    const samplesInGroups = newGroups.flatMap(g => g.testPoints);
+    const missingSamples = samples.filter(s => !samplesInGroups.includes(s));
+
+    missingSamples.forEach(sample => {
+      newGroups.push({
+        testPoints: [sample],
+        conditions: {
+          BuyerCode: props.buyerCode ?? null,
+          BuyerIsIndividualTraveler: props.buyerIsIndividualTraveler ?? false,
+        }
+      });
+    });
+
+    conditionsGroups.value = newGroups;
   }, { immediate: true });
+
+  watch(
+    () => [props.buyerCode, props.buyerIsIndividualTraveler],
+    ([newBuyerCode, newIsIndividualTraveler]) => {
+      conditionsGroups.value.forEach(group => {
+        group.conditions.BuyerCode = newBuyerCode ?? null;
+        group.conditions.BuyerIsIndividualTraveler = newIsIndividualTraveler ?? false;
+      });
+    },
+    { deep: true }
+  );
 
   // 监听 fiberCompositionSingle 变化（Composition 组件数据）
   watch(fiberCompositionSingle, (newFiberCom) => {
