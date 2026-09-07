@@ -391,34 +391,6 @@
   };
 
   //---------------------------------------------- 提交----------------------------
-  async function submitConditions() {
-    mergeGroupsWithSameConditions()
-    // 构建 DTO 列表
-    const dtoList = conditionsGroups.value.map(group => ({
-      ConditionPoolId: group.conditions.ConditionPoolId ?? props.step1Data?.conditionPoolId ?? Guid.Empty,
-      CheckListId: group.conditions.CheckListId ?? props.step1Data?.checkListId ?? Guid.Empty,
-      OrderId: group.conditions.ReportNo ?? props.step1Data?.reportNo ?? '',  // ReportNo 作为 OrderId
-      TestPoints: group.testPoints,
-      Conditions: group.conditions
-    }))
-
-    try {
-      const res = await request.post('/review/generate-param', dtoList)
-
-      if (res.data.isSuccess) {
-        ElMessage.success('Parameters generated successfully')
-        return res.data.value  // 返回 CheckListResponseDto
-      } else {
-        ElMessage.error(res.data.message || 'Failed to generate parameters')
-        return null
-      }
-    } catch (error) {
-      console.error('Submit conditions error:', error)
-      ElMessage.error('Error submitting conditions')
-      return null
-    }
-  }
-
   const isSubmitting = ref(false)  // 👈 添加提交状态
 
   async function submitConditions() {
