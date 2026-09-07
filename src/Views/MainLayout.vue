@@ -204,8 +204,11 @@
             <el-menu-item index="/main/PhysicalWeight">
               <span>Physical Weight</span>
             </el-menu-item>
-            <el-menu-item index="/main/DryingRate">
-              <span>Drying Rate</span>
+            <el-menu-item index="/main/Nf5022DryingRate">
+              <span>NF5022 MoistureDryingRate</span>
+            </el-menu-item>
+            <el-menu-item index="/main/Aatcc201DryingRate">
+              <span>AATCC 201 MoistureDryingRate</span>
             </el-menu-item>
             <el-menu-item index="/main/AbrasionResistance_RotatingDrum">
               <span>Abrasion Resistance(FW)</span>

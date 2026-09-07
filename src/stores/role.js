@@ -29,7 +29,8 @@ import WashLabel from "@/Views/WashLabel/WashLabel.vue";
 import FormulaConfig from "@/Views/Config/FormulaConfig.vue";
 import RuleConfig from "@/Views/Config/RuleConfig.vue";
 import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
-import DryingRate from "@/Views/Lab/DryingRate.vue";
+import Nf5022DryingRate from "@/Views/Equipment/Nf5022DryingRate.vue";
+import Aatcc201DryingRate from "@/Views/Equipment/Aatcc201DryingRate.vue";
 import AbrasionResistance_RotatingDrum from "@/Views/Lab/AbrasionResistance-RotatingDrum.vue";
 import MenuManagement from "@/Views/Config/MenuManagement.vue";
 import StructureConfig from "@/Views/Config/StructureConfig.vue";
@@ -67,7 +68,8 @@ const useRoleStore = defineStore('role', {
         { path: 'OrderOverview', name: 'OrderOverview', component: OrderOverview, meta: { title: 'Reporting List' } },
         { path: 'WashLabel', name: 'WashLabel', component: WashLabel, meta: { title: 'Wash Label' } },
         { path: 'PhysicalWeight', name: 'PhysicalWeight', component: PhysicalWeight, meta: { title: 'Physical Weight' } },
-        { path: 'DryingRate', name: 'DryingRate', component: DryingRate, meta: { title: 'Drying Rate' } },
+        { path: 'Nf5022DryingRate', name: 'Nf5022DryingRate', component: Nf5022DryingRate, meta: { title: 'NF5022 MoistureDryingRate' } },
+        { path: 'Aatcc201DryingRate', name: 'Aatcc201DryingRate', component: Aatcc201DryingRate, meta: { title: 'AATCC 201 MoistureDryingRate' } },
         { path: 'AbrasionResistance_RotatingDrum', name: 'AbrasionResistance_RotatingDrum', component: AbrasionResistance_RotatingDrum, meta: { title: 'Abrasion Resistance_Rotating Drum' } },
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
