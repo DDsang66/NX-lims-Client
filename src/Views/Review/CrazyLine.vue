@@ -5,6 +5,16 @@
   import RequireLabel from '@/components/RequireLabel.vue'
   import SubmitCheckList from '@/components/SubmitCheckList.vue'
 
+  const buyerInfoRef = ref(null);
+  const submitCheckListRef = ref(null);
+
+  // 处理清空报告号
+  const handleClearReportNumber = () => {
+    if (buyerInfoRef.value) {
+      buyerInfoRef.value.clearData4(); // 👈 调用 BuyerInfo 的方法
+    }
+  };
+
   const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')
   const itemToTable = new Map();
@@ -127,6 +137,7 @@
     <div class="col-xl-7">
 <!--          <Feedback />-->
       <BuyerInfo
+         ref="buyerInfoRef"
          :buyer="currentBuyer"
          :reviewer="currentReviewer"
          :menuName="menuOptions"
@@ -152,6 +163,7 @@
       <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle" />
 <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
       <SubmitCheckList
+        ref="submitCheckListRef" 
         :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
        :buyer="currentBuyer"
        :orderNumber="orderNumber"
@@ -160,7 +172,7 @@
        :selectedRows="selectedRows"
        :additionalRequire="additionalRequire"
        :sampleDescription="sampleDescription"
-                       />
+          @clear-report-number="handleClearReportNumber"                />
     </div>
   </div>
 </template>

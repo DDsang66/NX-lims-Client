@@ -144,6 +144,7 @@ const cvv          = ref(null)
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       emit('api-response', response.data)
+      emit('clear-report-number');
       emit('submit', response.data)
     }
     catch (error) {

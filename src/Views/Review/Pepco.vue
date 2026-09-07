@@ -4,7 +4,15 @@ import BuyerInfo from '@/components/BuyerInfo.vue'
 import CheckList from '@/components/CheckList.vue'
 import RequireLabel from '@/components/RequireLabel.vue'
 import SubmitCheckList from '@/components/SubmitCheckList.vue'
+  const buyerInfoRef = ref(null);
+  const submitCheckListRef = ref(null);
 
+  // 处理清空报告号
+  const handleClearReportNumber = () => {
+    if (buyerInfoRef.value) {
+      buyerInfoRef.value.clearData4(); // 👈 调用 BuyerInfo 的方法
+    }
+  };
 
 const itemToTable = new Map();
 const currentBuyer = ref("Pepco");
@@ -130,6 +138,7 @@ const handleFieldChange = (fields) => {
     <div class="col-xl-7">
       <!--          <Feedback />-->
       <BuyerInfo
+                   ref="buyerInfoRef"  
         :buyer="currentBuyer"
         :reviewer="currentReviewer"
         :menuName="menuOptions"
@@ -154,6 +163,7 @@ const handleFieldChange = (fields) => {
       <CheckList title="Wet" :list="WetList" @update:checked="onRowToggle"/>
       <!--          <CheckList title="Fiber" :list="FiberList" @update:checked="onRowToggle"/>-->
       <SubmitCheckList
+                        ref="submitCheckListRef"
         :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter :null"
         :buyer="currentBuyer"
         :orderNumber="orderNumber"
@@ -162,7 +172,7 @@ const handleFieldChange = (fields) => {
         :selectedRows="selectedRows"
         :additionalRequire="additionalRequire"
         :sampleDescription="sampleDescription"
-      />
+     @clear-report-number="handleClearReportNumber" />
     </div>
   </div>
 </template>

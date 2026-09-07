@@ -1,7 +1,9 @@
 <template>
   <div class="row">
     <div class="col-xl-7">
-      <BuyerInfo :buyer="currentBuyer"
+      <BuyerInfo
+                   ref="buyerInfoRef"  
+                 :buyer="currentBuyer"
                  :reviewer="currentReviewer"
                  :menuName="menuOptions"
                  @api-response="onBuyerData"
@@ -25,7 +27,9 @@
       <CheckList :rawData="rawData":fullRefresh="isFullRefresh"
                  @update:selected="val => selectedRows = val" />
 
-      <SubmitCheckList :buyer="currentBuyer"
+      <SubmitCheckList
+                        ref="submitCheckListRef"
+                       :buyer="currentBuyer"
                        :orderNumber="orderNumber"
                        :menuName="menuName?.[0] || 'default'"
                        :reviewer="currentReviewer"
@@ -33,7 +37,8 @@
                        :additionalRequire="additionalRequire"
                        :sampleDescription="sampleDescription"
                        :sampleDescripBoundSingleDto="requireLabelDoM ? requireLabelDoM.sampleDescripBoundSingleDto :null"
-                       :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter : null" />
+                       :seamParameter="requireLabelDoM ? requireLabelDoM.seamParameter : null"
+                       @clear-report-number="handleClearReportNumber"/>
     </div>
   </div>
 </template>
@@ -44,7 +49,15 @@
   import CheckList from '@/components/CheckListNew.vue' // 引入新的 Checklist
   import RequireLabel from '@/components/RequireLabel.vue'
   import SubmitCheckList from '@/components/SubmitCheckList.vue'
+  const buyerInfoRef = ref(null);
+  const submitCheckListRef = ref(null);
 
+  // 处理清空报告号
+  const handleClearReportNumber = () => {
+    if (buyerInfoRef.value) {
+      buyerInfoRef.value.clearData4(); // 👈 调用 BuyerInfo 的方法
+    }
+  };
   const currentBuyer = ref("Primark");
   const authStore = inject('userAuthStore')
   const currentReviewer = computed(() => authStore.user || '')

@@ -244,6 +244,14 @@ const size='large'
       });
     }
   };
+
+
+  defineExpose({
+    clearData4: () => {
+      reportNums.data4 = '';
+    }
+  });
+
 </script>
 
 <style lang="scss" scoped>

@@ -168,9 +168,6 @@
                     v-model="dialogForm.paramResult"
                     placeholder="Result value"></el-input>
         </el-form-item>
-        <el-form-item label="Engine Layer">
-          <el-input v-model="dialogForm.EngineLayer" placeholder=""></el-input>
-        </el-form-item>
         <el-form-item label="Priority">
           <el-input-number v-model="dialogForm.priority" :min="1" style="width: 100%"></el-input-number>
         </el-form-item>

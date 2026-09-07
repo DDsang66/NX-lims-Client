@@ -5,7 +5,15 @@ import CheckList from '@/components/CheckList.vue'
 import RequireLabel from '@/components/RequireLabel.vue'
 import SubmitCheckList from '@/components/SubmitCheckList.vue'
 
+  const buyerInfoRef = ref(null);
+  const submitCheckListRef = ref(null);
 
+  // 处理清空报告号
+  const handleClearReportNumber = () => {
+    if (buyerInfoRef.value) {
+      buyerInfoRef.value.clearData4(); // 👈 调用 BuyerInfo 的方法
+    }
+  };
 const itemToTable = new Map();
 const currentBuyer = ref("KiK");
 const authStore = inject('userAuthStore')
