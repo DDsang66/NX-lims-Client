@@ -89,13 +89,15 @@
 
 <script setup>
   import CareLabelSelect from "@/components/review/CareLabelSelect.vue";
-  import { computed, reactive, ref, watch } from "vue";
+  import { computed, reactive, ref, watch, nextTick } from "vue";
   import SampleSpecificComposition from "@/components/review/SampleSpecificComposition.vue";
   import SampleSpecificDescrip from "@/components/review/SampleSpecificDescrip.vue";
   import SeamRequire from "@/components/review/ItemRequire/SeamRequire.vue";
   import AfterWashingSelect from "@/components/review/ItemRequire/AfterWashingSelect.vue";
   import DetergentSelect from "@/components/review/ItemRequire/DetergentSelect.vue";
   import { isEqual } from 'lodash-es';
+  import request from "@/utils/request.js";
+  import { ElMessage } from 'element-plus';
 
   const conditionsGroups = ref([]);
   //和样品绑定的成分
@@ -107,12 +109,11 @@
   const sampleSpecificDescripDoM = ref(null);
   const props = defineProps({
     step1Dom: Object,
+    step1Data: Object, 
     buyerNameDto: String,
     buyerCode: { type: String, default: null },
     buyerIsIndividualTraveler: { type: Boolean, default: false },
   })
-
-  defineExpose({ conditionsGroups });
 
   const afterWashItems = ref(["item1", "item2"])
   const detergentItems = ref(["item1", "item2"])
@@ -203,6 +204,9 @@
       newGroups.push({
         testPoints: [sample],
         conditions: {
+          CheckListId: props.step1Data?.checkListId ?? null,     // ← 新增
+          ConditionPoolId: props.step1Data?.conditionPoolId ?? null,   // ← 新增
+          ReportNo: props.step1Data?.reportNo ?? null,     
           BuyerCode: props.buyerCode ?? null,
           BuyerIsIndividualTraveler: props.buyerIsIndividualTraveler ?? false,
         }
@@ -386,6 +390,83 @@
     fiberCompositionSingle.value = fiberCom;
   };
 
+  //---------------------------------------------- 提交----------------------------
+  async function submitConditions() {
+    mergeGroupsWithSameConditions()
+    // 构建 DTO 列表
+    const dtoList = conditionsGroups.value.map(group => ({
+      ConditionPoolId: group.conditions.ConditionPoolId ?? props.step1Data?.conditionPoolId ?? Guid.Empty,
+      CheckListId: group.conditions.CheckListId ?? props.step1Data?.checkListId ?? Guid.Empty,
+      OrderId: group.conditions.ReportNo ?? props.step1Data?.reportNo ?? '',  // ReportNo 作为 OrderId
+      TestPoints: group.testPoints,
+      Conditions: group.conditions
+    }))
+
+    try {
+      const res = await request.post('/review/generate-param', dtoList)
+
+      if (res.data.isSuccess) {
+        ElMessage.success('Parameters generated successfully')
+        return res.data.value  // 返回 CheckListResponseDto
+      } else {
+        ElMessage.error(res.data.message || 'Failed to generate parameters')
+        return null
+      }
+    } catch (error) {
+      console.error('Submit conditions error:', error)
+      ElMessage.error('Error submitting conditions')
+      return null
+    }
+  }
+
+  const isSubmitting = ref(false)  // 👈 添加提交状态
+
+  async function submitConditions() {
+    // 如果正在提交，直接返回
+    if (isSubmitting.value) return
+
+    mergeGroupsWithSameConditions()
+
+    // 构建 DTO 列表
+    const dtoList = conditionsGroups.value.map(group => ({
+      ConditionPoolId: group.conditions.ConditionPoolId ?? props.step1Data?.conditionPoolId ?? Guid.Empty,
+      CheckListId: group.conditions.CheckListId ?? props.step1Data?.checkListId ?? Guid.Empty,
+      OrderId: group.conditions.ReportNo ?? props.step1Data?.reportNo ?? '',
+      TestPoints: group.testPoints,
+      Conditions: group.conditions
+    }))
+
+    try {
+      isSubmitting.value = true  // 👈 开始提交
+
+      const res = await request.post('/review/generate-param', dtoList)
+
+      if (res.data.isSuccess) {
+        ElMessage.success('Parameters generated successfully')
+        return res.data.value
+      } else {
+        ElMessage.error(res.data.message || 'Failed to generate parameters')
+        return null
+      }
+    } catch (error) {
+      console.error('Submit conditions error:', error)
+      ElMessage.error('Error submitting conditions')
+      return null
+    } finally {
+      isSubmitting.value = false  // 👈 结束提交
+    }
+  }
+
+
+  /* 暴露数据 */
+  defineExpose({
+    conditionsGroups,
+    submitConditions,
+    isSubmitting, 
+    // ← 新增
+  })
+
+  //---------------------------------------------- 提交----------------------------
 </script>
 
 <style scoped lang="scss">

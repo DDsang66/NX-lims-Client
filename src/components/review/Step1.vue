@@ -436,6 +436,8 @@ function removeMenuHandler(tagValue){
     loadMenus(selectedBuyerCode.value)
   }
 
+  const standardIdToCodeMap = ref({})
+
 //加载 TestItem/Standard 映射（id → 名称/编码），同时填充右上角 Item / Standard Code 选项
 function loadMappings() {
   request.get('/TestItem/getall').then(res => {
@@ -451,33 +453,53 @@ function loadMappings() {
       }))
     }
   }).catch(() => {})
+  //request.get('/Standard/getall').then(res => {
+  //  if (res.data.isSuccess) {
+  //    // 建立两个映射
+  //    const codeToIdMap = {}  // standardCode → standardId
+  //    const idToCodeMap = {}  // standardId → standardCode
+
+  //      ; (res.data.value || []).forEach(s => {
+  //        const id = s.standardId || s.StandardId  // 兼容大小写
+  //        const code = s.standardCode
+  //        if (code && id) {
+  //          codeToIdMap[code] = id
+  //          idToCodeMap[id] = code
+  //        }
+  //      })
+
+  //    // 这里我们需要两个映射
+  //    // 但只有一个 standardMap，所以需要调整
+  //    standardMap.value = codeToIdMap  // 用于编码→ID 转换
+
+  //    // 为了在 loadMenus 中显示，需要另一个映射
+  //    // 可以复用 standardMap 或者新建一个
+  //    // 但为了最小改动，我们直接在 loadMenus 中使用 standardMap 的反向查找
+
+  //    standardOptions.value = res.data.value || []
+  //  }
+  //}).catch(() => {})
   request.get('/Standard/getall').then(res => {
     if (res.data.isSuccess) {
-      // 建立两个映射
-      const codeToIdMap = {}  // standardCode → standardId
-      const idToCodeMap = {}  // standardId → standardCode
+      const codeToId = {}
+      const idToCode = {}
 
         ; (res.data.value || []).forEach(s => {
-          const id = s.standardId || s.StandardId  // 兼容大小写
+          const id = s.standardId || s.StandardId
           const code = s.standardCode
           if (code && id) {
-            codeToIdMap[code] = id
-            idToCodeMap[id] = code
+            codeToId[code] = id
+            idToCode[id] = code
           }
         })
 
-      // 这里我们需要两个映射
-      // 但只有一个 standardMap，所以需要调整
-      standardMap.value = codeToIdMap  // 用于编码→ID 转换
-
-      // 为了在 loadMenus 中显示，需要另一个映射
-      // 可以复用 standardMap 或者新建一个
-      // 但为了最小改动，我们直接在 loadMenus 中使用 standardMap 的反向查找
-
+      standardMap.value = codeToId        // 内部继续用（code → id）
+      standardIdToCodeMap.value = idToCode // 新增（id → code）
       standardOptions.value = res.data.value || []
     }
-  }).catch(() => {})
+  }).catch(() => { })
 }
+
 //加载某买家的真实菜单 → 填充 menuOptions
 function loadMenus(buyerCode) {
   if (!buyerCode) { menuOptions.value = []; return }
@@ -619,16 +641,18 @@ function reportNoCheck(){
       return false
     }
 
-    // 2. 提交 sample 数据到后端
-    const submitSuccess = await submitSampleData()
+    // 2. 提交 sample 数据到后端，获取 ConditionPoolId
+    const result = await submitSampleData() 
 
-    if (submitSuccess) {
-      // 3. 将数据传递给父组件
+    if (result) {
+      // 3. 将数据（包含 ConditionPoolId）传递给父组件
       emit('update:step1Data', {
         reportNo: reportNo.value,
         buyerName: buyerName.value,
         menus: menus.value,
-        sampleData: collectSampleData()
+        sampleData: collectSampleData(),
+        conditionPoolId: result.conditionPoolId,
+        checkListId: result.checkListId 
       })
       return true
     }
@@ -882,7 +906,7 @@ function globalMouseDown(e) {
 
     if (items.length === 0) {
       ElMessage.warning(t('message.noSampleData') || 'Please add samples before proceeding')
-      return false
+      return null
     }
 
     try {
@@ -890,22 +914,26 @@ function globalMouseDown(e) {
         sourceId: reportNo.value,
         buyerCode: selectedBuyerCode.value,
         items: items,
-        remark: '' // 暂无备注
+        remark: ''
       }
 
       const res = await request.post('/review/generate-checklist', payload)
 
       if (res.data.isSuccess) {
         ElMessage.success(t('message.sampleSubmitSuccess') || 'Sample data submitted successfully')
-        return true
+        // 提取后端返回的 ConditionPoolId（兼容 camelCase / PascalCase）
+        return {
+          conditionPoolId: res.data.value?.conditionPoolId || res.data.value?.ConditionPoolId || null,
+          checkListId: res.data.value?.checkListId || res.data.value?.CheckListId || null  // ← 新增
+        }
       } else {
         ElMessage.error(res.data.message || t('message.sampleSubmitFailed') || 'Failed to submit sample data')
-        return false
+        return null
       }
     } catch (error) {
       console.error('Submit sample data error:', error)
       ElMessage.error(t('message.sampleSubmitError') || 'Error submitting sample data')
-      return false
+      return null
     }
   }
 
@@ -917,6 +945,8 @@ defineExpose({
   reportNo,
   buyerName,
   allCheck,
+  get testItemMap() { return testItemMap.value },
+  get standardIdToCodeMap() { return standardIdToCodeMap.value }
 })
 
 

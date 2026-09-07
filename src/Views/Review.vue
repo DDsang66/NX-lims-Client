@@ -17,45 +17,55 @@
 
     <!--    三个模块：按序挂载（Step1 完成 → Step2 渲染；Step2 完成 → Step3 渲染）-->
     <div class="moduleBlock" :ref="(el) => setModuleBlock(0, el)">
-      <Step1
-             :ref="setStep1Dom"
+      <Step1 :ref="setStep1Dom"
              :allDom="allDom"
              v-model:buyerNameDto="buyerNameDto"
              :size="size"
              @update:step1Data="handleStep1Data"
              @update:buyerCode="buyerCode = $event"
-             @update:buyerIsIndividualTraveler="buyerIsIndividualTraveler = $event"/>
+             @update:buyerIsIndividualTraveler="buyerIsIndividualTraveler = $event" />
       <!-- Step1 末尾：下一步 → 校验并挂载 Step2 -->
       <div class="moduleFooter" v-if="steps[0].status !== 'success'">
         <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
       </div>
     </div>
     <div v-if="steps[0].status==='success'" class="moduleBlock" :ref="(el) => setModuleBlock(1, el)">
-      <Step2
+      <Step2 ref="step2Ref"
              :step1Dom="step1Dom"
              :buyerNameDto="buyerNameDto"
              :buyerCode="buyerCode"
-             :buyerIsIndividualTraveler ="buyerIsIndividualTraveler"
-             :step1Data ="step1Data"/>
+             :buyerIsIndividualTraveler="buyerIsIndividualTraveler"
+             :step1Data="step1Data" />
       <!-- Step2 末尾：下一步 → 挂载 Step3 -->
       <div class="moduleFooter" v-if="steps[0].status==='success' && steps[1].status !== 'success'">
-        <el-button type="primary" @click="toNextStep" class="header-button">{{$t('nextStep')}}</el-button>
+        <el-button type="primary" @click="submitStep2AndNext" class="header-button">{{$t('nextStep')}}</el-button>
       </div>
     </div>
+
     <div v-if="steps[1].status==='success'" class="moduleBlock" :ref="(el) => setModuleBlock(2, el)">
-      <Step3 :step1Dom="step1Dom"/>
+      <Step3 ref="step3Ref"
+             :step1Dom="step1Dom"
+             :step2Data="step2Result"
+             :testItemMap="testItemMap"
+             :standardIdToCodeMap="standardIdToCodeMap"
+             @rebuild="handleReBuild"/>
     </div>
 
   </div>
 </template>
 
 <script setup>
-import {onBeforeUnmount, onMounted, reactive, ref} from 'vue'
+  import { onBeforeUnmount, onMounted, reactive, ref, nextTick } from 'vue'
+  import { ElLoading, ElMessage } from 'element-plus'
 import Step1 from "@/components/review/Step1.vue";
 import Step2 from "@/components/review/Step2.vue";
 import Step3 from "@/components/review/Step3.vue";
 
+  let loadingInstance = null 
   const step1Data = ref(null)
+  const step2Ref = ref(null)
+  const step3Ref = ref(null)
+  const step2Result = ref(null)
 
 //步骤信息
 const steps=reactive([
@@ -75,6 +85,26 @@ const steps=reactive([
     status:'wait'
   }
 ])
+
+  const testItemMap = ref({})
+  const standardIdToCodeMap = ref({})
+
+  function handleStep1Data(data) {
+    console.log('Step1 data:', data)
+    step1Data.value = data
+
+    // 关键：确保 step1Dom 已经挂载
+    console.log('step1Dom:', step1Dom.value)
+    console.log('step1Dom.testItemMap:', step1Dom.value?.testItemMap)
+    console.log('step1Dom.standardIdToCodeMap:', step1Dom.value?.standardIdToCodeMap)
+
+    testItemMap.value = step1Dom.value?.testItemMap || {}
+    standardIdToCodeMap.value = step1Dom.value?.standardIdToCodeMap || {}
+
+    console.log('testItemMap set to:', testItemMap.value)
+    console.log('standardIdToCodeMap set to:', standardIdToCodeMap.value)
+  }
+
 
 //整个组件（滚动容器，Step1 通过 props.allDom 自动滚动，必须保持）
 const allDom=ref(null)
@@ -152,9 +182,80 @@ function updateActiveStep(){
   activeStepIndex.value=nearest
 }
 
-  function handleStep1Data(data) {
-    console.log('Step1 data received:', data)
-    step1Data.value = data
+  async function submitStep2AndNext() {
+    if (!step2Ref.value) {
+      console.error('step2Ref is null')
+      return
+    }
+
+    // 👇 开启全屏 Loading
+    loadingInstance = ElLoading.service({
+      fullscreen: true,
+      text: '服务器执行计算，请耐心等待...',
+      background: 'rgba(0, 0, 0, 0.7)',
+      customClass: 'custom-loading-class'
+    })
+
+    try {
+      const result = await step2Ref.value.submitConditions()
+
+      if (result) {
+        step2Result.value = result
+        steps[1].status = 'success'
+
+        // 👇 等待 Step3 渲染完成，关闭 loading
+        await nextTick()
+        // 额外等待一下确保 Step3 数据渲染完成
+        await new Promise(resolve => setTimeout(resolve, 300))
+
+        loadingInstance.close()
+        loadingInstance = null
+
+        ElMessage.success('Checklist 生成成功！')
+      } else {
+        // 如果失败，关闭 loading 并提示
+        loadingInstance.close()
+        loadingInstance = null
+        ElMessage.error('生成失败，请检查参数后重试')
+      }
+    } catch (error) {
+      console.error('Submit error:', error)
+      if (loadingInstance) {
+        loadingInstance.close()
+        loadingInstance = null
+      }
+      ElMessage.error('提交失败，请重试')
+    }
+  }
+
+  // 处理 ReBuild：回到 Step2 重新提交
+  async function handleReBuild() {
+    // 重置 Step2 状态
+    steps[1].status = 'wait'
+    step2Result.value = null
+
+    // 如果 Step3 已渲染，重置其数据
+    if (step3Ref.value) {
+      step3Ref.value.setCheckListData(null)
+    }
+
+    // 等待 DOM 更新后重新聚焦到 Step2
+    await nextTick()
+    jumpToModule(2)
+
+    ElMessage.info('已返回 Step2，请修改参数后重新生成')
+  }
+
+  // 如果需要在 Step2 重新提交后更新 Step3
+  async function reSubmitStep2() {
+    const result = await step2Ref.value.submitConditions()
+    if (result) {
+      step2Result.value = result
+      steps[1].status = 'success'
+      // 更新 Step3 数据
+      await nextTick()
+      step3Ref.value?.setCheckListData(result)
+    }
   }
 
 let resizeObserver=null
@@ -175,6 +276,20 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+  .custom-loading-class {
+    .el-loading-text {
+      font-size: 16px;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .el-loading-spinner {
+      .circular {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  }
 .reviewContainer{
   height: 100%;
   width: 100%;
