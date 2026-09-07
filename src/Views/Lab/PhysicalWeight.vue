@@ -136,6 +136,7 @@
               <el-table-column label="条数" width="80" align="right"><template #default="s">{{ s.row.pc }}</template></el-table-column>
               <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(4) }}</template></el-table-column>
               <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="oz/dozen" width="100" align="right"><template #default="s">{{ s.row.ozd?.toFixed(4) }}</template></el-table-column>
             </template>
             <el-table-column label="测试时间" min-width="155"><template #default="s">{{ ts(s.row.t) }}</template></el-table-column>
           </el-table>
@@ -274,6 +275,7 @@ const sel = ref([])
 // ---- 换算常量 ----
 const OZ_PER_YD_TO_G_PER_M = 31.0035   // 1 oz/yd = 31.0035 g/m
 const LB_TO_G = 453.592                 // 1 lb = 453.592 g
+const OZ_TO_G = 28.3495                 // 1 oz = 28.3495 g
 
 // ---- 串口底层 (Sartorius BSA) ----
 // 注意: USB转串口多数不支持硬件流控, 优先用非流控 + 手动DTR/RTS模拟握手
@@ -488,8 +490,8 @@ function record() {
   } else {
     const pc = +pieceCount.value || 0
     if (pc <= 0) { ElMessage.warning('条数>0'); return }
-    const gp = +(w / pc).toFixed(4), lbd = +(gp * 12 / LB_TO_G).toFixed(4)
-    rows.push({ ...base, pc, gp, lbd })
+    const gp = +(w / pc).toFixed(4), lbd = +(gp * 12 / LB_TO_G).toFixed(4), ozd = +(gp * 12 / OZ_TO_G).toFixed(4)
+    rows.push({ ...base, pc, gp, lbd, ozd })
     ElMessage.success(`g/piece=${gp}  lb/dozen=${lbd}`)
   }
 }
@@ -538,7 +540,7 @@ async function doReport() {
       testMethod: '',
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null }))
+      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, ozPerDozen: r.ozd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null }))
     })
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
     const { downloadUrl, fileName } = res.data.value
