@@ -82,7 +82,7 @@
 
         <!-- 试样条重 (条重) -->
         <div v-if="testType==='piece'" class="card">
-          <div class="ctitle"><el-icon><Grid /></el-icon>试样条重</div>
+          <div class="ctitle"><el-icon><Grid /></el-icon>试样条重 (piece)</div>
           <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" placeholder="称重条数 (默认12)"/>
         </div>
       </div>
@@ -538,7 +538,7 @@ async function doReport() {
       testMethod: '',
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null }))
+      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null }))
     })
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
     const { downloadUrl, fileName } = res.data.value
