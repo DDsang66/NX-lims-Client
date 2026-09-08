@@ -873,8 +873,8 @@
         paramStructureId: dialogForm.value.id,
         paramName: dialogForm.value.name,
         engineLayer: dialogForm.value.engineLayer || '',
-        isEligibleAsCondition: dialogForm.value.isEligibleAsCondition, 
-        buyerCodes: dialogForm.value.buyerCodes || [],
+        isEligibleAsCondition: dialogForm.value.isEligibleAsCondition === 'True' ? true : false,
+        buyerIds: dialogForm.value.buyerCodes || [],
         formulaId: dialogForm.value.formulaId,
         standardFamilyIds: dialogForm.value.standardFamilyIds,
         ruleIds: dialogForm.value.ruleIds,
@@ -887,6 +887,8 @@
             : {}
         }
       };
+
+      console.log("submitdata:", requestData)
 
       const isEdit = dialogTitle.value === 'Edit Param Structure';
       const url = isEdit ? '/ParamStructure/update' : '/ParamStructure/add';
