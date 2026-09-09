@@ -831,6 +831,15 @@ function globalMouseDown(e) {
       // 处理有分组的情况
       if (menu.groups) {
         for (const group of menu.groups) {
+
+          let groupName = group.name?.trim() || 'Default'
+
+          // 可选：如果组名是数字或空，生成有意义的名称
+          if (!isNaN(groupName) || groupName === '') {
+            groupName = `Group${groupCounter}`
+            groupCounter++
+          }
+
           for (const item of group.items) {
             if (item.samples && item.samples.length > 0) {
               // 转换 standardCode 为 standardIds 数组（ID 列表）
@@ -855,7 +864,7 @@ function globalMouseDown(e) {
                 buyerModifiedTestItemId: null,
                 standardIds: standardIds,  // ← 现在是 ID 列表
                 buyerModifiedTextMethodId: null,
-                testGroup: 0,
+                testGroup: groupName,
                 samples: item.samples || [],
                 requirement: item.requirement || ''
               })
@@ -888,7 +897,7 @@ function globalMouseDown(e) {
               buyerModifiedTestItemId: null,
               standardIds: standardIds,  // ← 现在是 ID 列表
               buyerModifiedTextMethodId: null,
-              testGroup: 0,
+              testGroup: menuName,
               samples: item.samples || [],
               requirement: item.requirement || ''
             })

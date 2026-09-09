@@ -260,38 +260,94 @@ if (props.step2Data) {
 
 /* 按钮处理 --------------------------------------------------------------------------------------*/
 
-async function handleGenerate() {
-  if (!checkListData.value?.checklistId) {
-    ElMessage.warning('No checklist to generate')
-    return
-  }
-  
-  try {
-    await ElMessageBox.confirm(
-      'This will finalize the checklist. Continue?',
-      'Confirm Generate',
-      { confirmButtonText: 'Generate', cancelButtonText: 'Cancel', type: 'warning' }
-    )
-    
-    loading.value = true
-    const res = await request.post('/review/generate-final', {
-      checklistId: checkListData.value.checklistId
-    })
-    
-    if (res.data.isSuccess) {
-      ElMessage.success('Checklist generated successfully')
-    } else {
-      ElMessage.error(res.data.message || 'Generate failed')
+  async function handleGenerate() {
+    if (!checkListData.value?.checklistId) {
+      ElMessage.warning('No checklist to generate')
+      return
     }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Generate error:', error)
-      ElMessage.error('Error generating checklist')
+
+    try {
+      await ElMessageBox.confirm(
+        'This will finalize the checklist and generate the report. Continue?',
+        'Confirm Generate',
+        { confirmButtonText: 'Generate', cancelButtonText: 'Cancel', type: 'warning' }
+      )
+
+      loading.value = true
+
+      const payload = {
+        checkListId: checkListData.value.checklistId,
+        reportNo: "",
+        reviewer: '',
+        dateTime: new Date().toISOString(),
+        items: checkListData.value.items.map(item => {
+          // 获取 testItem 名称
+          const testItemInfo = props.testItemMap[item.testItemId]
+          const testItemName = testItemInfo?.nameEn
+            || testItemInfo?.nameChn
+            || item.testItemId
+
+          // 获取 standards 名称列表
+          const standardNames = (item.standards || []).map(stdId =>
+            props.standardIdToCodeMap[stdId] || stdId
+          )
+
+          // ✅ 构建处理后的 parameter：使用结构化参数
+          let processedParameter = ''
+
+          // 如果有结构化参数，转换为后端期望的格式
+          if (item.parameters && Array.isArray(item.parameters) && item.parameters.length > 0) {
+            // 构建参数对象
+            const paramObj = {}
+            for (const group of item.parameters) {
+              if (group.group && group.entries && group.entries.length > 0) {
+                const entries = {}
+                for (const entry of group.entries) {
+                  entries[entry.key] = entry.value
+                }
+                paramObj[group.group] = entries
+              }
+            }
+            // 转为 JSON 字符串
+            processedParameter = JSON.stringify(paramObj)
+          } else {
+            // 如果没有结构化参数，使用原始值
+            processedParameter = item.parameter || ''
+          }
+
+          return {
+            testItem: testItemName,
+            standards: standardNames,
+            testGroup: String(item.testGroup || ''),
+            samples: item.samples || [],
+            parameter: processedParameter, // ✅ 使用处理后的参数
+            requirement: item.requirement || '',
+            cuttingMethod: item.cuttingMethod || ''
+          }
+        })
+      }
+
+      const res = await request.post('/review/generate-completed-checklist', payload)
+
+      if (res.data.isSuccess) {
+        ElMessage.success('Checklist generated successfully')
+
+        const docxUrl = res.data.value?.docxUrl || res.data.value?.url
+        if (docxUrl) {
+          window.open(docxUrl, '_blank')
+        }
+      } else {
+        ElMessage.error(res.data.message || 'Generate failed')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('Generate error:', error)
+        ElMessage.error('Error generating checklist')
+      }
+    } finally {
+      loading.value = false
     }
-  } finally {
-    loading.value = false
   }
-}
 
 function handleReBuild() {
   emit('rebuild')
