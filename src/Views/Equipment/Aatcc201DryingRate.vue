@@ -27,7 +27,8 @@
           <div class="st"><span class="dot" :class="{on:connected || simMode}"></span>
             {{ simMode ? '仿真模式（无真机）' : connecting ? '连接中...' : connected ? '已连接 ' + baudRate + ' 8N1' : '未连接' }}
           </div>
-          <div class="st" style="color:#67c23a;" v-if="connected && !simMode"><span class="dot" :class="{on:true}"></span>设备主动推送遥测</div>
+          <div class="st" style="color:#67c23a;" v-if="connected && !simMode && recvTelemetry"><span class="dot on"></span>设备主动推送遥测</div>
+          <div class="st" style="color:#e6a23c;" v-else-if="connected && !simMode"><span class="dot"></span>等待设备遥测…</div>
         </div>
 
         <!-- 样品区 -->
@@ -36,30 +37,31 @@
           <div class="row row-col"><span class="lbl">报告号</span>
             <span class="repno">
               <el-input v-model="rep1" size="small" style="width:38px" disabled/>
-              <el-select v-model="rep2" size="small" style="width:58px" :disabled="testing1 || testing2"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
-              <el-select v-model="rep3" size="small" style="width:52px" :disabled="testing1 || testing2"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
-              <el-input v-model="rep4" size="small" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="testing1 || testing2"/>
-              <el-input v-model="rep5" size="small" style="width:40px" :disabled="testing1 || testing2"/>
+              <el-select v-model="rep2" size="small" style="width:58px" :disabled="anyTesting"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
+              <el-select v-model="rep3" size="small" style="width:52px" :disabled="anyTesting"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
+              <el-input v-model="rep4" size="small" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="anyTesting"/>
+              <el-input v-model="rep5" size="small" style="width:40px" :disabled="anyTesting"/>
             </span>
           </div>
           <div class="row"><span class="lbl">样品名称</span>
-            <el-input v-model="sampleName" size="small" :disabled="testing1 || testing2"/>
+            <el-input v-model="sampleName" size="small" :disabled="anyTesting"/>
           </div>
           <div class="row"><span class="lbl">环境温度</span>
-            <el-input v-model="temperature" size="small" placeholder="℃" :disabled="testing1 || testing2"/>
+            <el-input v-model="temperature" size="small" placeholder="℃" :disabled="anyTesting"/>
           </div>
           <div class="row"><span class="lbl">环境湿度</span>
-            <el-input v-model="humidity" size="small" placeholder="%" :disabled="testing1 || testing2"/>
+            <el-input v-model="humidity" size="small" placeholder="%" :disabled="anyTesting"/>
           </div>
           <div class="row"><span class="lbl">滴水量</span>
-            <el-input-number v-model="waterMl" :min="0.01" :max="10" :precision="2" :step="0.01" size="small" style="width:110px;" :disabled="testing1 || testing2" controls-position="right"/>
+            <el-input-number v-model="waterMl" :min="0.01" :max="10" :precision="2" :step="0.01" size="small" style="width:110px;" :disabled="anyTesting" controls-position="right"/>
             <span class="lbl">mL</span>
           </div>
         </div>
 
-        <!-- 工位操作 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><VideoPlay /></el-icon>工位测试</div>
+        <!-- 测试: 标准测 3 次 → 报告 #1=工位1 首次、#2=工位2 首次、#3=测试3(任选工位重测) -->
+        <!-- test-card: 取消 .row 的 bootstrap -15px 负边距, 使测试3/清空重测行与上方 .btn-grid 按钮同左边界 -->
+        <div class="card test-card">
+          <div class="ctitle"><el-icon><VideoPlay /></el-icon>测试</div>
           <div class="btn-grid">
             <el-button size="small" :type="testing1 ? 'danger' : 'primary'" :disabled="!canStart" @click="toggleTest(1)">
               {{ testing1 ? '工位1 停止' : '工位1 测试' }}
@@ -68,7 +70,23 @@
               {{ testing2 ? '工位2 停止' : '工位2 测试' }}
             </el-button>
           </div>
-          <div class="st" style="margin-top:6px;">{{ statusText }}</div>
+          <!-- 无左缩进: 测试3 行与上方两按钮同从卡片内容左缘起(行左边界 = 按钮框左边界) -->
+          <div class="row" style="margin-top:8px;">
+            <span class="lbl">测试3</span>
+            <el-select v-model="test3Station" size="small" style="width:104px"
+              :disabled="!test3Unlocked || testing3 || computing">
+              <el-option :value="1" label="重测 工位1"/><el-option :value="2" label="重测 工位2"/>
+            </el-select>
+            <el-button size="small" :type="testing3 ? 'danger' : 'warning'" style="flex:1;"
+              :disabled="!(testing3 || canStart3)" @click="toggleTest3">
+              {{ testing3 ? '停止测试3' : '开始测试3' }}
+            </el-button>
+          </div>
+          <div class="st" v-if="!test3Unlocked && !anyTesting" style="color:#e6a23c;">先完成工位1、工位2 首次测试(均有结果)后开放测试3</div>
+          <div class="row" style="justify-content:flex-end;margin-top:2px;">
+            <el-button size="small" text type="danger" :disabled="anyTesting || !computeResult" @click="resetAll">清空重测</el-button>
+          </div>
+          <div class="st" style="margin-top:2px;">{{ statusText }}</div>
         </div>
 
         <!-- 校准参数 -->
@@ -114,7 +132,7 @@
         <!-- 两条温度曲线 -->
         <div class="card" v-for="s in [1, 2]" :key="s">
           <div class="ctitle"><el-icon><TrendCharts /></el-icon>工位{{ s }} 表面温度曲线 (℃/点数)
-            <span class="st" style="margin:0 0 0 auto;">{{ testing1 && s === 1 || testing2 && s === 2 ? '● 记录中' : '空闲' }}</span>
+            <span class="st" style="margin:0 0 0 auto;">{{ busyLabel(s) }}</span>
           </div>
           <v-chart :option="chartOpts[s-1]" autoresize style="height:190px;"/>
         </div>
@@ -123,7 +141,10 @@
         <div class="card">
           <div class="ctitle"><el-icon><Tickets /></el-icon>计算结果</div>
           <el-table :data="resultRows" border stripe size="small" class="removeTableGaps" style="width:100%;">
-            <el-table-column prop="station" label="工位" width="60" align="center"/>
+            <el-table-column prop="no" label="#" width="52" align="center"/>
+            <el-table-column label="工位" width="60" align="center">
+              <template #default="{ row }">{{ row.participated ? row.station : '-' }}</template>
+            </el-table-column>
             <el-table-column label="滴水量(mL)" align="right">
               <template #default="{ row }">{{ row.participated ? row.waterMl.toFixed(2) : '-' }}</template>
             </el-table-column>
@@ -148,22 +169,32 @@
     </div>
 
     <!-- 历史报告列表 -->
-    <el-dialog v-model="historyVisible" title="历史报告文件" width="640px">
+    <el-dialog v-model="historyVisible" title="历史报告文件" width="880px">
       <div class="filter-row">
-        <el-input v-model="historyKeyword" size="small" placeholder="按报告号筛选" style="width:220px;"/>
-        <el-button size="small" type="primary" @click="loadHistory" style="margin-left:6px;">查询</el-button>
+        <el-input v-model="historyKeyword" size="small" clearable placeholder="按报告号 / 样品名称筛选" style="width:220px;"/>
+        <el-button size="small" type="success" :disabled="!canCombine" :loading="combining"
+                   @click="combineSelected" style="margin-left:6px;">
+          合并所选报告{{ historySelection.length >= 2 ? `(${historySelection.length})` : '' }}
+        </el-button>
+        <span class="combine-hint">(勾选同一报告号下的多个样品, 合成一份报告)</span>
       </div>
-      <el-table :data="historyList" border stripe size="small" class="removeTableGaps" style="width:100%;">
+      <el-table :data="filteredHistory" border stripe size="small" class="removeTableGaps" style="width:100%;"
+                @selection-change="onHistorySelect">
+        <el-table-column type="selection" width="42"/>
         <el-table-column prop="reportNumber" label="报告号" width="160"/>
+        <el-table-column prop="sampleName" label="样品名称" min-width="150" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.sampleName || '-' }}</template>
+        </el-table-column>
         <el-table-column label="生成时间" width="170">
           <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
         </el-table-column>
         <el-table-column label="大小" width="90">
           <template #default="{ row }">{{ (row.sizeBytes / 1024).toFixed(1) }} KB</template>
         </el-table-column>
-        <el-table-column label="操作" align="center">
+        <el-table-column label="操作" align="center" width="140">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="downloadFile(row.fileName)">下载</el-button>
+            <el-button size="small" type="danger" @click="deleteFile(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -211,7 +242,7 @@
 
 <script setup>
 import { ref, reactive, computed, inject, onBeforeUnmount, onMounted, onActivated, onDeactivated, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, SwitchButton, Link, Document, Setting, VideoPlay, Files, Download, Monitor, TrendCharts, Tickets, Tools } from '@element-plus/icons-vue'
 
 // ============================================================
@@ -236,6 +267,23 @@ const portCfg = ref(null)
 const baudRate = ref(19200)
 const rates = [9600, 19200, 38400, 115200]
 
+// ---- 遥测活性(看门狗): 真收到 AB BA 遥测帧才显示绿字"设备主动推送遥测" ----
+// 串口能打开 ≠ 设备在推遥测(AATCC 是设备主推, 机器没上电/没开机时端口照样能开)——
+// connected 只表示端口开着; recvTelemetry 由 handleTelemetry 置真, 超时看门狗清假。
+const lastFrameMs = ref(0)
+const recvTelemetry = ref(false)
+const TELEMETRY_STALE_MS = 3000   // 超过 3s 无遥测帧 → 判定设备不在推送
+let telemetryWatchdog = null
+function startTelemetryWatchdog() {
+  stopTelemetryWatchdog()
+  telemetryWatchdog = setInterval(() => {
+    if (recvTelemetry.value && Date.now() - lastFrameMs.value > TELEMETRY_STALE_MS) recvTelemetry.value = false
+  }, 1000)
+}
+function stopTelemetryWatchdog() {
+  if (telemetryWatchdog) { clearInterval(telemetryWatchdog); telemetryWatchdog = null }
+}
+
 // ---- 样品 ----
 // 五段式报告号 (照 PhysicalWeight): 87. + 405./441. + 两位年份. + 4位序号 + .01
 const twoDigitYear = new Date().getFullYear() % 100
@@ -257,10 +305,20 @@ const temperature = ref('')
 const humidity = ref('')
 const waterMl = ref(0.2)
 
-// ---- 测试状态 (每工位独立) ----
-const testing1 = ref(false)
-const testing2 = ref(false)
+// ---- 测试状态 (3 个报告槽位) ----
+// 报告固定槽位: #1=槽1(工位1 首次)、#2=槽2(工位2 首次)、#3=槽3(测试3 = 两工位首测后任选工位重测的标准第 3 次测定)。
+// 同一物理工位同一时刻最多一个活动槽(测试3 复用工位 → 帧进独立第 3 槽, 不覆盖该工位首次数据)。
+const SLOT_COUNT = 3
+const activeTest = reactive([false, false, false])    // 各槽是否在记录遥测
+const test3Station = ref(1)                           // 测试3 选用的物理工位 1|2
+const slotHasResult = reactive([false, false, false]) // 最近一次计算里各槽 Participated(测试3 开放 = 槽1&槽2 都有结果)
+const testing1 = computed(() => activeTest[0])        // 模板沿用旧名: 槽1 = 工位1 首次
+const testing2 = computed(() => activeTest[1])        // 槽2 = 工位2 首次
+const testing3 = computed(() => activeTest[2])        // 槽3 = 测试3
+const anyTesting = computed(() => activeTest[0] || activeTest[1] || activeTest[2])
 const statusText = ref('就绪')
+const slotStation = idx => idx === 0 ? 1 : idx === 1 ? 2 : test3Station.value // 槽位 → 物理工位(送算用)
+const testStart = [0, 0, 0]                           // 各槽帧的真实秒起点
 
 // ---- 实时显示 (含偏置) ----
 const liveSurface = ref([0, 0])
@@ -269,8 +327,10 @@ const liveWind = ref([0, 0])
 const liveCover = ref([0, 0])
 const livePower = ref([0, 0])
 
-// ---- 每工位帧序列 (送后端权威计算) ----
-const stFrames = reactive([[], []])
+// ---- 每槽位帧序列 (送后端权威计算; 槽位对齐: stFrames[i] ↔ 报告 #(i+1)) ----
+const stFrames = reactive([[], [], []])
+// ---- 每物理工位实时图所展示的数据槽(本工位最新会话: 测试3 在工位1 跑 → 工位1 那张图显示第 3 槽) ----
+const chartSlot = ref([0, 1])
 
 // ---- 校准参数 ----
 const config = ref(null)              // GET aatcc201-config 回显
@@ -288,11 +348,14 @@ const computeResult = ref(null)
 const computing = ref(false)
 const resultRows = computed(() => {
   const r = computeResult.value
-  if (!r) return Array.from({ length: 2 }, (_, i) => ({ station: i + 1, participated: false }))
-  return r.stations.map(s => ({
-    station: s.station, participated: s.participated, waterMl: s.waterMl, rateMgPerHour: s.rateMgPerHour,
-    rateGPerHour: s.rateGPerHour, dryingTimeSec: s.dryingTimeSec, startPoint: s.startPoint, endPoint: s.endPoint
-  }))
+  const mk = (i, s) => ({
+    no: '#' + (i + 1),                                // 报告槽位标号
+    station: s?.station ?? slotStation(i),            // 物理工位(测试3 可能重复)
+    participated: !!s?.participated,
+    waterMl: s?.waterMl ?? 0, rateMgPerHour: s?.rateMgPerHour ?? 0, rateGPerHour: s?.rateGPerHour ?? 0,
+    dryingTimeSec: s?.dryingTimeSec ?? 0, startPoint: s?.startPoint ?? 0, endPoint: s?.endPoint ?? 0
+  })
+  return [0, 1, 2].map(i => mk(i, r?.stations?.[i]))
 })
 
 // ---- 历史报告 ----
@@ -307,6 +370,11 @@ function ts(s) { if (!s) return '-'; const d = new Date(s); return `${d.getFullY
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 const canStart = computed(() => (connected.value || simMode.value) && !!sampleName.value.trim() && reportNoReady.value)
+// 测试3 开放 = 槽1(工位1 首次)、槽2(工位2 首次)都参与出结果; 任一没结果 → 该工位"首次测试"按钮仍可重跑
+const test3Unlocked = computed(() => slotHasResult[0] && slotHasResult[1])
+const canStart3 = computed(() => canStart.value && test3Unlocked.value)
+// 实时图卡片状态: 某物理工位正被 #N 槽测试记录
+const busyLabel = st => { const slot = activeSlotOn(st); return slot ? `● #${slot} 记录中` : '空闲' }
 
 // ============================================================
 // Web Serial 基建 (二进制, 按 AB BA 头同步切帧)
@@ -395,6 +463,8 @@ async function connect() {
     portCfg.value = await _open(p, baudRate.value)
     portObj.value = p
     connected.value = true
+    recvTelemetry.value = false   // 端口刚开还没收到帧 → 等首帧置真, 不先显示绿字
+    lastFrameMs.value = 0
     recoverCount = 0
     await startLoop()
     ElMessage.success('已连接 ' + baudRate.value + ' 8N1')
@@ -407,16 +477,17 @@ async function disconnect() {
   await _close(portObj.value)
   portObj.value = null
   connected.value = false
-  toggleTest(1, true, true); toggleTest(2, true, true)
+  recvTelemetry.value = false; lastFrameMs.value = 0
+  stopAllActive()
   ElMessage.info('已断开')
 }
 
 const onPortDisconnect = (e) => {
   if (portObj.value && e.port === portObj.value) {
     stopLoop(); connected.value = false; portObj.value = null
-    stopSimTelemetry()
+    recvTelemetry.value = false; lastFrameMs.value = 0
     // 拔线: 静默重置测试状态, 不触发 compute(残缺序列无意义); 原 bug 是 testing 永久为 true 卡死
-    toggleTest(1, true, true); toggleTest(2, true, true)
+    stopAllActive()
     statusText.value = '设备已移除, 测试中止'
     ElMessage.warning('设备已移除, 测试中止')
   }
@@ -459,6 +530,9 @@ function dispatchFrame(frame) {
 
 // AB BA 01 + 16 字节遥测帧
 function handleTelemetry(f) {
+  // 遥测帧到达 = 设备在推送 → 刷新活性; 看门狗超时后会自动清掉
+  lastFrameMs.value = Date.now()
+  recvTelemetry.value = true
   const rawS1 = f[3] * 256 + f[4]
   const rawS2 = f[5] * 256 + f[6]
   const rawB1 = f[7] * 256 + f[8]
@@ -487,13 +561,14 @@ function handleTelemetry(f) {
   livePower.value[0] = p1
   livePower.value[1] = p2
 
-  // 记录测试帧 (送后端)
+  // 记录测试帧(按物理工位路由到当前活动槽): 同一物理工位同一时刻最多一个活动槽,
+  // 测试3 若复用工位1 → 工位1 的帧进第 3 槽, 不覆盖槽1 的首次数据
   const now = Date.now()
-  if (testing1.value) {
-    stFrames[0].push({ surfaceRaw01: rawS1, boardRaw01: rawB1, coverStatus: c1, frameTimeSec: (now - testStart[0]) / 1000 })
-  }
-  if (testing2.value) {
-    stFrames[1].push({ surfaceRaw01: rawS2, boardRaw01: rawB2, coverStatus: c2, frameTimeSec: (now - testStart[1]) / 1000 })
+  const stData = [[rawS1, rawB1, c1, 0], [rawS2, rawB2, c2, 1]]
+  for (const [sRaw, bRaw, cv, phyIdx] of stData) {
+    const slot = activeSlotOn(phyIdx + 1) - 1
+    if (slot >= 0)
+      stFrames[slot].push({ surfaceRaw01: sRaw, boardRaw01: bRaw, coverStatus: cv, frameTimeSec: (now - testStart[slot]) / 1000 })
   }
   refreshCharts()
 }
@@ -514,46 +589,68 @@ function applyJitter(st, raw) {
 }
 
 // ============================================================
-// 工位测试开关
+// 测试开关 (3 槽位): toggleTest(工位1|2 首次测试) / toggleTest3(测试3 任选工位重测)
 // ============================================================
 
-const testStart = [0, 0]
+/// 某物理工位当前的活动槽号(1..3), 无则 0 —— 收帧路由 / 实时"记录中"状态共用
+function activeSlotOn(station) {
+  for (let i = 0; i < SLOT_COUNT; i++)
+    if (activeTest[i] && slotStation(i) === station) return i + 1
+  return 0
+}
 
-function toggleTest(st, forceStop = false, silent = false) {
-  const is1 = st === 1
-  if (forceStop) {
-    if (is1) { testing1.value = false } else { testing2.value = false }
-    // silent=true: 断开/拔线等异常终止 —— 只重置状态, 不触发 compute(残缺序列算出的速率无意义)
-    if (!silent) maybeFinish()
-    return
-  }
-  if (is1) {
-    if (!testing1.value) {
-      const anyRunning = testing1.value || testing2.value  // 首个测试 → 重置仿真序号从头跑曲线
-      stFrames[0] = []; testStart[0] = Date.now(); testing1.value = true
-      statusText.value = '工位1 测试开始 (盖板闭合→打开沿为起点)'
-      if (simMode.value) startSimTelemetry(anyRunning)
-    } else {
-      testing1.value = false; maybeFinish()
-    }
-  } else {
-    if (!testing2.value) {
-      const anyRunning = testing1.value || testing2.value  // 首个测试 → 重置仿真序号从头跑曲线
-      stFrames[1] = []; testStart[1] = Date.now(); testing2.value = true
-      statusText.value = '工位2 测试开始 (盖板闭合→打开沿为起点)'
-      if (simMode.value) startSimTelemetry(anyRunning)
-    } else {
-      testing2.value = false; maybeFinish()
-    }
-  }
+function beginSlot(slot, station, keepSeq) {
+  stFrames[slot] = []                  // 新测试清空该槽(槽独立, 不碰其它槽/工位首次数据)
+  testStart[slot] = Date.now()
+  activeTest[slot] = true
+  slotHasResult[slot] = false          // 正在重测 → 旧结果作废, 待本次停止重算
+  chartSlot.value[station - 1] = slot  // 该工位实时图 = 本工位最新会话
+  statusText.value = slot === 2
+    ? `测试3 (工位${station} 重测) 开始 —— 盖板闭合→打开沿为起点`
+    : `工位${station} 测试开始 (盖板闭合→打开沿为起点)`
+  if (simMode.value) startSimTelemetry(keepSeq)   // 首个活动槽 → 仿真序号清零从头跑
+}
+
+function toggleTest(st) {
+  // 工位 st 的"首次测试"→ 固定槽 st(#st)。运行中点击 = 停止(→计算); 已有结果再点 = 重测覆盖该槽
+  const slot = st - 1
+  if (activeTest[slot]) { activeTest[slot] = false; maybeFinish(); return }
+  if (!canStart.value) return
+  if (activeSlotOn(st)) { ElMessage.warning(`工位${st} 正在被其它测试占用, 先停止再开始`); return }
+  if (slotHasResult[slot]) ElMessage.info(`工位${st} 重测: 将覆盖报告 #${st} 原结果`)
+  beginSlot(slot, st, anyTesting.value)
+}
+
+function toggleTest3() {
+  // 测试3(槽3): 两工位首测都有结果后开放; 任选工位重测一次 = 标准第 3 次测定, 并入报告 #3 行
+  const slot = 2
+  if (activeTest[slot]) { activeTest[slot] = false; maybeFinish(); return }
+  if (!canStart3.value) return
+  const st = test3Station.value
+  if (activeSlotOn(st)) { ElMessage.warning(`工位${st} 正在测试中, 先停止再开始测试3`); return }
+  beginSlot(slot, st, anyTesting.value)
+}
+
+// 断开/拔线等异常终止: 只停所有活动槽, 不触发 compute(残缺序列算出的速率无意义)
+function stopAllActive() {
+  for (let i = 0; i < SLOT_COUNT; i++) if (activeTest[i]) activeTest[i] = false
+  stopSimTelemetry()
 }
 
 function maybeFinish() {
-  if (!testing1.value && !testing2.value) {
-    statusText.value = '测试已停止, 计算中...'
-    stopSimTelemetry()
-    compute()
-  }
+  if (anyTesting.value) return
+  stopSimTelemetry()
+  statusText.value = '测试已停止, 计算中...'
+  compute()
+}
+
+function resetAll() {
+  // 清空本样品全部槽位数据/结果, 换样品或测坏了重来
+  stopAllActive()
+  for (let i = 0; i < SLOT_COUNT; i++) { stFrames[i] = []; slotHasResult[i] = false }
+  chartSlot.value = [0, 1]
+  computeResult.value = null
+  statusText.value = '已清空, 可重新开始'
 }
 
 // ============================================================
@@ -569,10 +666,13 @@ async function compute() {
       sampleName: sampleName.value.trim(),
       temperature: temperature.value,
       humidity: humidity.value,
-      stations: [0, 1].map(i => ({ waterMl: waterMl.value, frames: stFrames[i] }))
+      // 槽位对齐(后端契约): 列表第 i 项 = 报告 #(i+1); 未测的中间槽传空 Frames 占位, 否则会挤位
+      stations: [0, 1, 2].map(i => ({ station: slotStation(i), waterMl: waterMl.value, frames: stFrames[i] }))
     })
     if (res.data?.isSuccess) {
       computeResult.value = res.data.value
+      const sts = res.data.value?.stations || []
+      for (let i = 0; i < SLOT_COUNT; i++) slotHasResult[i] = !!sts[i]?.participated
       statusText.value = '计算完成'
     } else {
       statusText.value = '空闲'
@@ -611,13 +711,24 @@ function downloadBlob(downloadUrl, fileName) {
 }
 
 // ---- 历史报告 ----
+// 打开对话框拉全量(不带 keyword, 报告号/样品名称本地筛), 筛选交给 computed —— 改动输入即出结果, 不再打后端。
+// 样品名是后端从每份 docx 里读回来的, 所以列表每份都有; 报告号列还是原始文件名里的报告号。
 async function loadHistory() {
   try {
-    const res = await api.get('/MoistureDryingRate/reports', { params: { mode: 'aatcc201', keyword: historyKeyword.value.trim() || undefined } })
+    const res = await api.get('/MoistureDryingRate/reports', { params: { mode: 'aatcc201' } })
     historyList.value = res.data?.isSuccess ? res.data.value : []
   } catch (e) { ElMessage.error('查询失败: ' + e.message) }
 }
 watch(historyVisible, v => { if (v) loadHistory() })
+
+const filteredHistory = computed(() => {
+  const keyword = historyKeyword.value.trim().toLowerCase()
+  if (!keyword) return historyList.value
+  return historyList.value.filter(r =>
+    (r.reportNumber || '').toLowerCase().includes(keyword) ||
+    (r.sampleName || '').toLowerCase().includes(keyword)
+  )
+})
 
 function downloadFile(fileName) {
   const backendOrigin = new URL(api.defaults.baseURL).origin
@@ -627,6 +738,55 @@ function downloadFile(fileName) {
     a.style.display = 'none'; document.body.appendChild(a); a.click()
     document.body.removeChild(a); URL.revokeObjectURL(url)
   }).catch(e => ElMessage.error('下载失败: ' + e.message))
+}
+
+// 删除报告: 物理删除不可恢复 → 先二次确认; 文件名就是列表给的原名(后端再挡一次路径穿越)
+async function deleteFile(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除报告「${row.reportNumber}」${row.sampleName ? ' 样品 ' + row.sampleName : ''} 吗? 删除后不可恢复。`,
+      '删除确认', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+  } catch { return }   // 取消/关闭 → 什么都不做
+
+  try {
+    const res = await api.delete(`/MoistureDryingRate/reports/${encodeURIComponent(row.fileName)}`)
+    if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '删除失败'); return }
+    ElMessage.success('已删除')
+    historySelection.value = []   // 删完重新拉列表, 勾选跟着清掉
+    loadHistory()
+  } catch (e) { ElMessage.error('网络错误: ' + e.message) }
+}
+
+// ---- 合并所选报告 (同一报告号下、不同时间做的多个样品 → 一份报告, 一个样品一张 Sample 表) ----
+// 样品名从报告 docx 里读回(后端 ListAatcc201Reports 回填 sampleName), 用于分辨同报告号下是哪块样品。
+const historySelection = ref([])
+const combining = ref(false)
+function onHistorySelect(rows) { historySelection.value = rows || [] }
+// 至少 2 份、且报告号一致才可合并(不同报告号 = 不同报告, 后端也会拦)
+const canCombine = computed(() => {
+  const rows = historySelection.value
+  return rows.length >= 2 && rows.every(r => r.reportNumber === rows[0].reportNumber)
+})
+
+async function combineSelected() {
+  const rows = historySelection.value
+  if (rows.length < 2) { ElMessage.warning('请至少勾选 2 份报告'); return }
+  if (!rows.every(r => r.reportNumber === rows[0].reportNumber)) {
+    ElMessage.warning('只能合并同一报告号下的样品'); return
+  }
+  combining.value = true
+  try {
+    const res = await api.post('/MoistureDryingRate/combine/aatcc201', {
+      fileNames: rows.map(r => r.fileName)
+    })
+    if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '合并失败'); return }
+    const { downloadUrl, fileName } = res.data.value
+    ElMessage.success('合并成功, 开始下载')
+    downloadBlob(downloadUrl, fileName)
+    historySelection.value = []   // 重新拉列表 → 行对象换了, 勾选清掉(免得按钮还停在可合并态)
+    loadHistory()                 // 合并产物也进列表(样品名 = 各样品名顿号拼接), 可再被选中继续合并
+  } catch (e) { ElMessage.error('网络错误: ' + e.message) }
+  finally { combining.value = false }
 }
 
 // ============================================================
@@ -786,10 +946,9 @@ function startSimTelemetry(keepSeq = false) {
     // 曲线跑完(平台段已完整) → 照原软件 flat_time_dg 自动结束测试并触发计算
     if (simSeq >= SIM_TOTAL_FRAMES) {
       stopSimTelemetry()
-      const wasTesting = testing1.value || testing2.value
-      testing1.value = false
-      testing2.value = false
-      if (wasTesting) {
+      let anyStopped = false
+      for (let i = 0; i < SLOT_COUNT; i++) if (activeTest[i]) { activeTest[i] = false; anyStopped = true }
+      if (anyStopped) {
         statusText.value = '测试自动结束（温度平台已确认），计算中...'
         compute()
       }
@@ -809,7 +968,8 @@ const chartOpts = ref([buildChartOpt(0), buildChartOpt(1)])
 
 function refreshCharts() {
   for (let st = 0; st < 2; st++) {
-    const temps = stFrames[st].map(f => f.surfaceRaw01 / 100)
+    const src = chartSlot.value[st]                    // 该工位当前展示的数据槽(本工位最新会话)
+    const temps = (stFrames[src] || []).map(f => f.surfaceRaw01 / 100)
     const c = chartOpts.value[st]
     c.series[0].data = temps
     c.xAxis.data = temps.map((_, i) => i + 1)
@@ -834,15 +994,18 @@ function buildChartOpt(st) {
 function pauseAll() {
   stopLoop()
   stopSimTelemetry()
+  stopTelemetryWatchdog()
 }
 async function resumeAll() {
+  startTelemetryWatchdog()
   if (connected.value) await startLoop()
   // keepSeq=true: 恢复时不重置仿真序号, 否则测试中曲线从 0 重头(与已采数据错乱)
   if (simMode.value) startSimTelemetry(true)
 }
 
-// 挂载即载入校准参数(照原软件 MainForm 启动读 201config): 卡片摘要 + 实时偏置叠加立即生效
-onMounted(() => loadConfig())
+// 挂载即载入校准参数(照原软件 MainForm 启动读 201config): 卡片摘要 + 实时偏置叠加立即生效;
+// 看门狗每 1s 巡检一次——收到遥测帧的最近 3s 内才让"设备主动推送遥测"绿字成立
+onMounted(() => { loadConfig(); startTelemetryWatchdog() })
 onBeforeUnmount(() => {
   navigator.serial?.removeEventListener('disconnect', onPortDisconnect)
   pauseAll()
@@ -879,8 +1042,13 @@ onActivated(() => resumeAll())
 .full-width { width: 100% !important; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .btn-grid .el-button { margin: 0; }
+/* 全局 bootstrap.min.css 的 .row 带 margin:0 -15px; 本视图 scoped .row 未重置左右边距 →
+   测试卡片里测试3/清空重测行会比 .btn-grid 按钮整行偏左 15px。此卡片内取消负边距,
+   行左边界(=按钮框左边界)回卡片内容左缘, 右侧也回内容右缘, 与按钮行对齐。 */
+.test-card .row { margin-left: 0; margin-right: 0; }
 /* 对话框筛选行: 全局 bootstrap .row 带 -15px 负边距, 用独立类避免筛选框贴边框 */
 .filter-row { display: flex; align-items: center; gap: 4px; margin: 0 0 8px; width: 100%; }
+.combine-hint { font-size: 12px; color: #909399; margin-left: 8px; }
 .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rt-cell { background: #f7f8fa; border-radius: 8px; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
 .rt-cell .lbl { font-size: 12px; color: #409eff; font-weight: 700; margin-right: 4px; }

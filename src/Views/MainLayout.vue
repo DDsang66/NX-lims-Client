@@ -259,8 +259,6 @@
   </el-container>
 </template>
 <script>
-  import HomeImage from '@/components/Layout/HomeImage.vue'
-  import Header from '@/components/Layout/Header.vue'
   import TabBar from '@/components/Layout/TabBar.vue'
   import { useTabsStore } from '@/stores/tabs'
 
@@ -279,7 +277,6 @@
   import { useRoute } from 'vue-router'
   import { ArrowDown, ArrowUp, Lock, Fold, Expand, HomeFilled, Document, Edit, Files, Setting, User, Operation } from "@element-plus/icons-vue";
   import { useI18n } from "vue-i18n";
-  import userAuthStore from "@/stores/auth.js";
   import { ElMessage } from "element-plus";
 
   export default {

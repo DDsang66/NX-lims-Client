@@ -27,9 +27,13 @@
           <div class="st"><span class="dot" :class="{on:connected || simMode}"></span>
             {{ simMode ? '仿真模式（无真机）' : connecting ? '连接中...' : connected ? '已连接 ' + baudRate + ' 8N1' : '未连接' }}
           </div>
-          <div v-if="!simMode && connected" class="st" style="color:#67c23a;">
-            <span class="dot" :class="{on:true}"></span>设备在线, 握手间隔 {{ spaceTime }}min
+          <div v-if="!simMode && connected" class="st" :style="{ color: handshakeOk ? '#67c23a' : '#e6a23c' }">
+            <span class="dot" :class="{on:true}"></span>
+            <template v-if="handshakeOk">设备握手成功, 采样间隔 {{ spaceTime }}min</template>
+            <template v-else>串口已开, 未收到设备握手回帧 (已收 {{ rxBytes }}B/{{ rxFrames }}帧)</template>
+            <el-button v-if="!handshakeOk" size="small" text type="primary" style="margin-left:6px;" @click="doHandshake">重发握手</el-button>
           </div>
+          <div v-if="!simMode && connected && lastRxHex" class="st" style="color:#909399; word-break:break-all;">RX: {{ lastRxHex }}</div>
         </div>
 
         <!-- 样品区 -->
@@ -195,10 +199,9 @@
     <!-- 历史报告列表 -->
     <el-dialog v-model="historyVisible" title="历史报告文件" width="640px">
       <div class="filter-row">
-        <el-input v-model="historyKeyword" size="small" placeholder="按报告号筛选" style="width:220px;"/>
-        <el-button size="small" type="primary" @click="loadHistory" style="margin-left:6px;">查询</el-button>
+        <el-input v-model="historyKeyword" size="small" clearable placeholder="按报告号筛选" style="width:220px;"/>
       </div>
-      <el-table :data="historyList" border stripe size="small" class="removeTableGaps" style="width:100%;">
+      <el-table :data="filteredHistory" border stripe size="small" class="removeTableGaps" style="width:100%;">
         <el-table-column prop="reportNumber" label="报告号" width="160"/>
         <el-table-column label="生成时间" width="170">
           <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
@@ -206,9 +209,10 @@
         <el-table-column label="大小" width="90">
           <template #default="{ row }">{{ (row.sizeBytes / 1024).toFixed(1) }} KB</template>
         </el-table-column>
-        <el-table-column label="操作" align="center">
+        <el-table-column label="操作" align="center" width="140">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="downloadFile(row.fileName)">下载</el-button>
+            <el-button size="small" type="danger" @click="deleteFile(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -218,7 +222,7 @@
 
 <script setup>
 import { ref, reactive, computed, inject, onBeforeUnmount, onActivated, onDeactivated, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, SwitchButton, Link, Document, Setting, Grid, VideoPlay, Files, Download, Check, DataAnalysis, TrendCharts, Tickets } from '@element-plus/icons-vue'
 
 // ============================================================
@@ -226,8 +230,10 @@ import { Connection, SwitchButton, Link, Document, Setting, Grid, VideoPlay, Fil
 // 协议(ASCII, 19200/8N1, 反编译钉死):
 //   命令: !!!!!!@1 握手 | !!!!!!%4<位图> 去皮 | !!!!!!%3<位图> 称干布
 //         !!!!!!%2<工位1-6> 滴水 | !!!!!!%1<位图> 测试 | !!!!!!%60 解除 | !!!!!!%00 停止
-//   回帧: @<间隔字节> 握手确认 | &1<站'1'-'6'><6位重量mg> 单站重量
-//         &2<站><3位时间><x><3位速率> 设备结果推送 | &3<0架/1布/2水/3蒸发><10站×6位> 批量
+//   回帧: @<间隔字节> 握手确认
+//         &1<rtData[2]><站'1'-'6'><6位重量mg> 单站重量 (10B: 站=index3, 重量=index4..9, index2 忽略)
+//         &2<站><时间><速率> 设备结果推送 (11B, 前端仅消费保持对齐, 不做实时处理)
+//         &3<0架/1布/2水/3蒸发><10站×6位> 批量 (63B)
 // 状态机(dev_status): 1=去皮收架重, 2=称干布, 3/4=测试(首帧定滴水量, 后续帧算蒸发量)
 // 计算落点: 测试中记每工位原始重量时序 rawSeries → 停止 POST compute/nf5022(后端权威)
 //          → 结果表 → POST report/nf5022 → DOCX 存服务器 + 下载
@@ -243,6 +249,12 @@ const portObj = ref(null)
 const portCfg = ref(null)
 const baudRate = ref(19200)
 const rates = [9600, 19200, 38400, 115200]
+
+// ---- 串口诊断 (真机调试: 握手是否成功 / 实际收到多少字节) ----
+const handshakeOk = ref(false)   // 收到设备 @ 回帧才算链路通
+const rxBytes = ref(0)           // 本次连接累计收到的原始字节数
+const rxFrames = ref(0)          // 解析出的完整帧数
+const lastRxHex = ref('')        // 最近一次收到数据块的十六进制预览
 
 // ---- 样品 / 参数 ----
 // 五段式报告号 (照 PhysicalWeight): 87. + 405./441. + 两位年份. + 4位序号 + .01
@@ -372,6 +384,9 @@ async function startLoop() {
         const { value, done } = await reader.read()
         if (done || stopped) break
         if (value && value.length) {
+          rxBytes.value += value.length
+          const hex = Array.from(value).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase()
+          lastRxHex.value = hex.length > 320 ? '…' + hex.slice(-320) : hex
           const dec = new TextDecoder().decode(value)
           rxBuf += dec
           pumpBuffer()
@@ -423,6 +438,7 @@ async function connect() {
     portObj.value = p
     connected.value = true
     recoverCount = 0
+    handshakeOk.value = false; rxBytes.value = 0; rxFrames.value = 0; lastRxHex.value = ''
     await startLoop()
     sendHandshake()
     ElMessage.success('已连接 ' + baudRate.value + ' 8N1')
@@ -462,7 +478,8 @@ if (navigator.serial) navigator.serial.addEventListener('disconnect', onPortDisc
 // 帧解析 (ASCII 缓冲, 按 @ / & 起始符切帧, 半帧拼接)
 // ============================================================
 
-// 从缓冲里取完整帧: @ 帧 2 字节, &1 帧 9 字节, &2 帧 10 字节, &3 帧 63 字节
+// 帧定界 —— 长度照反编译 SplitData 的固定下标解析, 修正此前 9B/10B 的错误假设:
+//   @ 帧 2 字节; &1 帧 10 字节; &2 帧 11 字节; &3 帧 63 字节
 function pumpBuffer() {
   let frames = []
   let i = 0
@@ -475,8 +492,8 @@ function pumpBuffer() {
       if (i + 1 >= rxBuf.length) break
       const sub = rxBuf[i + 1]
       let len = 0
-      if (sub === '1') len = 9
-      else if (sub === '2') len = 10
+      if (sub === '1') len = 10
+      else if (sub === '2') len = 11
       else if (sub === '3') len = 63
       else { i++; continue }
       if (rxBuf.length - i < len) break
@@ -488,28 +505,30 @@ function pumpBuffer() {
 }
 
 function handleFrame(f) {
+  rxFrames.value++
   const c0 = f[0]
   if (c0 === '@') {
     // @<间隔字节> —— 原始字节值, 兼容 ASCII 数字
     const v = f.charCodeAt(1)
     spaceTime.value = (v >= 48 && v <= 57) ? v - 48 : v
+    handshakeOk.value = true
     statusText.value = '设备握手成功, 采样间隔 ' + spaceTime.value + 'min'
     return
   }
   if (c0 !== '&') return
   const sub = f[1]
   if (sub === '1') handleStationWeight(f)
-  // &2 / &3 帧: 设备自推结果/批量, 前端权威计算在后端, 实时显示用 &1 已足够
+  else if (sub === '3') handleBatch3(f)
+  // &2: 设备自推结果(时间/速率), 权威计算在后端, 前端只需消费该帧长度保持对齐, 不做实时处理
 }
 
-// &1<站'1'-'6'><6位重量mg>
+// &1<rtData[2]><站'1'-'6'><6位重量mg> —— 站号 index3, 6 位重量 index4..9 (照反编译 SplitData case"1")
 function handleStationWeight(f) {
-  const stationChar = f.charCodeAt(2)
-  if (stationChar < 49 || stationChar > 54) return
-  const st = stationChar - 49             // 0 基工位
+  const st = f.charCodeAt(3) - 49            // '1'-'6' → 0..5
+  if (st < 0 || st > 5) return
   let w = 0
   for (let k = 0; k < 6; k++) {
-    const d = f.charCodeAt(3 + k) - 48
+    const d = f.charCodeAt(4 + k) - 48
     if (d < 0 || d > 9) return            // 非数字 → 帧损坏, 丢弃
     w = w * 10 + d
   }
@@ -526,6 +545,32 @@ function handleStationWeight(f) {
       break
     default:
       break
+  }
+}
+
+// &3<子类'0'架/'1'布/'2'水/'3'蒸发><10站×6位mg> 批量 (63B, 照反编译 SplitData case"3")
+// 每站 6 位在原代码从 rtData[8+6k] 递减累乘到 rtData[3+6k] —— index8 是高位(index3 低位),
+// 与 &1 的单站正向六位方向相反, 这里照原样镜像(原软件据此与实机跑通)
+function handleBatch3(f) {
+  const kind = f[2]
+  if (kind < '0' || kind > '3') return
+  const weights = []
+  for (let k = 0; k < 10; k++) {
+    let w = 0
+    for (let d = 0; d < 6; d++) {
+      const c = f.charCodeAt(8 + 6 * k - d) - 48   // 8→3 = 高位→低位
+      if (c < 0 || c > 9) return                   // 非数字 → 帧损坏, 整帧丢弃
+      w = w * 10 + c
+    }
+    weights.push(w)
+  }
+  // 机器 6 工位 → 只写前 6 站; 赋值语义照原代码(架/布/水/蒸发各自直接写入对应数组)
+  for (let st = 0; st < 6; st++) {
+    const w = weights[st]
+    if (kind === '0') frameWeight.value[st] = w
+    else if (kind === '1') clothWeight.value[st] = w
+    else if (kind === '2') waterWeight.value[st] = w
+    else if (kind === '3') curEvap.value[st] = w
   }
 }
 
@@ -584,7 +629,18 @@ async function sendCmd(cmd) {
 
 function sendHandshake() {
   sendCmd('!!!!!!@1')
-  setTimeout(() => { if (connected.value) statusText.value = '等待设备握手回帧...' }, 50)
+  // 原实现 50ms 无条件覆盖状态文字 —— @ 回帧快于定时器时会把"握手成功"刷成"等待",
+  // 加 !handshakeOk 守卫: 已成功就不再覆盖
+  setTimeout(() => { if (connected.value && !handshakeOk.value) statusText.value = '等待设备握手回帧...' }, 300)
+}
+
+// 手动重发握手: 设备可能上电时序晚于串口打开, 首次握手没被收到时重发一次即可建链
+function doHandshake() {
+  if (simMode.value || !connected.value) return
+  handshakeOk.value = false
+  statusText.value = '握手命令已重发, 等待设备回帧...'
+  sendCmd('!!!!!!@1')
+  setTimeout(() => { if (connected.value && !handshakeOk.value) statusText.value = '等待设备握手回帧...' }, 300)
 }
 
 function onInput() {
@@ -751,13 +807,36 @@ function downloadBlob(downloadUrl, fileName) {
 }
 
 // ---- 历史报告 ----
+// 打开对话框拉全量(不带 keyword), 报告号筛选交给 computed —— 改动输入即出结果, 不再打后端。
 async function loadHistory() {
   try {
-    const res = await api.get('/MoistureDryingRate/reports', { params: { mode: 'nf5022', keyword: historyKeyword.value.trim() || undefined } })
+    const res = await api.get('/MoistureDryingRate/reports', { params: { mode: 'nf5022' } })
     historyList.value = res.data?.isSuccess ? res.data.value : []
   } catch (e) { ElMessage.error('查询失败: ' + e.message) }
 }
 watch(historyVisible, v => { if (v) loadHistory() })
+
+const filteredHistory = computed(() => {
+  const keyword = historyKeyword.value.trim().toLowerCase()
+  if (!keyword) return historyList.value
+  return historyList.value.filter(r => (r.reportNumber || '').toLowerCase().includes(keyword))
+})
+
+// 删除报告: 物理删除不可恢复 → 先二次确认; 文件名就是列表给的原名(后端再挡一次路径穿越)
+async function deleteFile(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除报告「${row.reportNumber}」吗? 删除后不可恢复。`,
+      '删除确认', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+  } catch { return }   // 取消/关闭 → 什么都不做
+
+  try {
+    const res = await api.delete(`/MoistureDryingRate/reports/${encodeURIComponent(row.fileName)}`)
+    if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '删除失败'); return }
+    ElMessage.success('已删除')
+    loadHistory()
+  } catch (e) { ElMessage.error('网络错误: ' + e.message) }
+}
 
 function downloadFile(fileName) {
   const backendOrigin = new URL(api.defaults.baseURL).origin
@@ -788,12 +867,12 @@ function onSimModeChange() {
 function simulateResponse(kind, arg) {
   setTimeout(() => {
     if (kind === 'tare') {
-      for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + String.fromCharCode(49 + i) + String(12300 + i * 100).padStart(6, '0'))
+      for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(12300 + i * 100).padStart(6, '0'))
     } else if (kind === 'cloth') {
-      for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + String.fromCharCode(49 + i) + String(18300 + i * 50).padStart(6, '0'))
+      for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(18300 + i * 50).padStart(6, '0'))
     } else if (kind === 'drip') {
       const st = arg - 1
-      handleFrame('&1' + String.fromCharCode(49 + st) + String(18500 + st * 60).padStart(6, '0'))
+      handleFrame('&1' + '0' + String.fromCharCode(49 + st) + String(18500 + st * 60).padStart(6, '0'))
     }
   }, 120)
 }
@@ -810,7 +889,7 @@ function startSimTest(keepSeq = false) {
       const water = waterWeight.value[i] || 600
       const evap = Math.min(Math.max(simSeq - 1, 0) * 12, water)
       const raw = frameWeight.value[i] + clothWeight.value[i] + water - evap
-      handleFrame('&1' + String.fromCharCode(49 + i) + String(Math.round(raw)).padStart(6, '0'))
+      handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(Math.round(raw)).padStart(6, '0'))
     }
   }, spaceTime.value * 1000) // 仿真按墙钟毫秒快进(真机间隔是分钟), 60× 快放演示; 数值仍按 sp=分钟自洽
 }
