@@ -112,7 +112,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
   import request from '@/utils/request.js'
   import { BACKEND_BASE } from '@/utils/config.js'
-  import { onStatus, printWord } from '@/utils/printBridge'
+  import { onStatus, printWord, printPdf } from '@/utils/printBridge'
 
   const props = defineProps({
     step1Dom: Object,
@@ -325,19 +325,28 @@ if (props.step2Data) {
           let processedParameter = ''
 
           if (item.parameters && Array.isArray(item.parameters) && item.parameters.length > 0) {
-            const paramObj = {}
+            const lines = []
+
             for (const group of item.parameters) {
               if (group.group && group.entries && group.entries.length > 0) {
-                const entries = {}
-                for (const entry of group.entries) {
-                  entries[entry.key] = entry.value
+                // 过滤掉空 key / 空 value
+                const validEntries = group.entries.filter(
+                  e => e.key && e.value !== undefined && e.value !== null && e.value !== ''
+                )
+
+                if (validEntries.length > 0) {
+                  lines.push(`${group.group}:`)
+                  for (const entry of validEntries) {
+                    lines.push(`${entry.key}: ${entry.value}`)
+                  }
                 }
-                paramObj[group.group] = entries
               }
             }
-            processedParameter = JSON.stringify(paramObj)
+
+            // 有有效数据才赋值，否则保持空字符串
+            processedParameter = lines.length > 0 ? lines.join('\r\n') : ''
           } else {
-            processedParameter = item.parameter || ''
+            processedParameter = ''
           }
 
           return {
@@ -367,19 +376,19 @@ if (props.step2Data) {
         }
 
         // ✅ 拼接成完整 URL
-        const docxUrl = rawUrl.startsWith('http')
+        const pdfUrl = rawUrl.startsWith('http')
           ? rawUrl
           : `${BACKEND_BASE}${rawUrl}`
 
-        console.log("url:", docxUrl)
+        console.log("url:", pdfUrl)
 
-        if (docxUrl) {
+        if (pdfUrl) {
           try {
             // 发送静默打印任务（状态通过 onStatus 全局订阅反馈）
-            await printWord(docxUrl, {
+            await printPdf(pdfUrl, {
               copies: 1,
               // printerName: '',                          // 可选，不传用默认打印机
-               paper: { widthMm: 210, heightMm: 297 }    // 可选，默认 A4
+              paper: { widthMm: 210, heightMm: 297 }    // 可选，默认 A4
             })
             ElMessage.info('打印任务已发送，正在处理...')
           } catch (printError) {
@@ -402,6 +411,7 @@ if (props.step2Data) {
     }
   }
 
+const emit = defineEmits(['rebuild'])
 function handleReBuild() {
   emit('rebuild')
 }
@@ -431,7 +441,6 @@ async function handleSaveDraft() {
   }
 }
 
-const emit = defineEmits(['rebuild'])
 
 function setCheckListData(data) {
   checkListData.value = normalizeCheckListData(data)

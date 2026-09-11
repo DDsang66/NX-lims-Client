@@ -5,7 +5,7 @@ import { API_BASE, DOC_VIEWER } from '@/utils/config.js'
 //旧的请求配置，改为从 config 读取
 const oldConfig = {
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 }
 

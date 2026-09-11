@@ -4,9 +4,6 @@ import { PrintBridgeClient } from 'print-bridge-sdk'
 let client = null
 const statusHandlers = new Set()
 
-/**
- * 初始化 PrintBridge 连接
- */
 export async function connect(options = {}) {
   if (client?.isConnected()) return client
 
@@ -19,7 +16,6 @@ export async function connect(options = {}) {
 
   await client.connect()
 
-  // 连接成功后，注册一次底层 status 监听，向所有订阅者分发
   client.on('status', (event) => {
     statusHandlers.forEach(handler => {
       try {
@@ -33,23 +29,18 @@ export async function connect(options = {}) {
   return client
 }
 
-/**
- * 订阅打印任务状态
- * @param {function} handler - (event) => void，event 含 jobId、status 等字段
- * @returns {function} 取消订阅函数
- */
 export function onStatus(handler) {
   statusHandlers.add(handler)
   return () => statusHandlers.delete(handler)
 }
 
 /**
- * 打印 Word 文档
- * @param {string} fileUrl - 后端 Word 文档下载 URL
+ * 通用打印方法
+ * @param {string} fileUrl - 文件下载 URL
+ * @param {string} type - 文件类型：'docx' | 'pdf'
  * @param {object} options - 打印选项
- * @returns {Promise<{ requestId: string, jobId: string }>}
  */
-export async function printWord(fileUrl, options = {}) {
+async function printFile(fileUrl, type, options = {}) {
   const {
     copies = 1,
     printerName,
@@ -64,7 +55,7 @@ export async function printWord(fileUrl, options = {}) {
   await client.print({
     requestId,
     jobId,
-    type: 'docx',
+    type,          // 'docx' 或 'pdf'
     fileUrl,
     copies,
     printerName,
@@ -72,6 +63,20 @@ export async function printWord(fileUrl, options = {}) {
   })
 
   return { requestId, jobId }
+}
+
+/**
+ * 打印 Word 文档
+ */
+export async function printWord(fileUrl, options = {}) {
+  return printFile(fileUrl, 'docx', options)
+}
+
+/**
+ * 打印 PDF 文档
+ */
+export async function printPdf(fileUrl, options = {}) {
+  return printFile(fileUrl, 'pdf', options)
 }
 
 /**
