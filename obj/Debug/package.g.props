@@ -20,6 +20,7 @@
     <PackageJsonDependenciesElementPlus Condition="$(PackageJsonDependenciesElementPlus) == ''">^2.3.9</PackageJsonDependenciesElementPlus>
     <PackageJsonDependenciesMarked Condition="$(PackageJsonDependenciesMarked) == ''">^15.0.12</PackageJsonDependenciesMarked>
     <PackageJsonDependenciesPinia Condition="$(PackageJsonDependenciesPinia) == ''">^3.0.3</PackageJsonDependenciesPinia>
+    <PackageJsonDependenciesPrintBridgeSdk Condition="$(PackageJsonDependenciesPrintBridgeSdk) == ''">^0.1.3</PackageJsonDependenciesPrintBridgeSdk>
     <PackageJsonDependenciesProcess Condition="$(PackageJsonDependenciesProcess) == ''">^0.11.10</PackageJsonDependenciesProcess>
     <PackageJsonDependenciesQs Condition="$(PackageJsonDependenciesQs) == ''">^6.14.0</PackageJsonDependenciesQs>
     <PackageJsonDependenciesVitePluginInspect Condition="$(PackageJsonDependenciesVitePluginInspect) == ''">^11.3.3</PackageJsonDependenciesVitePluginInspect>
@@ -28,6 +29,7 @@
     <PackageJsonDependenciesVueI18n Condition="$(PackageJsonDependenciesVueI18n) == ''">^12.0.0-alpha.3</PackageJsonDependenciesVueI18n>
     <PackageJsonDependenciesVueRouter Condition="$(PackageJsonDependenciesVueRouter) == ''">^4.5.1</PackageJsonDependenciesVueRouter>
     <PackageJsonDependenciesVuedraggable Condition="$(PackageJsonDependenciesVuedraggable) == ''">^2.24.3</PackageJsonDependenciesVuedraggable>
+    <PackageJsonDependenciesXlsx Condition="$(PackageJsonDependenciesXlsx) == ''">^0.18.5</PackageJsonDependenciesXlsx>
     <PackageJsonDevdependenciesEslintJs Condition="$(PackageJsonDevdependenciesEslintJs) == ''">^9.29.0</PackageJsonDevdependenciesEslintJs>
     <PackageJsonDevdependenciesVitejsPluginVue Condition="$(PackageJsonDevdependenciesVitejsPluginVue) == ''">^6.0.0</PackageJsonDevdependenciesVitejsPluginVue>
     <PackageJsonDevdependenciesEslint Condition="$(PackageJsonDevdependenciesEslint) == ''">^9.29.0</PackageJsonDevdependenciesEslint>

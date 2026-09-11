@@ -200,15 +200,51 @@
     const samplesInGroups = newGroups.flatMap(g => g.testPoints);
     const missingSamples = samples.filter(s => !samplesInGroups.includes(s));
 
+    // ✅ 从 step1Dom 获取 menus
+    const menus = props.step1Dom?.menus || []
+
     missingSamples.forEach(sample => {
+      // ✅ 查找该 sample 属于哪个 menu 和 group
+      let sampleMenu = ''
+      let sampleGroup = ''
+
+      for (const menu of menus) {
+        let found = false
+
+        // 有分组的情况
+        if (menu.groups) {
+          for (const group of menu.groups) {
+            if (group.items.some(item => item.samples?.includes(sample))) {
+              found = true
+              sampleMenu = menu.name
+              sampleGroup = group.name
+              break
+            }
+          }
+        }
+        // 无分组的情况
+        else if (menu.items) {
+          if (menu.items.some(item => item.samples?.includes(sample))) {
+            found = true
+            sampleMenu = menu.name
+            sampleGroup = ''  // 无分组
+            break
+          }
+        }
+
+        if (found) break
+      }
+
       newGroups.push({
         testPoints: [sample],
         conditions: {
-          CheckListId: props.step1Data?.checkListId ?? null,     // ← 新增
-          ConditionPoolId: props.step1Data?.conditionPoolId ?? null,   // ← 新增
-          ReportNo: props.step1Data?.reportNo ?? null,     
+          CheckListId: props.step1Data?.checkListId ?? null,
+          ConditionPoolId: props.step1Data?.conditionPoolId ?? null,
+          ReportNo: props.step1Data?.reportNo ?? null,
           BuyerCode: props.buyerCode ?? null,
           BuyerIsIndividualTraveler: props.buyerIsIndividualTraveler ?? false,
+          Menu: sampleMenu,           // ✅ 该 sample 所属的菜单名
+          TestGroup: sampleGroup,     // ✅ 该 sample 所属的组名（如果有）
         }
       });
     });

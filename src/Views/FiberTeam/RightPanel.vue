@@ -21,6 +21,7 @@
 <script setup>
   import { computed, ref, watch, onBeforeUnmount, onMounted, nextTick } from 'vue'
   import { Document, Menu } from '@element-plus/icons-vue'
+  import { API_BASE } from '@/utils/config.js'
   import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
 
 
@@ -32,7 +33,7 @@
     // 文档URL，用于OnlyOffice预览
     documentUrl: {
       type: String,
-      default: 'http://192.168.68.8:5051/api/fiberdocx/get-docxUrl'
+      default: `${API_BASE}/fiberdocx/get-docxUrl`
     },
     // 文档标题
     documentTitle: {

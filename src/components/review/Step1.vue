@@ -652,7 +652,7 @@ function reportNoCheck(){
         menus: menus.value,
         sampleData: collectSampleData(),
         conditionPoolId: result.conditionPoolId,
-        checkListId: result.checkListId 
+        checkListId: result.checkListId
       })
       return true
     }
@@ -821,7 +821,6 @@ function globalMouseDown(e) {
     }, 50)
   }
 
-  // 收集有 sample 值的行数据
   // 收集有 sample 值的行数据
   function collectSampleData() {
     const items = []

@@ -43,11 +43,12 @@
   import LeftMultiFiberSection from './LeftMultiFiberSection.vue'
   import LeftSingleFiberSection from './LeftSingleFiberSection.vue'
   import RightPanel from './RightPanel.vue'
+  import { API_BASE } from '@/utils/config.js' 
   import '@/assets/css/style.css';
 
   const emit = defineEmits(['confirm']);
   const request = inject('request');
-  const docUrl = ref('http://localhost:5051/api/fiberdocx/get-docxUrl')  // 初始加载模板文档
+  const docUrl = ref(`${API_BASE}/fiberdocx/get-docxUrl`)  // 初始化模板，改为从 config 拼接
   const refreshKey = ref(0)
 
   // Report Number 分段数据

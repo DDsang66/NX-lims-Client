@@ -22,6 +22,7 @@ import { createPinia } from 'pinia';
 import userAuthStore from '@/stores/auth.js'
 import useRoleStore from '@/stores/role.js'
 import request from "@/utils/request.js";
+import * as printBridge from '@/utils/printBridge.js'
 import globalFunctions from "@/utils/globalFunctions.js";
 import i18n from './i18n'
 import router from './router';
@@ -45,7 +46,8 @@ const auth = userAuthStore()
 app.provide('roleStore',useRoleStore())
 app.provide('userAuthStore',auth)
 app.provide('request',request)
-app.provide('funcs',globalFunctions)
+app.provide('funcs', globalFunctions)
+app.provide('printBridge', printBridge)
 
 auth.init()
 app.mount('#mycontent');

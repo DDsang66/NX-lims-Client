@@ -49,28 +49,29 @@
           
           <el-table-column label="Parameter" min-width="280">
             <template #default="scope">
-              <!-- 先用 computed 取值 -->
-              <template v-if="scope.row.parameters && scope.row.parameters.length">
-                <div class="parameterBlock">
-                  <div v-for="(paramGroup, gIdx) in scope.row.parameters"
-                       :key="gIdx"
-                       class="paramGroup">
-                    <span class="paramGroupLabel">{{ paramGroup.group }}</span>
-                    <span class="paramGroupBracket">[</span>
-                    <div class="paramItems">
-                      <div v-for="(entry, eIdx) in paramGroup.entries"
-                           :key="eIdx"
-                           class="paramItem">
-                        <span class="paramKey">{{ entry.key }}</span>
-                        <span class="paramColon">:</span>
-                        <span class="paramValue">{{ entry.value }}</span>
-                      </div>
+              <!-- 1. 空参数：直接显示 - -->
+              <span v-if="scope.row.parameters === '-' || !scope.row.parameters || scope.row.parameters.length === 0"
+                    class="parameterDash">-</span>
+
+              <!-- 2. 结构化参数 -->
+              <div v-else class="parameterBlock">
+                <div v-for="(paramGroup, gIdx) in scope.row.parameters"
+                     :key="gIdx"
+                     class="paramGroup">
+                  <span class="paramGroupLabel">{{ paramGroup.group }}</span>
+                  <span class="paramGroupBracket">[</span>
+                  <div class="paramItems">
+                    <div v-for="(entry, eIdx) in paramGroup.entries"
+                         :key="eIdx"
+                         class="paramItem">
+                      <span class="paramKey">{{ entry.key }}</span>
+                      <span class="paramColon">:</span>
+                      <span class="paramValue">{{ entry.value }}</span>
                     </div>
-                    <span class="paramGroupBracket">]</span>
                   </div>
+                  <span class="paramGroupBracket">]</span>
                 </div>
-              </template>
-              <span v-else class="parameterPlain">{{ scope.row.parameter }}</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column prop="requirement" label="Requirement" min-width="180" />
@@ -98,15 +99,20 @@
         <el-button type="info" @click="handleSaveDraft" :loading="loading">
           {{ $t('saveDraft') || 'Save a Draft' }}
         </el-button>
+        <el-button type="'info'" @click="handleSaveDraft" :loading="loading">
+          {{ $t('sendToPrinter') || 'Send to Printer' }}
+        </el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/utils/request.js'
+  import request from '@/utils/request.js'
+  import { BACKEND_BASE } from '@/utils/config.js'
+  import { onStatus, printWord } from '@/utils/printBridge'
 
   const props = defineProps({
     step1Dom: Object,
@@ -117,6 +123,7 @@ import request from '@/utils/request.js'
 
 const loading = ref(false)
 const checkListData = ref(null)
+  let offStatus = null
 
 // 初始化
 if (props.step2Data) {
@@ -184,8 +191,18 @@ if (props.step2Data) {
           })
         }
       }
-      console.log('parseParameter return:', groups) 
-      return groups.length > 0 ? groups : null
+
+      const totalEntries = groups.reduce((sum, g) => sum + g.entries.length, 0)
+
+      // 如果没有任何有效 key:value，整个字符串重置为 "-"
+      if (totalEntries === 0) {
+        console.log('parseParameter: 无有效参数，重置为 "-"')
+        return '-'
+      }
+
+      console.log('parseParameter return:', groups)
+
+      return groups
     } catch (e) {
       // JSON 解析失败，尝试旧格式解析
       return parseParameterLegacy(paramStr)
@@ -221,16 +238,28 @@ if (props.step2Data) {
         groups.push({ group: groupName, entries })
       }
     }
+    // ✅ 新增：没有任何有效 key:value，重置为 "-"
+    const totalEntries = groups.reduce((sum, g) => sum + g.entries.length, 0)
+    if (totalEntries === 0) {
+      console.log('parseParameterLegacy: 无有效参数，重置为 "-"')
+      return '-'
+    }
 
-    return groups.length > 0 ? groups : null
+    return groups
   }
 
 // 计算显示数据：转换 ID 为名称
   const displayItems = computed(() => {
     if (!checkListData.value?.items) return []
 
-    return checkListData.value.items.map((item, idx) => {
-      // ✅ 用 item.testItemId（不是 item.testItem）
+    // ✅ 先按 testGroup 排序（不改变原始数据）
+    const sortedItems = [...checkListData.value.items].sort((a, b) => {
+      const ga = Number(a.testGroup) || 0
+      const gb = Number(b.testGroup) || 0
+      return ga - gb
+    })
+
+    return sortedItems.map((item, idx) => {
       const testItemInfo = props.testItemMap[item.testItemId]
       const testItemName = testItemInfo?.nameEn
         || testItemInfo?.nameChn
@@ -241,11 +270,9 @@ if (props.step2Data) {
         code: props.standardIdToCodeMap[stdId] || stdId
       }))
 
-      console.log('Item parameters in displayItems:', item.parameters)
-
       return {
         index: idx + 1,
-        testItemId: item.testItemId,  // ✅ 用 item.testItemId
+        testItemId: item.testItemId,
         testItemName,
         standardsDisplay,
         testGroup: item.testGroup,
@@ -273,31 +300,31 @@ if (props.step2Data) {
         { confirmButtonText: 'Generate', cancelButtonText: 'Cancel', type: 'warning' }
       )
 
+      let reportNo = ''
+      if (props.step1Dom) {
+        reportNo = props.step1Dom.reportNo
+      }
+
       loading.value = true
 
       const payload = {
         checkListId: checkListData.value.checklistId,
-        reportNo: "",
+        reportNo: reportNo || '',
         reviewer: '',
         dateTime: new Date().toISOString(),
         items: checkListData.value.items.map(item => {
-          // 获取 testItem 名称
           const testItemInfo = props.testItemMap[item.testItemId]
           const testItemName = testItemInfo?.nameEn
             || testItemInfo?.nameChn
             || item.testItemId
 
-          // 获取 standards 名称列表
           const standardNames = (item.standards || []).map(stdId =>
             props.standardIdToCodeMap[stdId] || stdId
           )
 
-          // ✅ 构建处理后的 parameter：使用结构化参数
           let processedParameter = ''
 
-          // 如果有结构化参数，转换为后端期望的格式
           if (item.parameters && Array.isArray(item.parameters) && item.parameters.length > 0) {
-            // 构建参数对象
             const paramObj = {}
             for (const group of item.parameters) {
               if (group.group && group.entries && group.entries.length > 0) {
@@ -308,10 +335,8 @@ if (props.step2Data) {
                 paramObj[group.group] = entries
               }
             }
-            // 转为 JSON 字符串
             processedParameter = JSON.stringify(paramObj)
           } else {
-            // 如果没有结构化参数，使用原始值
             processedParameter = item.parameter || ''
           }
 
@@ -320,7 +345,7 @@ if (props.step2Data) {
             standards: standardNames,
             testGroup: String(item.testGroup || ''),
             samples: item.samples || [],
-            parameter: processedParameter, // ✅ 使用处理后的参数
+            parameter: processedParameter,
             requirement: item.requirement || '',
             cuttingMethod: item.cuttingMethod || ''
           }
@@ -332,9 +357,37 @@ if (props.step2Data) {
       if (res.data.isSuccess) {
         ElMessage.success('Checklist generated successfully')
 
-        const docxUrl = res.data.value?.docxUrl || res.data.value?.url
+        // 从后端返回的 DTO 中取下载链接
+
+        const rawUrl = res.data.value?.downloadUrl   // "/api/Review/..."
+
+        if (!rawUrl) {
+          ElMessage.warning('未获取到文档下载链接')
+          return
+        }
+
+        // ✅ 拼接成完整 URL
+        const docxUrl = rawUrl.startsWith('http')
+          ? rawUrl
+          : `${BACKEND_BASE}${rawUrl}`
+
+        console.log("url:", docxUrl)
+
         if (docxUrl) {
-          window.open(docxUrl, '_blank')
+          try {
+            // 发送静默打印任务（状态通过 onStatus 全局订阅反馈）
+            await printWord(docxUrl, {
+              copies: 1,
+              // printerName: '',                          // 可选，不传用默认打印机
+               paper: { widthMm: 210, heightMm: 297 }    // 可选，默认 A4
+            })
+            ElMessage.info('打印任务已发送，正在处理...')
+          } catch (printError) {
+            console.error('Print error:', printError)
+            ElMessage.error('打印失败，请检查 PrintBridge 是否已启动')
+          }
+        } else {
+          ElMessage.warning('未获取到文档下载链接')
         }
       } else {
         ElMessage.error(res.data.message || 'Generate failed')
@@ -388,6 +441,22 @@ defineExpose({
   setCheckListData,
   checkListData
 })
+
+  // 在 script setup 中注册状态监听
+  onMounted(() => {
+    offStatus = onStatus((event) => {
+      if (event.status === 'success') {
+        ElMessage.success('打印任务已提交到打印机')
+      } else if (event.status === 'failed') {
+        ElMessage.error('打印失败：' + (event.message || '请检查打印机状态'))
+      }
+    })
+  })
+
+  onUnmounted(() => {
+    // 组件卸载时取消监听，避免内存泄漏
+    offStatus?.()
+  })
 </script>
 
 <style scoped lang="scss">
@@ -544,5 +613,10 @@ defineExpose({
   .parameterPlain {
     color: var(--el-text-color-regular);
     font-size: 13px;
+  }
+
+  .parameterDash {
+    color: #909399;
+    font-size: 14px;
   }
 </style>

@@ -1,14 +1,16 @@
-import axios from 'axios';
 import qs from 'qs'
+import axios from 'axios'
+import { API_BASE, DOC_VIEWER } from '@/utils/config.js'
 
-//旧的请求配置
-const oldConfig={
-  baseURL: 'http://localhost:5051/api',
+//旧的请求配置，改为从 config 读取
+const oldConfig = {
+  baseURL: API_BASE,
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' }
 }
+
 //工厂函数
-function createAxiosInstance(config){
+function createAxiosInstance(config) {
   const instance = axios.create({
     timeout: 10000,
     headers: { 'Content-Type': 'application/json' },
@@ -21,7 +23,7 @@ function createAxiosInstance(config){
       config.headers['accessToken'] = accessToken;
     }
     if (config.method === 'get') {
-      config.paramsSerializer = function(params) {
+      config.paramsSerializer = function (params) {
         return qs.stringify(params, { arrayFormat: 'repeat' })
       }
     }
@@ -46,7 +48,9 @@ function createAxiosInstance(config){
   return instance
 }
 const api = createAxiosInstance(oldConfig)
-api.documentSrc = "http://localhost:5130/web-apps/apps/api/documents/api.js"
+
+// 使用 config 中的 DOC_VIEWER，便于统一配置文档查看脚本地址
+api.documentSrc = `${DOC_VIEWER}/web-apps/apps/api/documents/api.js`
 
 //错误处理的方法
 const errorHandle = (status, info) => {
