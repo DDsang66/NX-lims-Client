@@ -30,7 +30,7 @@
           </div>
           <div class="st"><span class="dot" :class="{on:connected}"></span>{{ connecting ? '连接中...' : connected ? '已连接 ' + cfgInfo : '未连接 — 可手动输入' }}</div>
           <div v-if="connected" class="st" style="color:#67c23a;">
-            <span class="dot" :class="{on:weight!=null}"></span>{{ weight != null ? '读取正常: ' + weight.toFixed(4) : '等待数据... 按天平 PRINT 键' }}
+            <span class="dot" :class="{on:weight!=null}"></span>{{ weight != null ? '读取正常: ' + weight.toFixed(3) : '等待数据... 按天平 PRINT 键' }}
           </div>
         </div>
 
@@ -39,9 +39,9 @@
           <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>重量 (g)</div>
           <div class="wtbox" :class="{live:connected}">
             <span v-if="!connected">
-              <el-input-number v-model="weight" :precision="4" :min="0" :step="0.0001" controls-position="right" style="width:100%" placeholder="手动输入"/>
+              <el-input-number v-model="weight" :precision="3" :min="0" :step="0.001" controls-position="right" style="width:100%" placeholder="手动输入"/>
             </span>
-            <span v-else class="wtval">{{ weight != null ? weight.toFixed(4) : '---' }}</span>
+            <span v-else class="wtval">{{ weight != null ? weight.toFixed(3) : '---' }}</span>
           </div>
         </div>
 
@@ -113,30 +113,30 @@
           <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
         </div>
         <div class="tbl-wrap">
-          <el-table :data="rows" border stripe class="removeTableGaps" style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
+          <el-table ref="tblRef" :data="rows" border stripe class="removeTableGaps" style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
             <el-table-column type="selection" width="40"/>
             <el-table-column prop="ri" label="次数" width="60" align="center"/>
             <el-table-column prop="sid" label="试样编号" width="200"/>
             <el-table-column prop="point" label="试样测点" width="100"/>
-            <el-table-column label="重量(g)" width="100" align="right"><template #default="s">{{ s.row.w?.toFixed(4) }}</template></el-table-column>
+            <el-table-column label="重量(g)" width="100" align="right"><template #default="s">{{ s.row.w?.toFixed(3) }}</template></el-table-column>
             <!-- 面积克重 -->
             <template v-if="testType==='area'">
               <el-table-column label="面积(cm²)" width="100" align="right"><template #default="s">{{ s.row.a?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(4) }}</template></el-table-column>
-              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(3) }}</template></el-table-column>
+              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(3) }}</template></el-table-column>
             </template>
             <!-- 长度克重 -->
             <template v-if="testType==='length'">
               <el-table-column label="长度(cm)" width="100" align="right"><template #default="s">{{ s.row.lc?.toFixed(2) }}</template></el-table-column>
-              <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(4) }}</template></el-table-column>
-              <el-table-column label="oz/yd" width="90" align="right"><template #default="s">{{ s.row.oyd?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(3) }}</template></el-table-column>
+              <el-table-column label="oz/yd" width="90" align="right"><template #default="s">{{ s.row.oyd?.toFixed(3) }}</template></el-table-column>
             </template>
             <!-- 条重 -->
             <template v-if="testType==='piece'">
               <el-table-column label="条数" width="80" align="right"><template #default="s">{{ s.row.pc }}</template></el-table-column>
-              <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(4) }}</template></el-table-column>
-              <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(4) }}</template></el-table-column>
-              <el-table-column label="oz/dozen" width="100" align="right"><template #default="s">{{ s.row.ozd?.toFixed(4) }}</template></el-table-column>
+              <el-table-column label="g/piece" width="90" align="right"><template #default="s">{{ s.row.gp?.toFixed(3) }}</template></el-table-column>
+              <el-table-column label="lb/dozen" width="90" align="right"><template #default="s">{{ s.row.lbd?.toFixed(3) }}</template></el-table-column>
+              <el-table-column label="oz/dozen" width="100" align="right"><template #default="s">{{ s.row.ozd?.toFixed(3) }}</template></el-table-column>
             </template>
             <el-table-column label="测试时间" min-width="155"><template #default="s">{{ ts(s.row.t) }}</template></el-table-column>
           </el-table>
@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, inject, onBeforeUnmount, computed } from 'vue'
+import { ref, reactive, inject, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload, Document } from '@element-plus/icons-vue'
 
@@ -271,6 +271,13 @@ const temp = ref(null)
 const humid = ref(null)
 const rows = reactive([])
 const sel = ref([])
+const tblRef = ref()
+
+// 记录表格超出可视高度时, 新增一条自动滚到底部跟住最新记录(删除/清空不滚)
+watch(() => rows.length, (n, o) => {
+  if (n <= o) return
+  nextTick(() => tblRef.value?.setScrollTop(Number.MAX_SAFE_INTEGER))
+})
 
 // ---- 换算常量 ----
 const OZ_PER_YD_TO_G_PER_M = 31.0035   // 1 oz/yd = 31.0035 g/m
@@ -476,7 +483,7 @@ function record() {
   if (testType.value === 'area') {
     const a = areaValue.value
     if (a == null || +a <= 0) { ElMessage.warning('面积>0'); return }
-    const gsm = +(w / a * 10000).toFixed(4), oz = +(gsm / 33.9057).toFixed(4)
+    const gsm = +(w / a * 10000).toFixed(3), oz = +(gsm / 33.9057).toFixed(3)
     // 长×宽模式: 记录尺寸文本供报告 Measure 列直填(如 "5×5"); 直填模式无尺寸, dim=null
     const dim = areaByCalc.value && areaLen.value && areaWid.value ? `${areaLen.value}×${areaWid.value}` : null
     rows.push({ ...base, a, dim, gsm, oz })
@@ -484,13 +491,13 @@ function record() {
   } else if (testType.value === 'length') {
     const lc = lengthCm.value
     if (lc == null || +lc <= 0) { ElMessage.warning('长度>0'); return }
-    const gm = +(w / lc * 100).toFixed(4), oyd = +(gm / OZ_PER_YD_TO_G_PER_M).toFixed(4)
+    const gm = +(w / lc * 100).toFixed(3), oyd = +(gm / OZ_PER_YD_TO_G_PER_M).toFixed(3)
     rows.push({ ...base, lc, gm, oyd })
     ElMessage.success(`g/m=${gm}  oz/yd=${oyd}`)
   } else {
     const pc = +pieceCount.value || 0
     if (pc <= 0) { ElMessage.warning('条数>0'); return }
-    const gp = +(w / pc).toFixed(4), lbd = +(gp * 12 / LB_TO_G).toFixed(4), ozd = +(gp * 12 / OZ_TO_G).toFixed(4)
+    const gp = +(w / pc).toFixed(3), lbd = +(gp * 12 / LB_TO_G).toFixed(3), ozd = +(gp * 12 / OZ_TO_G).toFixed(3)
     rows.push({ ...base, pc, gp, lbd, ozd })
     ElMessage.success(`g/piece=${gp}  lb/dozen=${lbd}`)
   }
@@ -517,11 +524,11 @@ async function doExport() {
   const XLSX = await import('xlsx')
   let map
   if (testType.value === 'length') {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '长度(cm)': r.lc?.toFixed(2), 'g/m': r.gm?.toFixed(4), 'oz/yd': r.oyd?.toFixed(4), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '长度(cm)': r.lc?.toFixed(2), 'g/m': r.gm?.toFixed(3), 'oz/yd': r.oyd?.toFixed(3), '测试时间': ts(r.t) })
   } else if (testType.value === 'piece') {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '条数': r.pc, 'g/piece': r.gp?.toFixed(4), 'lb/dozen': r.lbd?.toFixed(4), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '条数': r.pc, 'g/piece': r.gp?.toFixed(3), 'lb/dozen': r.lbd?.toFixed(3), '测试时间': ts(r.t) })
   } else {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(4), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(4), 'oz/yd²': r.oz?.toFixed(4), '测试时间': ts(r.t) })
+    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(3), 'oz/yd²': r.oz?.toFixed(3), '测试时间': ts(r.t) })
   }
   const ws = XLSX.utils.json_to_sheet(rows.map(map))
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PhysicalWeight')
