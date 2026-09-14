@@ -1042,17 +1042,23 @@
   flex-direction: column;
   gap: 15px;
   padding: 20px;
+  height: 100%;
+  box-sizing: border-box; // 防止 padding 撑破高度
+  overflow: hidden;       // 防止内部溢出
 }
 
 .topHalf {
   display: flex;
   gap: 15px;
-  height: 100%;
+  flex: 1;                // 关键：让它占满剩余高度
+  min-height: 0;          // 关键：允许 flex 子项收缩，避免溢出
+  overflow: hidden;
 }
 
 .halfBox {
   flex: 1;
   min-width: 0;
+  min-height: 0;          // 关键：让内部可以滚动
   border: 1px solid var(--el-border-color);
   border-radius: 10px;
   padding: 16px;
@@ -1062,6 +1068,14 @@
   gap: 12px;
   background: #fff;
   width: 100%;
+  box-sizing: border-box;
+}
+
+// 让表格区域自适应占满剩余高度
+.halfBox :deep(.el-table) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .boxTitle {
@@ -1115,13 +1129,6 @@
   
   &::-webkit-scrollbar-track {
     background: #f3f6f9;
-  }
-}
-
-// Responsive Adjustments
-@media (max-width: 1200px) {
-  .halfBox {
-    max-height: 500px;
   }
 }
 

@@ -286,10 +286,10 @@ const dryProceduresUSA = ref([
 const DCProceduresEurope = ref([
   { value: '', label: 'Do Not Dry Clean', src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href] },
   {value: 'default', label:'default', src:[new URL('../../assets/img/wet Care Label/default/DCDefault.png', import.meta.url).href]},
-  { value: 'DC Normal', label: 'DC Normal', src: [new URL('../../assets/img/wet Care Label/Europe/DC/DC Normal.jpg', import.meta.url).href] },
-  { value: 'DC Sensitive', label: 'DC Sensitive', src: [new URL('../../assets/img/wet Care Label/Europe/DC/DC Sensitive.jpg', import.meta.url).href]},
-  { value: 'Petroleum DC Normal', label: 'Petroleum DC Normal', src: [new URL('../../assets/img/wet Care Label/Europe/DC/Petroleum DC Normal.jpg', import.meta.url).href]},
-  { value: 'Petroleum DC Sensitive', label: 'Petroleum DC Sensitive', src: [new URL('../../assets/img/wet Care Label/Europe/DC/Petroleum DC Sensitive.jpg', import.meta.url).href]}
+  { value: 'P', label: 'DC Normal', src: [new URL('../../assets/img/wet Care Label/Europe/DC/DC Normal.jpg', import.meta.url).href] },
+  { value: 'P-Sensitive', label: 'DC Sensitive', src: [new URL('../../assets/img/wet Care Label/Europe/DC/DC Sensitive.jpg', import.meta.url).href]},
+  { value: 'F', label: 'Petroleum DC Normal', src: [new URL('../../assets/img/wet Care Label/Europe/DC/Petroleum DC Normal.jpg', import.meta.url).href]},
+  { value: 'F-Sensitive', label: 'Petroleum DC Sensitive', src: [new URL('../../assets/img/wet Care Label/Europe/DC/Petroleum DC Sensitive.jpg', import.meta.url).href]}
 ]);
 
 const ironProceduresEurope = ref([

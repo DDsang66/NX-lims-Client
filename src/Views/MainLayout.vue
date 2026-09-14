@@ -451,4 +451,28 @@
     margin: 0; /* 移除默认margin，确保居中 */
     vertical-align: middle;
   }
+
+  :deep(.sidebar-menu) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    &::-webkit-scrollbar
+
+  {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #e5e5e5;
+    border-radius: 3px;
+  }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: #d5d5d5;
+    }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  }
 </style>
