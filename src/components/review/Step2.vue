@@ -99,6 +99,8 @@
   import request from "@/utils/request.js";
   import { ElMessage } from 'element-plus';
 
+  const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+
   const conditionsGroups = ref([]);
   //和样品绑定的成分
   const fiberCompositionSingle = ref([])
@@ -108,7 +110,7 @@
   ])
   const sampleSpecificDescripDoM = ref(null);
   const props = defineProps({
-    step1Dom: Object,
+    step1Ref: Object,
     step1Data: Object, 
     buyerNameDto: String,
     buyerCode: { type: String, default: null },
@@ -164,7 +166,7 @@
   //根据menus获取所有smaple
   let allSample = computed(() => {
     let samples = new Set()
-    props.step1Dom?.menus?.forEach(menu => {
+    props.step1Ref?.menus?.forEach(menu => {
       //分组
       if (menu.groups) {
         menu.groups.forEach(group => {
@@ -200,8 +202,8 @@
     const samplesInGroups = newGroups.flatMap(g => g.testPoints);
     const missingSamples = samples.filter(s => !samplesInGroups.includes(s));
 
-    // ✅ 从 step1Dom 获取 menus
-    const menus = props.step1Dom?.menus || []
+    // ✅ 从 step1Ref 获取 menus
+    const menus = props.step1Ref?.menus || []
 
     missingSamples.forEach(sample => {
       // ✅ 查找该 sample 属于哪个 menu 和 group
@@ -367,6 +369,19 @@
     });
   }, { deep: true, immediate: true });
 
+  // 当 step1Data 的 conditionPoolId / checkListId 变化时（例如新单 regenerate 后），
+  // 同步刷新到所有 group 的 conditions，保证内部状态与父组件一致
+  watch(
+    () => [props.step1Data?.conditionPoolId, props.step1Data?.checkListId],
+    ([poolId, checkListId]) => {
+      conditionsGroups.value.forEach(group => {
+        group.conditions.ConditionPoolId = poolId ?? null
+        group.conditions.CheckListId = checkListId ?? null
+      })
+    },
+    { immediate: true }
+  )
+
   watch(conditionsGroups, (val) => {
     console.log('conditionsGroups updated:', JSON.parse(JSON.stringify(val)));
   }, { deep: true });
@@ -398,7 +413,7 @@
   //接缝样品
   const seamSamples = computed(() => {
     let seamSamplesSet = new Set()
-    props.step1Dom?.menus?.forEach(menu => {
+    props.step1Ref?.menus?.forEach(menu => {
       //如果有groups
       if (menu.groups) {
         menu.groups.forEach(group => {
@@ -429,19 +444,66 @@
   //---------------------------------------------- 提交----------------------------
   const isSubmitting = ref(false)  // 👈 添加提交状态
 
+  //async function submitConditions() {
+  //  // 如果正在提交，直接返回
+  //  if (isSubmitting.value) return
+
+  //  mergeGroupsWithSameConditions()
+
+  //  // 构建 DTO 列表
+  //  const dtoList = conditionsGroups.value.map(group => ({
+  //    ConditionPoolId: group.conditions.ConditionPoolId ?? props.step1Data?.conditionPoolId ?? Guid.Empty,
+  //    CheckListId: group.conditions.CheckListId ?? props.step1Data?.checkListId ?? Guid.Empty,
+  //    OrderId: group.conditions.ReportNo ?? props.step1Data?.reportNo ?? '',
+  //    TestPoints: group.testPoints,
+  //    Conditions: group.conditions
+  //  }))
+
+  //  try {
+  //    isSubmitting.value = true  // 👈 开始提交
+
+  //    const res = await request.post('/review/generate-param', dtoList)
+
+  //    if (res.data.isSuccess) {
+  //      ElMessage.success('Parameters generated successfully')
+  //      return res.data.value
+  //    } else {
+  //      ElMessage.error(res.data.message || 'Failed to generate parameters')
+  //      return null
+  //    }
+  //  } catch (error) {
+  //    console.error('Submit conditions error:', error)
+  //    ElMessage.error('Error submitting conditions')
+  //    return null
+  //  } finally {
+  //    isSubmitting.value = false  // 👈 结束提交
+  //  }
+  //}
+
   async function submitConditions() {
     // 如果正在提交，直接返回
     if (isSubmitting.value) return
 
     mergeGroupsWithSameConditions()
 
+    // 单一数据源：每次提交时从 props.step1Data 实时取，避免 group 内缓存旧值
+    const currentPoolId = props.step1Data?.conditionPoolId ?? EMPTY_GUID
+    const currentCheckListId = props.step1Data?.checkListId ?? EMPTY_GUID
+    const currentReportNo = props.step1Data?.reportNo ?? ''
+
     // 构建 DTO 列表
     const dtoList = conditionsGroups.value.map(group => ({
-      ConditionPoolId: group.conditions.ConditionPoolId ?? props.step1Data?.conditionPoolId ?? Guid.Empty,
-      CheckListId: group.conditions.CheckListId ?? props.step1Data?.checkListId ?? Guid.Empty,
-      OrderId: group.conditions.ReportNo ?? props.step1Data?.reportNo ?? '',
+      ConditionPoolId: currentPoolId,
+      CheckListId: currentCheckListId,
+      OrderId: currentReportNo,
       TestPoints: group.testPoints,
-      Conditions: group.conditions
+      Conditions: {
+        ...group.conditions,
+        // 兜底：确保 Conditions 内部也带上最新的三个关键字段
+        ConditionPoolId: currentPoolId,
+        CheckListId: currentCheckListId,
+        ReportNo: currentReportNo
+      }
     }))
 
     try {

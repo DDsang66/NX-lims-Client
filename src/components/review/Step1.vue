@@ -257,7 +257,8 @@ import { ElMessage } from 'element-plus';
     'update:buyerNameDto',
     'update:step1Data',
     'update:buyerCode',
-    'update:buyerIsIndividualTraveler'])
+    'update:buyerIsIndividualTraveler',
+    'update:regeneratedData' ])
 
 const { t } = useI18n()
 const props=defineProps({
@@ -625,6 +626,12 @@ function data5Check() {
 function reportNoCheck(){
   return data4Check()&&data5Check()
 }
+
+  const currentCheckListId = ref(null)
+
+  // 记录上次成功提交的单号，用于区分"数据变更"还是"新单"
+  const submittedReportNo = ref('')
+
 //统一检查
   async function allCheck() {
     // 1. 先进行表单验证
@@ -645,6 +652,10 @@ function reportNoCheck(){
     const result = await submitSampleData() 
 
     if (result) {
+      currentCheckListId.value = result.checkListId
+
+      submittedReportNo.value = reportNo.value
+
       // 3. 将数据（包含 ConditionPoolId）传递给父组件
       emit('update:step1Data', {
         reportNo: reportNo.value,
@@ -659,6 +670,75 @@ function reportNoCheck(){
 
     return false
   }
+
+  // --- 3. 新增：Regenerate Checklist 方法 ---
+  async function regenerateCheckList() {
+    if (!currentCheckListId.value) {
+      ElMessage.warning(t('message.noCheckListId') || 'No existing CheckList found to regenerate.')
+      return null
+    }
+
+    // 单号变了 → 视为新单，走 generate-checklist 创建新记录
+    if (reportNo.value !== submittedReportNo.value) {
+      const result = await submitSampleData()
+      if (result) {
+        currentCheckListId.value = result.checkListId
+        submittedReportNo.value = reportNo.value
+
+        emit('update:regeneratedData', {
+          conditionPoolId: result.conditionPoolId,
+          checkListId: result.checkListId,
+          isNewOrder: true   // 标记新单，供父组件区分处理
+        })
+        return result
+      }
+      return null
+    }
+
+    // 单号没变 → 原有 regenerate 逻辑（更新当前 checklist）
+    try {
+      const items = collectSampleData()
+      if (items.length === 0) {
+        ElMessage.warning(t('message.noSampleData') || 'Please add samples before proceeding')
+        return null
+      }
+
+      const payload = {
+        id: currentCheckListId.value,
+        sourceId: reportNo.value,
+        buyerCode: selectedBuyerCode.value,
+        items: items,
+        remark: ''
+      }
+
+      const res = await request.post('/review/regenerate-checklist', payload)
+
+      if (res.data.isSuccess) {
+        ElMessage.success(t('message.regenerateSuccess') || 'Checklist regenerated successfully!')
+
+        const newConditionPoolId = res.data.value?.conditionPoolId || res.data.value?.ConditionPoolId || null
+        const newCheckListId = res.data.value?.checkListId || res.data.value?.CheckListId || null
+
+        if (newCheckListId) currentCheckListId.value = newCheckListId
+
+        emit('update:regeneratedData', {
+          conditionPoolId: newConditionPoolId,
+          checkListId: newCheckListId,
+          isNewOrder: false
+        })
+
+        return { conditionPoolId: newConditionPoolId, checkListId: newCheckListId }
+      } else {
+        ElMessage.error(res.data.message || t('message.regenerateFailed') || 'Failed to regenerate checklist')
+        return null
+      }
+    } catch (error) {
+      console.error('Regenerate checklist error:', error)
+      ElMessage.error(t('message.regenerateError') || 'Error regenerating checklist')
+      return null
+    }
+  }
+
 
 //data4中按下enter
 function data4Keydown(e) {
@@ -946,13 +1026,73 @@ function globalMouseDown(e) {
   }
 
 
+  function clearAll() {
+    // 表单
+    form1Ref.value?.resetFields()
+    form2Ref.value?.resetFields()
 
-/*暴露数据-------------------------------------------------------------------------------------------*/
+    // 买家 / 菜单
+    buyerName.value = ''
+    selectedBuyerCode.value = ''
+    menus.value = []
+    menuOptions.value = []
+
+    // 单号（恢复默认）
+    reportNums.data4 = ''
+    reportNums.data5 = '.01'
+    data4IsError.value = false
+    data5IsError.value = false
+    reportErrorSummary.clear()
+
+    // 右上角 Item / Standard 选择
+    newItemName.value = ''
+    newItemstandardCode.value = ''
+
+    // 模糊查询
+    itemFuzzyQueryParameters.itemName = ''
+    itemFuzzyQueryParameters.standardCode = ''
+
+    // 当前 checklist
+    currentCheckListId.value = null
+
+    submittedReportNo.value = ''
+
+    // 激活标签
+    activeTabName.value = 'default'
+
+    // 清理“一起修改”标记
+    for (const menu of menus.value) { /* menus 已清空，无需遍历 */ }
+  }
+
+
+
+  /*暴露数据-------------------------------------------------------------------------------------------*/
+  function emitStep1Data() {
+    emit('update:step1Data', {
+      reportNo: reportNo.value,
+      buyerName: buyerName.value,
+      menus: menus.value,
+      sampleData: collectSampleData(),
+      conditionPoolId: null,  // 数据已变，旧的 pool 失效
+      checkListId: currentCheckListId.value
+    })
+  }
+
+  // Step1 完成后，任何关键数据变化都通知父组件（触发 stale 检测）
+  watch([buyerName, menus, reportNums], () => {
+    // 只有已提交过（有 checkListId）才需要通知，避免初始化阶段无意义 emit
+    if (currentCheckListId.value) {
+      emitStep1Data()
+    }
+  }, { deep: true })
+
 defineExpose({
   menus,
   reportNo,
   buyerName,
   allCheck,
+  clearAll,
+  regenerateCheckList, // 暴露出去，供 Review 悬浮按钮调用
   get testItemMap() { return testItemMap.value },
   get standardIdToCodeMap() { return standardIdToCodeMap.value }
 })
