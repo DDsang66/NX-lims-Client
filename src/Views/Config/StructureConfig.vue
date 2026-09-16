@@ -111,20 +111,6 @@
                       <span v-else class="text-muted">No associated formulas</span>
                     </div>
 
-                    <!-- Associated Rules -->
-                    <div style="min-width: 200px;">
-                      <h4>Associated Rules</h4>
-                      <div v-if="row.rules && row.rules.length > 0">
-                        <el-tag v-for="rule in row.rules"
-                                :key="rule.id"
-                                size="small"
-                                style="margin: 2px;"
-                                type="warning">
-                          {{ rule.id }} - {{ rule.paramName }}
-                        </el-tag>
-                      </div>
-                      <span v-else class="text-muted">No associated rules</span>
-                    </div>
                   </div>
                 </div>
               </template>
@@ -162,11 +148,6 @@
             <el-table-column label="Formulas" width="120" align="center">
               <template #default="{ row }">
                 <el-tag size="small" type="info">{{ row.formulas?.length || 0 }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Rules" width="120" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" type="warning">{{ row.rules?.length || 0 }}</el-tag>
               </template>
             </el-table-column>
 
@@ -320,7 +301,7 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="Rule IDs" prop="ruleIds">
+        <!--<el-form-item label="Rule IDs" prop="ruleIds">
           <el-select v-model="dialogForm.ruleIds"
                      multiple
                      filterable
@@ -332,7 +313,7 @@
                        :label="rule.paramName ? `${rule.id} - ${rule.paramName}` : rule.id"
                        :value="rule.id" />
           </el-select>
-        </el-form-item>
+        </el-form-item>-->
 
         <el-form-item label="Effective Date" prop="effectiveDate">
           <el-date-picker v-model="dialogForm.effectiveDate"

@@ -66,12 +66,20 @@
     </div>
     <div class="specialCareInstructionContainer">
       <label>{{ $t('specialCareInstruction') }}</label>
-      <el-select v-model="modelValue.specialCareInstruction" multiple style="flex: 1; min-width: 100px;" clearable>
-        <el-option v-for="instruction in specialCareInstructionOptions" :key="instruction.value"
-                   :value="instruction.value" :label="instruction.label">
-        </el-option>
+      <el-select v-model="modelValue.specialCareInstruction"
+                 multiple
+                 allow-create
+                 default-first-option
+                 filterable
+                 style="flex: 1; min-width: 100px;"
+                 clearable>
+        <el-option v-for="instruction in specialCareInstructionOptions"
+                   :key="instruction.value"
+                   :value="instruction.value"
+                   :label="instruction.label" />
       </el-select>
     </div>
+
   </div>
 </template>
 
@@ -156,12 +164,28 @@ const props = defineProps({
 
 const emit = defineEmits(['updateData', 'update:modelValue']);
 
+  const specialCareInstructionText = computed(() => {
+    if (!props.modelValue.specialCareInstruction || props.modelValue.specialCareInstruction.length === 0) {
+      return '';
+    }
+
+    // 处理每个选项：如果是第一个选项，保持原样；否则将首字母转为小写
+    return props.modelValue.specialCareInstruction.map((instruction, index) => {
+      if (index === 0) {
+        return instruction; // 第一个选项保持不变
+      }
+      // 其他选项：将首字母转为小写
+      return instruction.charAt(0).toLowerCase() + instruction.slice(1);
+    }).join(', ');
+  });
+
 // 特殊洗语选项
 const specialCareInstructionOptions = [
-  { value: 'Front Zippers Must be Opened', label: 'Front Zippers Must be Opened' },
-  { value: 'Wash Inside Out', label: 'Wash Inside Out' },
-  { value: 'Wash in Laundry Bag', label: 'Wash in Laundry Bag' },
-  { value: 'Close All Botton and Zipper before Washing', label: 'Close All Botton and Zipper before Washing' },
+  { value: 'Front zippers must be opened', label: 'Front zippers must be opened' },
+  { value: 'Wash inside out', label: 'Wash inside out' },
+  { value: 'Wash in laundry bag', label: 'Wash in laundry bag' },
+  { value: 'Wash in mesh bag', label: 'Wash in mesh bag' },
+  { value: 'Close all botton and zipper before washing', label: 'Close all botton and zipper before washing' },
   { value: 'Wash in Net Bag', label: 'Wash in Net Bag' },
   { value: 'Close fastener', label: 'Close fastener' }
 ];
