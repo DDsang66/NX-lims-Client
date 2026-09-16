@@ -50,10 +50,11 @@
           <div class="ctitle"><el-icon><Grid /></el-icon>测试类型</div>
           <el-radio-group v-model="testType" size="small" style="width:100%" @change="onTestTypeChange">
             <el-radio-button value="area" style="width:33.33%">面积克重</el-radio-button>
-            <el-radio-button value="length" style="width:33.33%">长度克重</el-radio-button>
-            <el-radio-button value="piece" style="width:33.33%">条重</el-radio-button>
+            <el-radio-button value="length" style="width:33.33%" :disabled="!supportsType('length')">长度克重</el-radio-button>
+            <el-radio-button value="piece" style="width:33.33%" :disabled="!supportsType('piece')">条重</el-radio-button>
           </el-radio-group>
           <div class="st" style="color:#909399;">{{ TYPE_LABEL[testType] }}</div>
+          <div v-if="!supportsType('length')" class="st" style="color:#e6a23c;">{{ buyer }} 报告模板只有面积克重的列</div>
         </div>
 
         <!-- 试样面积 (面积克重) -->
@@ -63,7 +64,7 @@
             <el-switch v-model="areaByCalc" size="small" active-text="长×宽" inactive-text="直接" style="--el-switch-on-color:#409eff;" />
           </div>
           <template v-if="areaByCalc">
-            <div class="row" style="gap:4px;">
+            <div class="row" style="gap:4px;padding-right:16px;">
               <span class="lbl">长</span>
               <el-input-number v-model="areaLen" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
               <span class="lbl">宽</span>
@@ -71,7 +72,21 @@
             </div>
             <span v-if="areaLen>0 && areaWid>0" class="hint">= {{ areaValue }} cm²</span>
           </template>
+          <!-- NEXT 直接模式: 单块试样固定 100 cm², 不填(一次称 N 块时靠下面的样品数乘出总面积) -->
+          <el-input-number v-else-if="areaFixed" :model-value="NEXT_AREA" disabled :precision="2" controls-position="right" style="width:100%"/>
           <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
+          <span v-if="areaFixed" class="hint">NEXT 单块固定 100 cm², 总面积 = 样品数 × 100</span>
+          <!-- FOCUS 报告汇总表有 g/m 那一列, 面积模式下页面没有长度可录 → 每条记录单独录一次长度 -->
+          <div v-if="buyer==='FOCUS'" class="row" style="gap:4px;margin-top:6px;padding-right:16px;">
+            <span class="lbl">长度</span>
+            <el-input-number v-model="focusLen" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm (算 g/m)"/>
+          </div>
+          <span v-if="buyer==='FOCUS' && focusLen>0" class="hint">g/m = 重量 ÷ 长度 × 100</span>
+          <!-- NEXT 登记表要 Number of sample: 该次称重覆盖了几块试样, 每条记录录一次 -->
+          <div v-if="buyer==='NEXT'" class="row" style="gap:4px;margin-top:6px;padding-right:16px;">
+            <span class="lbl">样品数</span>
+            <el-input-number v-model="sampleCount" :precision="0" :min="1" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="样品数 (默认1)"/>
+          </div>
         </div>
 
         <!-- 试样长度 (长度克重) -->
@@ -100,17 +115,28 @@
 
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right">
-        <div class="card" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;padding:10px 14px;">
-          <span class="field">试样编号
-            <el-input v-model="rep1" style="width:52px" disabled/>
-            <el-select v-model="rep2" style="width:76px"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
-            <el-select v-model="rep3" style="width:64px"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear-1) + '.'">{{ twoDigitYear-1 }}</el-option></el-select>
-            <el-input v-model="rep4" style="width:76px" @blur="data4Blur" placeholder="序号"/>
-            <el-input v-model="rep5" style="width:56px"/>
-          </span>
-          <span class="field">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
-          <span class="field">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
-          <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;padding:10px 14px;">
+          <!-- 第一排: 试样编号 + 试样测点 -->
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;">
+            <span class="field">试样编号
+              <el-input v-model="rep1" style="width:52px" disabled/>
+              <el-select v-model="rep2" style="width:76px"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
+              <el-select v-model="rep3" style="width:64px"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear-1) + '.'">{{ twoDigitYear-1 }}</el-option></el-select>
+              <el-input v-model="rep4" style="width:76px" @blur="data4Blur" placeholder="序号"/>
+              <el-input v-model="rep5" style="width:56px"/>
+            </span>
+            <span class="field">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
+          </div>
+          <!-- 第二排: 环境温度 + 环境湿度 + 买家 -->
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;">
+            <span class="field">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
+            <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
+            <span class="field">买家
+              <el-select v-model="buyer" style="width:110px" @change="onBuyerChange">
+                <el-option v-for="b in BUYERS" :key="b" :label="b" :value="b"/>
+              </el-select>
+            </span>
+          </div>
         </div>
         <div class="tbl-wrap">
           <el-table ref="tblRef" :data="rows" border stripe class="removeTableGaps" style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
@@ -123,7 +149,15 @@
             <template v-if="testType==='area'">
               <el-table-column label="面积(cm²)" width="100" align="right"><template #default="s">{{ s.row.a?.toFixed(2) }}</template></el-table-column>
               <el-table-column label="g/m²" width="90" align="right"><template #default="s">{{ s.row.gsm?.toFixed(3) }}</template></el-table-column>
-              <el-table-column label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(3) }}</template></el-table-column>
+              <!-- Adidas/NEXT 的报告没有 oz/yd² 这一格, 就不摆这一列 -->
+              <el-table-column v-if="areaShowsOz" label="oz/yd²" width="90" align="right"><template #default="s">{{ s.row.oz?.toFixed(3) }}</template></el-table-column>
+              <!-- FOCUS: 录入长度与据此算出的 g/m(显示计算全精度, 进报告才按模板取整) -->
+              <template v-if="buyer==='FOCUS'">
+                <el-table-column label="长度(cm)" width="100" align="right"><template #default="s">{{ s.row.fl?.toFixed(2) }}</template></el-table-column>
+                <el-table-column label="g/m" width="90" align="right"><template #default="s">{{ s.row.gm?.toFixed(3) }}</template></el-table-column>
+              </template>
+              <!-- NEXT: 该次称重的样品数(登记表 Number of sample 用) -->
+              <el-table-column v-if="buyer==='NEXT'" label="样品数" width="90" align="right"><template #default="s">{{ s.row.ns ?? 1 }}</template></el-table-column>
             </template>
             <!-- 长度克重 -->
             <template v-if="testType==='length'">
@@ -238,12 +272,31 @@ const lastRxTime = ref(0)          // 最近一次收到串口数据的时间戳
 // ---- 测试类型: area(面积克重) | length(长度克重) | piece(条重) ----
 const testType = ref('area')
 const TYPE_LABEL = { area: '面积克重', length: '长度克重', piece: '条重' }
+// ---- 买家: 决定生成报告时用哪份模板(Normal/Adidas/FOCUS/NEXT) ----
+const buyer = ref('Normal')
+const BUYERS = ['Normal', 'Adidas', 'FOCUS', 'NEXT']
+// 与后端 PhysicalWeightReportService.SupportsTestType 一一对应: 模板表0 没有的列, 报告里就落不进去
+const BUYER_TYPES = { Normal: ['area', 'length', 'piece'], Adidas: ['area'], FOCUS: ['area'], NEXT: ['area'] }
+const supportsType = t => BUYER_TYPES[buyer.value].includes(t)
+// 面积报告表0 里有没有 oz/yd² 那一格 —— 与后端 SummaryValuesOf 的列一一对应:
+// Adidas/NEXT 只有 g/m² 一列, 页面上再摆 oz/yd² 就是列了报告里不存在的数(仅指面积列; 长度克重的 oz/yd、条重的 oz/dozen 不受影响)
+const BUYER_AREA_OZ = { Normal: true, Adidas: false, FOCUS: true, NEXT: false }
+const areaShowsOz = computed(() => BUYER_AREA_OZ[buyer.value])
 // ---- 面积 ----
 const area = ref(null)             // 直接输入模式
 const areaByCalc = ref(false)      // 长×宽计算模式
 const areaLen = ref(null)
 const areaWid = ref(null)
-const areaValue = computed(() => areaByCalc.value && areaLen.value && areaWid.value ? parseFloat((areaLen.value * areaWid.value).toFixed(2)) : area.value)
+// NEXT 的单块试样固定 100 cm²(客户方法): 面积框在 NEXT 直接模式下不可填, 一律按 100 算 ——
+// 后端 T2 的 Ave(g/m²) 也是拿这个常数池化算的(重量合计 ÷ (样品数合计 × 100) × 10000),
+// 两边用同一块面积, 报告与页面才不会是两个数。
+const NEXT_AREA = 100
+const areaFixed = computed(() => buyer.value === 'NEXT' && !areaByCalc.value)
+const areaValue = computed(() => areaFixed.value
+  ? NEXT_AREA
+  : areaByCalc.value && areaLen.value && areaWid.value ? parseFloat((areaLen.value * areaWid.value).toFixed(2)) : area.value)
+const focusLen = ref(null)         // FOCUS 专用: 面积模式下另录的长度 cm(算 g/m 那格用)
+const sampleCount = ref(1)         // NEXT 专用: 该次称重覆盖的样品数(登记表 Number of sample)
 // ---- 长度 ----
 const lengthCm = ref(null)         // 试样长度 cm
 // ---- 条重 ----
@@ -474,20 +527,47 @@ function applyTypeDefaults(v) {
   if (v === 'piece' && !pieceCount.value) pieceCount.value = 12
 }
 
+// 买家切换: 与切测试类型同一套 —— 有数据先确认清空。买家既决定用哪份模板, 也决定一行的行数据
+// (FOCUS 的长度算出的 g/m、NEXT 的样品数都是按买家录的), 混着出报告会让别的买家那几格空着。
+function onBuyerChange(v) {
+  // 新买家不支持当前类型(Adidas/FOCUS/NEXT 只有面积克重) → 一并退回面积
+  const toArea = !supportsType(testType.value)
+  const settle = () => { if (toArea) { testType.value = 'area'; applyTypeDefaults('area') } }
+  if (!rows.length) { settle(); return }
+  ElMessageBox.confirm(`切换到 ${v} 将清空已记录的 ${rows.length} 条数据，确定？`, '确认', { type: 'warning' })
+    .then(() => { rows.splice(0); settle() })
+    // 取消: el-select 已经改过 v-model 了, 得把买家改回去 —— 行上留了录这条时的买家
+    .catch(() => { buyer.value = rows[0]?.buyer || 'Normal' })
+}
+
 function record() {
   if (weight.value == null || +weight.value <= 0) { ElMessage.warning('重量>0'); return }
   if (!rep4.value.trim()) { ElMessage.warning('试样编号序号不能为空'); return }
   if (!point.value.trim()) { ElMessage.warning('试样测点不能为空'); return }
   const w = +weight.value, t = new Date().toISOString()
-  const base = { id: crypto.randomUUID?.() ?? Math.random().toString(36), ri: rows.length + 1, sid: sid.value.trim(), point: point.value.trim(), type: testType.value, w, temp: temp.value, humid: humid.value, t }
+  // buyer: 录这条时的买家 —— 切买家会清空, 所以表里各行必属同一个买家; 取消切换时靠它把买家改回去
+  const base = { id: crypto.randomUUID?.() ?? Math.random().toString(36), ri: rows.length + 1, sid: sid.value.trim(), point: point.value.trim(), type: testType.value, buyer: buyer.value, w, temp: temp.value, humid: humid.value, t }
   if (testType.value === 'area') {
+    // NEXT 登记表要 Number of sample: 默认 1(等价于"称一次算一个样品"); 非 NEXT 的行走后端默认 1
+    const ns = buyer.value === 'NEXT' ? (+sampleCount.value || 1) : null
     const a = areaValue.value
     if (a == null || +a <= 0) { ElMessage.warning('面积>0'); return }
-    const gsm = +(w / a * 10000).toFixed(3), oz = +(gsm / 33.9057).toFixed(3)
+    // g/m² = 重量 ÷ 总面积, 总面积 = 样品数 × 单块面积 —— 一次称重可能称了 ns 块, 重量格录的是这 ns 块的总重,
+    // 而面积框(以及 NEXT 固定的 100)说的是单块。ns=1 时与原来完全一样。
+    const gsm = +(w / ((ns ?? 1) * a) * 10000).toFixed(3), oz = +(gsm / 33.9057).toFixed(3)
     // 长×宽模式: 记录尺寸文本供报告 Measure 列直填(如 "5×5"); 直填模式无尺寸, dim=null
     const dim = areaByCalc.value && areaLen.value && areaWid.value ? `${areaLen.value}×${areaWid.value}` : null
-    rows.push({ ...base, a, dim, gsm, oz })
-    ElMessage.success(`g/m²=${gsm}  oz/yd²=${oz}`)
+    // FOCUS 报告汇总表多一格 g/m: 面积模式下长度是另录的, 用与长度克重同一个式子算
+    let fl = null, gm = null
+    if (buyer.value === 'FOCUS') {
+      if (!(focusLen.value > 0)) { ElMessage.warning('长度>0'); return }
+      fl = focusLen.value
+      gm = +(w / fl * 100).toFixed(3)
+    }
+    rows.push({ ...base, a, dim, gsm, oz, fl, gm, ns })
+    ElMessage.success(buyer.value === 'FOCUS'
+      ? `g/m²=${gsm}  oz/yd²=${oz}  g/m=${gm}`
+      : `g/m²=${gsm}  oz/yd²=${oz}`)
   } else if (testType.value === 'length') {
     const lc = lengthCm.value
     if (lc == null || +lc <= 0) { ElMessage.warning('长度>0'); return }
@@ -528,7 +608,19 @@ async function doExport() {
   } else if (testType.value === 'piece') {
     map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '条数': r.pc, 'g/piece': r.gp?.toFixed(3), 'lb/dozen': r.lbd?.toFixed(3), '测试时间': ts(r.t) })
   } else {
-    map = r => ({ '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(3), 'oz/yd²': r.oz?.toFixed(3), '测试时间': ts(r.t) })
+    // 导出列与页面记录表同源: Adidas/NEXT 不导 oz/yd²
+    const areaMap = r => {
+      const o = { '次数': r.ri, '试样编号': r.sid, '试样测点': r.point, '重量(g)': r.w?.toFixed(3), '面积(cm²)': r.a?.toFixed(2), 'g/m²': r.gsm?.toFixed(3) }
+      if (areaShowsOz.value) o['oz/yd²'] = r.oz?.toFixed(3)
+      return o
+    }
+    if (buyer.value === 'FOCUS') {
+      map = r => ({ ...areaMap(r), '长度(cm)': r.fl?.toFixed(2), 'g/m': r.gm?.toFixed(3), '测试时间': ts(r.t) })
+    } else if (buyer.value === 'NEXT') {
+      map = r => ({ ...areaMap(r), '样品数': r.ns ?? 1, '测试时间': ts(r.t) })
+    } else {
+      map = r => ({ ...areaMap(r), '测试时间': ts(r.t) })
+    }
   }
   const ws = XLSX.utils.json_to_sheet(rows.map(map))
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PhysicalWeight')
@@ -536,18 +628,19 @@ async function doExport() {
   ElMessage.success('导出成功')
 }
 
-// 生成 docx 报告: 调后端用 PHY_Weight.docx 模板填充并下载
+// 生成 docx 报告: 调后端按买家选模板(Normal/Adidas/FOCUS/NEXT)填充并下载
 async function doReport() {
   if (!rows.length) { ElMessage.warning('请先记录数据'); return }
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(报告号)'); return }
   try {
     const res = await api.post('/PhysicalWeightReport/report', {
       reportNumber: sid.value.trim(),
+      buyer: buyer.value,
       testType: testType.value,
       testMethod: '',
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, ozPerDozen: r.ozd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null }))
+      records: rows.map(r => ({ point: r.point, sampleId: r.sid, gsm: r.gsm || 0, oz: r.oz || 0, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, ozPerDozen: r.ozd || 0, weight: r.w, area: r.a, dimension: r.dim ?? null, lengthCm: r.lc ?? r.fl ?? null, pieceCount: r.pc ?? null, sampleCount: r.ns ?? null }))
     })
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '生成失败'); return }
     const { downloadUrl, fileName } = res.data.value
@@ -569,7 +662,7 @@ async function doSave() {
   if (!rows.length) return
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(单号)'); return }
   try {
-    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, sampleId: sid.value.trim(), testPoint: r.point, weight: r.w, area: r.a || 0, gsm: r.gsm || 0, oz: r.oz || 0, testType: r.type, lengthCm: r.lc ?? null, pieceCount: r.pc ?? null, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
+    const res = await api.post('/PhysicalWeight', { records: rows.map(r => ({ recordIndex: r.ri, sampleId: sid.value.trim(), testPoint: r.point, weight: r.w, area: r.a || 0, gsm: r.gsm || 0, oz: r.oz || 0, testType: r.type, lengthCm: r.lc ?? r.fl ?? null, pieceCount: r.pc ?? null, gPerM: r.gm || 0, ozPerYd: r.oyd || 0, gPerPiece: r.gp || 0, lbPerDozen: r.lbd || 0, envTemperature: r.temp, envHumidity: r.humid, testTime: r.t, reportNumber: sid.value.trim() })) })
     if (res.data.isSuccess) { ElMessage.success('保存成功') } else { ElMessage.error(res.data.error || '保存失败') }
   } catch (e) { ElMessage.error('网络错误: ' + e.message) }
 }
