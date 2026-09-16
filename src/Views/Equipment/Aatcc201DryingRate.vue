@@ -123,7 +123,7 @@
               <span class="sub">面温 <b>{{ liveSurface[s-1].toFixed(2) }}</b>℃</span>
               <span class="sub">板温 <b>{{ liveBoard[s-1].toFixed(2) }}</b>℃</span>
               <span class="sub">风速 <b>{{ liveWind[s-1].toFixed(2) }}</b>m/s</span>
-              <span class="sub">盖板 <b :class="liveCover[s-1] === 1 ? 'closed' : 'open'">{{ liveCover[s-1] === 1 ? '●闭' : '○开' }}</b></span>
+              <span class="sub">盖板 <b :class="liveCover[s-1] === COVER_OPEN ? 'open' : 'closed'">{{ liveCover[s-1] === COVER_OPEN ? '●开' : '○闭' }}</b></span>
               <span class="sub">功率 <b>{{ livePower[s-1] }}</b>%</span>
             </div>
           </div>
@@ -248,7 +248,7 @@ import { Connection, SwitchButton, Link, Document, Setting, VideoPlay, Files, Do
 // ============================================================
 // AATCC 201 水分干燥速率 (加热板法, 2 工位, 纯温度式)
 // 协议(二进制, 19200/8N1, 反编译钉死):
-//   遥测帧 19字节: AB BA 01 + 面温1/2(16位大端,0.01℃) + 板温1/2 + 风速1/2(0.01) + 盖板1/2(0开1闭) + 功率1/2
+//   遥测帧 19字节: AB BA 01 + 面温1/2(16位大端,0.01℃) + 板温1/2 + 风速1/2(0.01) + 盖板1/2(0闭1开) + 功率1/2
 //   设备主动连续推送, PC 不发启停命令 (test_flg 纯本地开关)
 //   校准: 读 AB BA 00 00 16 | 写 AB BA 00 01 <set_hi><set_lo><P><I><D><板1修><板2修> 16
 // 计算落点: 测试中记每工位帧序列(面温/板温/盖板/真实秒数) → 停止 POST compute/aatcc201(后端权威)
@@ -325,6 +325,10 @@ const liveSurface = ref([0, 0])
 const liveBoard = ref([0, 0])
 const liveWind = ref([0, 0])
 const liveCover = ref([0, 0])
+// 盖板原始字节极性: 1=开 0=闭。
+// 只用于显示。判定不要跟着动: 后端是 1 武装 / 0 记起点, 逐字照抄原软件(MainForm.cs:3002-3008),
+// 那个沿的物理含义是 开→闭 = 盖上盖板那一刻; 把常量对调会挪动所有历史的起点序号。
+const COVER_OPEN = 1
 const livePower = ref([0, 0])
 
 // ---- 每槽位帧序列 (送后端权威计算; 槽位对齐: stFrames[i] ↔ 报告 #(i+1)) ----
@@ -606,8 +610,8 @@ function beginSlot(slot, station, keepSeq) {
   slotHasResult[slot] = false          // 正在重测 → 旧结果作废, 待本次停止重算
   chartSlot.value[station - 1] = slot  // 该工位实时图 = 本工位最新会话
   statusText.value = slot === 2
-    ? `测试3 (工位${station} 重测) 开始 —— 盖板闭合→打开沿为起点`
-    : `工位${station} 测试开始 (盖板闭合→打开沿为起点)`
+    ? `测试3 (工位${station} 重测) 开始 —— 盖板打开→闭合沿为起点`
+    : `工位${station} 测试开始 (盖板打开→闭合沿为起点)`
   if (simMode.value) startSimTelemetry(keepSeq)   // 首个活动槽 → 仿真序号清零从头跑
 }
 

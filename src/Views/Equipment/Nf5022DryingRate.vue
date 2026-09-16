@@ -275,7 +275,7 @@ const data4Blur = () => {
 const sampleName = ref('')
 const temperature = ref('')
 const humidity = ref('')
-const testMethod = ref(0)            // 0=GBT 2008, 1=GBT 2023
+const testMethod = ref(1)            // 0=GBT 2008, 1=GBT 2023
 const spaceTime = ref(3)             // 采样间隔分钟 (设备 @帧; GB/T 21655.1 自然蒸发, 对拍验证 time×rate≈water)
 const residualMinute = ref(30)       // 残留率检测时刻 min
 const inputDone = ref(false)         // 录入标志 (原 rulu_flg)
@@ -721,7 +721,6 @@ async function doStop() {
   clearTestTimeout()
   devStatus.value = 0
   statusText.value = '停止命令已发送'
-  sendCmd('!!!!!!%00')
   if (simMode.value) stopSimTest()
   finishTest()
 }
@@ -737,6 +736,11 @@ function finishTest() {
   computedForTest = true
   clearTestTimeout()
   stopSimTest()
+  // 叫停设备: 手动停止/工位全部到点/60min超时 三条路径共用这一个收口。
+  // 照原软件语义(反编译 MainForm.teststop, 由 SaveNF5021Result 末尾调用) —— 判定到点后是软件发 %00, 不指望设备自停。
+  // 不能只留在手动停止里: 走到这里 devStatus 即将归 0, 设备后续帧被 handleFrame 丢弃,
+  // 再不发 %00 就是"软件已结束、机器还在加热", 看面板也不知道能否开箱取样。
+  sendCmd('!!!!!!%00')
   testing.value = false
   // 测试结束回空闲: 否则自动结束(全工位到点/60min超时)路径 devStatus 仍卡 3, 右上角一直"蒸发测试中"
   // (手动停止在 doStop 已先置 0, 这里重复置 0 无害)
@@ -854,6 +858,9 @@ function downloadFile(fileName) {
 
 let simTimer = null
 let simSeq = 0
+// 仿真各工位滴水量(mg) —— 必须全站一致: 2023 判据是"蒸发量追平滴水量(差 ≤20mg)",
+// 若各站滴水量不同, 到点时刻就错开, 演示时看着像"到点却不收尾"。0.2mL ≈ 200mg。
+const SIM_WATER_MG = 200
 
 function onSimModeChange() {
   if (simMode.value) {
@@ -872,7 +879,10 @@ function simulateResponse(kind, arg) {
       for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(18300 + i * 50).padStart(6, '0'))
     } else if (kind === 'drip') {
       const st = arg - 1
-      handleFrame('&1' + '0' + String.fromCharCode(49 + st) + String(18500 + st * 60).padStart(6, '0'))
+      // 秤读数 = 架重 + 干布重 + 滴水量: 由已称好的架/布推出, 保证各工位滴水量都等于 SIM_WATER_MG。
+      // (以前写死 18500+60×工位号, 减去架/布后各站是 200/210/220…, 到点时刻各不同)
+      const raw = frameWeight.value[st] + clothWeight.value[st] + SIM_WATER_MG
+      handleFrame('&1' + '0' + String.fromCharCode(49 + st) + String(raw).padStart(6, '0'))
     }
   }, 120)
 }
@@ -885,8 +895,8 @@ function startSimTest(keepSeq = false) {
     for (let i = 0; i < 6; i++) {
       if (!stationChecked.value[i]) continue
       // 蒸发量从 0 线性升到滴水量 (每点 +12), 秤读数 raw 从 架+布+水 递减到 架+布
-      // —— 蒸发时称重必然递减, 与真机 &1 帧方向一致; 用水量取已滴的 waterWeight, 否则首点会把滴水量覆盖成硬编码值
-      const water = waterWeight.value[i] || 600
+      // —— 蒸发时称重必然递减, 与真机 &1 帧方向一致; 用水量取已滴的 waterWeight, 没滴过就按 SIM_WATER_MG 兜底(仍保持各站一致)
+      const water = waterWeight.value[i] || SIM_WATER_MG
       const evap = Math.min(Math.max(simSeq - 1, 0) * 12, water)
       const raw = frameWeight.value[i] + clothWeight.value[i] + water - evap
       handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(Math.round(raw)).padStart(6, '0'))
