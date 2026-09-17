@@ -36,6 +36,7 @@ import MenuManagement from "@/Views/Config/MenuManagement.vue";
 import StructureConfig from "@/Views/Config/StructureConfig.vue";
 import LogicValidation from "@/Views/Config/LogicValidation.vue";
 import TemplateManagement from "@/Views/Config/TemplateManagement.vue";
+import DataSheetTask from "@/Views/DataSheetTask.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -71,6 +72,7 @@ const useRoleStore = defineStore('role', {
         { path: 'Nf5022DryingRate', name: 'Nf5022DryingRate', component: Nf5022DryingRate, meta: { title: 'NF5022 MoistureDryingRate' } },
         { path: 'Aatcc201DryingRate', name: 'Aatcc201DryingRate', component: Aatcc201DryingRate, meta: { title: 'AATCC 201 MoistureDryingRate' } },
         { path: 'AbrasionResistance_RotatingDrum', name: 'AbrasionResistance_RotatingDrum', component: AbrasionResistance_RotatingDrum, meta: { title: 'Abrasion Resistance_Rotating Drum' } },
+        { path: 'DataSheetTask', name: 'DataSheetTask', component: DataSheetTask, meta: { title: 'DataSheetTask' } }
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },

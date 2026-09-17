@@ -142,6 +142,9 @@
             <el-menu-item index="/main/Review">
               <span>Review</span>
             </el-menu-item>
+            <el-menu-item index="/main/DataSheetTask">
+              <span>DataSheet Task</span>
+            </el-menu-item>
             <el-menu-item index="/main/ExcelTry">
               <span>Work Sheet Edit</span>
             </el-menu-item>
