@@ -1,67 +1,91 @@
 <template>
-  <div class="allContainer">
+  <div class="allContainer instrument-page">
     <div class="main">
 
       <!-- ==================== 左侧面板 ==================== -->
       <div class="left-panel">
 
         <!-- 设备连接 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
-          <div class="row">
-            <span class="lbl">波特率</span>
-            <el-select v-model="baudRate" size="small" style="width:110px" :disabled="connected || connecting">
-              <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
-            </el-select>
-            <span class="lbl" style="margin-left:6px;">仿真</span>
-            <el-switch v-model="simMode" size="small" @change="onSimModeChange" :disabled="connected || connecting"/>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
+          </template>
+          <el-form label-position="left" label-width="62px" size="small" @submit.prevent>
+            <el-form-item label="波特率">
+              <div class="pair">
+                <el-select v-model="baudRate" style="width:110px" :disabled="connected || connecting">
+                  <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
+                </el-select>
+                <span class="lbl">仿真</span>
+                <el-switch v-model="simMode" size="small" @change="onSimModeChange" :disabled="connected || connecting"/>
+              </div>
+            </el-form-item>
+            <!-- label-width="0": 无 label 的 form-item 默认吃 form 的 label-width 当 margin-left
+                 (element-plus form-item 的 contentStyle), 不显式归零这排按钮会右移 62px 并换行 -->
+            <el-form-item label-width="0">
+              <el-button type="primary" size="small" :disabled="connected || simMode" :loading="connecting" @click="connect">
+                <el-icon><Link /></el-icon>连接设备
+              </el-button>
+              <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
+                <el-icon><SwitchButton /></el-icon>断开
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <div class="st"><el-tag :type="connTag.type" size="small" effect="plain">{{ connTag.text }}</el-tag></div>
+          <div class="st" v-if="connected && !simMode && recvTelemetry">
+            <el-tag type="success" size="small" effect="plain">设备主动推送遥测</el-tag>
           </div>
-          <div class="row" style="gap:8px;">
-            <el-button type="primary" size="small" :disabled="connected || simMode" :loading="connecting" @click="connect">
-              <el-icon style="margin-right:4px;"><Link /></el-icon>连接设备
-            </el-button>
-            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
-              <el-icon style="margin-right:4px;"><SwitchButton /></el-icon>断开
-            </el-button>
+          <div class="st" v-else-if="connected && !simMode">
+            <el-tag type="warning" size="small" effect="plain">等待设备遥测…</el-tag>
           </div>
-          <div class="st"><span class="dot" :class="{on:connected || simMode}"></span>
-            {{ simMode ? '仿真模式（无真机）' : connecting ? '连接中...' : connected ? '已连接 ' + baudRate + ' 8N1' : '未连接' }}
-          </div>
-          <div class="st" style="color:#67c23a;" v-if="connected && !simMode && recvTelemetry"><span class="dot on"></span>设备主动推送遥测</div>
-          <div class="st" style="color:#e6a23c;" v-else-if="connected && !simMode"><span class="dot"></span>等待设备遥测…</div>
-        </div>
+        </el-card>
 
         <!-- 样品区 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Document /></el-icon>样品信息</div>
-          <div class="row row-col"><span class="lbl">报告号</span>
-            <span class="repno">
-              <el-input v-model="rep1" size="small" style="width:38px" disabled/>
-              <el-select v-model="rep2" size="small" style="width:58px" :disabled="anyTesting"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
-              <el-select v-model="rep3" size="small" style="width:52px" :disabled="anyTesting"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
-              <el-input v-model="rep4" size="small" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="anyTesting"/>
-              <el-input v-model="rep5" size="small" style="width:40px" :disabled="anyTesting"/>
-            </span>
-          </div>
-          <div class="row"><span class="lbl">样品名称</span>
-            <el-input v-model="sampleName" size="small" :disabled="anyTesting"/>
-          </div>
-          <div class="row"><span class="lbl">环境温度</span>
-            <el-input v-model="temperature" size="small" placeholder="℃" :disabled="anyTesting"/>
-          </div>
-          <div class="row"><span class="lbl">环境湿度</span>
-            <el-input v-model="humidity" size="small" placeholder="%" :disabled="anyTesting"/>
-          </div>
-          <div class="row"><span class="lbl">滴水量</span>
-            <el-input-number v-model="waterMl" :min="0.01" :max="10" :precision="2" :step="0.01" size="small" style="width:110px;" :disabled="anyTesting" controls-position="right"/>
-            <span class="lbl">mL</span>
-          </div>
-        </div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Document /></el-icon>样品信息</div>
+          </template>
+          <!-- label 在上: 报告号是五段式, 左侧留出标签位就放不下了 -->
+          <el-form label-position="top" size="small" @submit.prevent>
+            <el-form-item label="报告号">
+              <span class="repno">
+                <el-input v-model="rep1" style="width:38px" disabled/>
+                <el-select v-model="rep2" style="width:58px" :disabled="anyTesting"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
+                <el-select v-model="rep3" style="width:52px" :disabled="anyTesting"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
+                <el-input v-model="rep4" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="anyTesting"/>
+                <el-input v-model="rep5" style="width:40px" :disabled="anyTesting"/>
+              </span>
+            </el-form-item>
+            <el-form-item label="样品名称">
+              <el-input v-model="sampleName" :disabled="anyTesting"/>
+            </el-form-item>
+            <!-- 环境温度/湿度同一排(原来是两行) -->
+            <el-form-item label-width="0">
+              <div class="env-row">
+                <div class="env-cell">
+                  <span class="lbl">环境温度</span>
+                  <el-input v-model="temperature" placeholder="℃" :disabled="anyTesting"/>
+                </div>
+                <div class="env-cell">
+                  <span class="lbl">环境湿度</span>
+                  <el-input v-model="humidity" placeholder="%" :disabled="anyTesting"/>
+                </div>
+              </div>
+            </el-form-item>
+            <el-form-item label="滴水量">
+              <div class="pair">
+                <el-input-number v-model="waterMl" :min="0.01" :max="10" :precision="2" :step="0.01" style="width:110px" :disabled="anyTesting" controls-position="right"/>
+                <el-text size="small" type="info">mL</el-text>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 测试: 标准测 3 次 → 报告 #1=工位1 首次、#2=工位2 首次、#3=测试3(任选工位重测) -->
-        <!-- test-card: 取消 .row 的 bootstrap -15px 负边距, 使测试3/清空重测行与上方 .btn-grid 按钮同左边界 -->
-        <div class="card test-card">
-          <div class="ctitle"><el-icon><VideoPlay /></el-icon>测试</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><VideoPlay /></el-icon>测试</div>
+          </template>
           <div class="btn-grid">
             <el-button size="small" :type="testing1 ? 'danger' : 'primary'" :disabled="!canStart" @click="toggleTest(1)">
               {{ testing1 ? '工位1 停止' : '工位1 测试' }}
@@ -71,52 +95,69 @@
             </el-button>
           </div>
           <!-- 无左缩进: 测试3 行与上方两按钮同从卡片内容左缘起(行左边界 = 按钮框左边界) -->
-          <div class="row" style="margin-top:8px;">
-            <span class="lbl">测试3</span>
-            <el-select v-model="test3Station" size="small" style="width:104px"
-              :disabled="!test3Unlocked || testing3 || computing">
-              <el-option :value="1" label="重测 工位1"/><el-option :value="2" label="重测 工位2"/>
-            </el-select>
-            <el-button size="small" :type="testing3 ? 'danger' : 'warning'" style="flex:1;"
-              :disabled="!(testing3 || canStart3)" @click="toggleTest3">
-              {{ testing3 ? '停止测试3' : '开始测试3' }}
-            </el-button>
+          <el-form label-position="left" label-width="48px" size="small" class="test-form" @submit.prevent>
+            <el-form-item label="测试3">
+              <div class="pair">
+                <el-select v-model="test3Station" style="width:104px"
+                  :disabled="!test3Unlocked || testing3 || computing">
+                  <el-option :value="1" label="重测 工位1"/><el-option :value="2" label="重测 工位2"/>
+                </el-select>
+                <el-button size="small" :type="testing3 ? 'danger' : 'warning'" style="flex:1"
+                  :disabled="!(testing3 || canStart3)" @click="toggleTest3">
+                  {{ testing3 ? '停止测试3' : '开始测试3' }}
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+          <div class="st" v-if="!test3Unlocked && !anyTesting">
+            <el-tag type="warning" size="small" effect="plain">先完成工位1、工位2 首次测试(均有结果)后开放测试3</el-tag>
           </div>
-          <div class="st" v-if="!test3Unlocked && !anyTesting" style="color:#e6a23c;">先完成工位1、工位2 首次测试(均有结果)后开放测试3</div>
-          <div class="row" style="justify-content:flex-end;margin-top:2px;">
+          <div class="btn-row end">
             <el-button size="small" text type="danger" :disabled="anyTesting || !computeResult" @click="resetAll">清空重测</el-button>
           </div>
-          <div class="st" style="margin-top:2px;">{{ statusText }}</div>
-        </div>
+          <div class="st">{{ statusText }}</div>
+        </el-card>
 
         <!-- 校准参数 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Setting /></el-icon>校准参数</div>
-          <div class="row"><span class="lbl">设定温度</span><span class="val">{{ config?.setTemp ?? '-' }} ℃</span></div>
-          <div class="row"><span class="lbl">面温偏置1/2</span><span class="val">{{ fmtBias(config?.tempHw1) }} / {{ fmtBias(config?.tempHw2) }} ℃</span></div>
-          <div class="row"><span class="lbl">风速偏置1/2</span><span class="val">{{ fmtBias(config?.wind1) }} / {{ fmtBias(config?.wind2) }} m/s</span></div>
-          <div class="row"><span class="lbl">PID</span><span class="val">{{ config?.p }} / {{ config?.i }} / {{ config?.d }}</span></div>
-          <el-button type="primary" size="small" class="full-width" @click="openCalDialog">
-            <el-icon style="margin-right:4px;"><Tools /></el-icon>校准参数设置
-          </el-button>
-        </div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Setting /></el-icon>校准参数</div>
+          </template>
+          <el-descriptions :column="1" size="small" border>
+            <el-descriptions-item label="设定温度"><span class="val">{{ config?.setTemp ?? '-' }} ℃</span></el-descriptions-item>
+            <el-descriptions-item label="面温偏置1/2"><span class="val">{{ fmtBias(config?.tempHw1) }} / {{ fmtBias(config?.tempHw2) }} ℃</span></el-descriptions-item>
+            <el-descriptions-item label="风速偏置1/2"><span class="val">{{ fmtBias(config?.wind1) }} / {{ fmtBias(config?.wind2) }} m/s</span></el-descriptions-item>
+            <el-descriptions-item label="PID"><span class="val">{{ config?.p }} / {{ config?.i }} / {{ config?.d }}</span></el-descriptions-item>
+          </el-descriptions>
+          <el-form size="small" @submit.prevent>
+            <el-form-item label-width="0" class="gap-t">
+              <el-button type="primary" size="small" style="width:100%" @click="openCalDialog">
+                <el-icon><Tools /></el-icon>校准参数设置
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 数据 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Files /></el-icon>数据</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Files /></el-icon>数据</div>
+          </template>
           <div class="btn-grid">
             <el-button size="small" @click="historyVisible = true">历史报告</el-button>
-            <el-button size="small" type="success" :disabled="!computeResult" :loading="computing" @click="generateReport"><el-icon style="margin-right:4px;"><Download /></el-icon>生成报告</el-button>
+            <el-button size="small" type="success" :disabled="!computeResult" :loading="computing" @click="generateReport"><el-icon><Download /></el-icon>生成报告</el-button>
           </div>
-        </div>
+        </el-card>
       </div>
 
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right-panel">
 
         <!-- 实时状态栏 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Monitor /></el-icon>实时状态</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Monitor /></el-icon>实时状态</div>
+          </template>
           <div class="rt-grid">
             <div v-for="s in [1, 2]" :key="s" class="rt-cell">
               <span class="lbl">工位{{ s }}</span>
@@ -127,20 +168,24 @@
               <span class="sub">功率 <b>{{ livePower[s-1] }}</b>%</span>
             </div>
           </div>
-        </div>
+        </el-card>
 
-        <!-- 两条温度曲线 -->
-        <div class="card" v-for="s in [1, 2]" :key="s">
-          <div class="ctitle"><el-icon><TrendCharts /></el-icon>工位{{ s }} 表面温度曲线 (℃/点数)
-            <span class="st" style="margin:0 0 0 auto;">{{ busyLabel(s) }}</span>
-          </div>
+        <!-- 两条温度曲线 (高度全部来自内联 style, 别把它再包进没有高度的容器) -->
+        <el-card v-for="s in [1, 2]" :key="s" shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><TrendCharts /></el-icon>工位{{ s }} 表面温度曲线 (℃/点数)
+              <el-tag type="info" size="small" effect="plain" class="push-r">{{ busyLabel(s) }}</el-tag>
+            </div>
+          </template>
           <v-chart :option="chartOpts[s-1]" autoresize style="height:190px;"/>
-        </div>
+        </el-card>
 
         <!-- 结果表 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Tickets /></el-icon>计算结果</div>
-          <el-table :data="resultRows" border stripe size="small" class="removeTableGaps" style="width:100%;">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Tickets /></el-icon>计算结果</div>
+          </template>
+          <el-table :data="resultRows" border stripe size="small" style="width:100%;">
             <el-table-column prop="no" label="#" width="52" align="center"/>
             <el-table-column label="工位" width="60" align="center">
               <template #default="{ row }">{{ row.participated ? row.station : '-' }}</template>
@@ -164,21 +209,23 @@
               <template #default="{ row }">{{ row.participated ? row.endPoint : '-' }}</template>
             </el-table-column>
           </el-table>
-        </div>
+        </el-card>
       </div>
     </div>
 
     <!-- 历史报告列表 -->
     <el-dialog v-model="historyVisible" title="历史报告文件" width="880px">
-      <div class="filter-row">
-        <el-input v-model="historyKeyword" size="small" clearable placeholder="按报告号 / 样品名称筛选" style="width:220px;"/>
-        <el-button size="small" type="success" :disabled="!canCombine" :loading="combining"
-                   @click="combineSelected" style="margin-left:6px;">
-          合并所选报告{{ historySelection.length >= 2 ? `(${historySelection.length})` : '' }}
-        </el-button>
-        <span class="combine-hint">(勾选同一报告号下的多个样品, 合成一份报告)</span>
-      </div>
-      <el-table :data="filteredHistory" border stripe size="small" class="removeTableGaps" style="width:100%;"
+      <el-form size="small" @submit.prevent>
+        <el-form-item label-width="0">
+          <el-input v-model="historyKeyword" clearable placeholder="按报告号 / 样品名称筛选" style="width:220px"/>
+          <el-button size="small" type="success" :disabled="!canCombine" :loading="combining"
+                     @click="combineSelected" style="margin-left:8px;">
+            合并所选报告{{ historySelection.length >= 2 ? `(${historySelection.length})` : '' }}
+          </el-button>
+          <span class="combine-hint">(勾选同一报告号下的多个样品, 合成一份报告)</span>
+        </el-form-item>
+      </el-form>
+      <el-table :data="filteredHistory" border stripe size="small" style="width:100%;"
                 @selection-change="onHistorySelect">
         <el-table-column type="selection" width="42"/>
         <el-table-column prop="reportNumber" label="报告号" width="160"/>
@@ -266,6 +313,13 @@ const portObj = ref(null)
 const portCfg = ref(null)
 const baudRate = ref(19200)
 const rates = [9600, 19200, 38400, 115200]
+// 连接状态行显示(文字与颜色一起给, 模板里不再写嵌套三元)
+const connTag = computed(() => {
+  if (simMode.value) return { type: 'warning', text: '仿真模式（无真机）' }
+  if (connecting.value) return { type: 'warning', text: '连接中...' }
+  if (connected.value) return { type: 'success', text: '已连接 ' + baudRate.value + ' 8N1' }
+  return { type: 'info', text: '未连接' }
+})
 
 // ---- 遥测活性(看门狗): 真收到 AB BA 遥测帧才显示绿字"设备主动推送遥测" ----
 // 串口能打开 ≠ 设备在推遥测(AATCC 是设备主推, 机器没上电/没开机时端口照样能开)——
@@ -1022,36 +1076,42 @@ onActivated(() => resumeAll())
 </script>
 
 <style scoped>
+/* 容器/骨架(.allContainer / .main)、卡片内边距、el-form-item 间距、table 下边距
+   一律见 src/assets/css/instrument-panel.css —— 那些是 5 个仪器页逐字相同的部分。 */
 * { box-sizing: border-box; }
-.allContainer { padding: 14px; box-sizing: border-box; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%); overflow: auto; }
-.main { display: flex; width: 100%; height: 100%; gap: 12px; box-sizing: border-box; min-width: 0; }
-.left-panel { width: 24%; min-width: 250px; max-width: 330px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box; }
+.allContainer { overflow: auto; }
+.left-panel { width: 24%; min-width: 250px; max-width: 330px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-shrink: 0; }
 .right-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: auto; }
-.card { background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 10px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.04); box-sizing: border-box; width: 100%; }
-.card.conn-card .row, .card.conn-card .st { margin-left: 1px; }
-.card.conn-card .row { width: calc(100% - 1px); }
-.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+/* 面板是 flex 列, 卡片的 flex-shrink 默认是 1 —— 内容比面板高时卡片被压扁, 而
+   .el-card__body 自带 overflow:auto, 卡内就冒出一条滚动条。
+   给卡片 flex-shrink:0 让它们保持内容高度, 溢出交给面板自己的 overflow
+   (.left-panel 是 overflow-y:auto, .right-panel 是 overflow:auto, 本来就有),
+   卡内不再出现滚动条。 */
+.left-panel > .el-card, .right-panel > .el-card { flex-shrink: 0; }
+
+/* 卡片标题: 不叫 card-header, 那个类名 bootstrap 也有 */
+.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; display: flex; align-items: center; gap: 6px; }
 .ctitle .el-icon { color: #409eff; }
-.row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; width: 100%; }
-.row:last-child { margin-bottom: 0; }
+/* 标题右侧的状态 tag 顶到最右 */
+.push-r { margin-left: auto; }
+
 .lbl { font-size: 12px; color: #666; font-weight: 500; white-space: nowrap; }
-.repno { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; flex: 1; min-width: 0; }
+/* 一个 form-item 里并排的控件(波特率+仿真 / 数值+单位 / 测试3 / 温湿度两格) */
+.pair { display: flex; align-items: center; gap: 4px; width: 100%; min-width: 0; }
+.env-row { display: flex; gap: 8px; width: 100%; }
+.env-cell { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+.repno { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; width: 100%; min-width: 0; }
 .repno :deep(.el-input), .repno :deep(.el-select) { flex: 1 1 auto; }
-.row-col { flex-direction: column; align-items: flex-start; gap: 4px; }
-.row-col .repno { width: 100%; }
 .val { font-size: 12px; color: #2b3a4a; font-family: Consolas, monospace; }
-.st { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 4px; word-break: break-all; line-height: 1.4; }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: #c0c4cc; transition: all .2s; flex-shrink: 0; }
-.dot.on { background: #67c23a; box-shadow: 0 0 4px #67c23a; }
-.full-width { width: 100% !important; }
+
+/* 状态行: 固定短状态用 el-tag, 动态长文本(statusText)仍是纯文字 */
+.st { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 6px; word-break: break-all; line-height: 1.4; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .btn-grid .el-button { margin: 0; }
-/* 全局 bootstrap.min.css 的 .row 带 margin:0 -15px; 本视图 scoped .row 未重置左右边距 →
-   测试卡片里测试3/清空重测行会比 .btn-grid 按钮整行偏左 15px。此卡片内取消负边距,
-   行左边界(=按钮框左边界)回卡片内容左缘, 右侧也回内容右缘, 与按钮行对齐。 */
-.test-card .row { margin-left: 0; margin-right: 0; }
-/* 对话框筛选行: 全局 bootstrap .row 带 -15px 负边距, 用独立类避免筛选框贴边框 */
-.filter-row { display: flex; align-items: center; gap: 4px; margin: 0 0 8px; width: 100%; }
+.btn-row { display: flex; }
+.btn-row.end { justify-content: flex-end; margin-top: 2px; }
+.test-form { margin-top: 8px; }
+.gap-t { margin-top: 8px; }
 .combine-hint { font-size: 12px; color: #909399; margin-left: 8px; }
 .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rt-cell { background: #f7f8fa; border-radius: 8px; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
@@ -1064,8 +1124,8 @@ onActivated(() => resumeAll())
 .form-grid .el-form-item { margin-bottom: 8px; }
 .form-grid .el-input-number { width: 130px; }
 :deep(.el-divider__text) { font-size: 12px; color: #909399; }
-/* 清除全局样式 table{margin-bottom:30px} 造成的表头与首行之间的空行 */
-.removeTableGaps :deep(table) {
-  margin-bottom: 0 !important;
-}
+/* 原来这里有一条 .removeTableGaps :deep(table){margin-bottom:0!important}, 用来压掉
+   style.css 的 table{margin-bottom:30px}。共用样式表 instrument-panel.css 里的
+   .instrument-page table 已覆盖同一件事((0,1,1) 赢 (0,0,1), 不需要 !important), 故删除。
+   本页两个 el-dialog 都没写 append-to-body → 就地渲染在 .instrument-page 内, 同样受益。 */
 </style>

@@ -1,0 +1,48 @@
+/* 仪器页共用版式 ------------------------------------------------------------------
+   5 个仪器页(PhysicalWeight / Nf5022DryingRate / Aatcc201DryingRate /
+   AbrasionResistance-RotatingDrum / YarnCount)的根节点都带 .instrument-page,
+   只有这些页面吃下面的规则 —— 全站另有若干页面用 .allContainer, 不加标记会误伤。
+
+   背景: main.js 与 MainLayout.vue 全局引了 bootstrap.min.css 与 style.css, 里面
+   .card / .row / .card-header / .btn-group / label / table 这些选择器跟仪器页手写的
+   版式类同名。scoped 的 .card[data-v-x] 只赢下**自己声明过**的属性, 没声明的一律漏进来
+   (典型: .row 只写 margin-bottom, bootstrap 的 margin:0 -15px 留着 → 每行比卡片内容区
+   宽 30px, 控件压到左边框上)。5 个页面因此各打了各的补丁, 补丁互不相同。
+
+   版式交给 Element 组件(el-card / el-form-item / el-descriptions / el-space)之后,
+   那些补丁全部删掉, 真正需要统一压的几条留在这里一处。 */
+
+/* style.css 给所有 table 加了 margin-bottom:30px, 会打进 el-table、带 border 的
+   el-descriptions 内部的 table, 在表下多出一条空白 —— 这正是各页原来那条
+   .removeTableGaps :deep(table){margin-bottom:0!important} 想干的事。
+
+   只重置 margin: style.css 还给 table th/td 塞了 padding:15px 和 1px #efefef 边框,
+   AbrasionResistance 那四张要打印的表单正是靠逐格内联样式压着这两条画的,
+   连边框内边距一起重置会把那张表打乱。
+   全局选择器没有 scoped 的 :deep() 问题, 类+元素 (0,1,1) 赢元素 (0,0,1), 不用 !important。 */
+.instrument-page table { margin-bottom: 0; }
+
+/* 一屏要塞 3~9 张卡, el-card 默认 --el-card-padding:20px 太松, 统一收成 12px
+   (改造前各页是 12px / 10px 18px / 10px 12px, 这里统一) */
+.instrument-page .el-card { --el-card-border-radius: 10px; }
+.instrument-page .el-card__body { padding: 12px; }
+.instrument-page .el-card__header { padding: 10px 12px; }
+
+/* 一行一个控件的密集表单: el-form-item 默认 margin-bottom:18px 太散 */
+.instrument-page .el-form-item { margin-bottom: 8px; }
+.instrument-page .el-form-item:last-child { margin-bottom: 0; }
+
+/* label 换行显示的表单(label-position="top"):
+   el-form 自己会变成 display:flex;flex-wrap:wrap, form-item 是收缩到内容宽的 flex 子项,
+   里面再放 width:100% 的控件就会互相打架 —— 强制每项独占一行。
+   标签高度默认跟控件走(默认 32px / small 24px), 换行后偏空, 收紧到内容高度。 */
+.instrument-page .el-form--label-top .el-form-item { width: 100%; }
+.instrument-page .el-form--label-top .el-form-item__label { height: auto; line-height: 1.4; margin-bottom: 2px; }
+
+/* el-card__body 默认是 block; 卡片内容区不再是 flex 列, 原来靠 .card 的 flex 列竖排的
+   行内元素会挤到同一行。需要"竖排 + 给子元素分配剩余高度"的卡(表格卡)加 .card-stack。 */
+.instrument-page .card-stack .el-card__body { display: flex; flex-direction: column; }
+
+/* 5 个仪器页逐字相同的骨架(各页 .left/.mid/.right 的宽度是内容定的, 留在页面里) */
+.instrument-page { padding: 14px; box-sizing: border-box; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%); }
+.instrument-page > .main { display: flex; width: 100%; height: 100%; gap: 12px; box-sizing: border-box; }

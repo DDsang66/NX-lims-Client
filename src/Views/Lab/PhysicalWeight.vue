@@ -1,123 +1,159 @@
 <template>
-  <div class="allContainer">
+  <div class="allContainer instrument-page">
     <div class="main">
 
       <!-- ==================== 左侧面板 ==================== -->
       <div class="left">
 
         <!-- 设备连接 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
-          <div class="row">
-            <span class="lbl">天平品牌</span>
-            <el-select v-model="scaleBrand" size="small" style="width:130px" :disabled="connected || connecting" @change="onBrandChange">
-              <el-option v-for="(b, k) in SCALE_BRANDS" :key="k" :value="k" :label="b.label"/>
-            </el-select>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
+          </template>
+          <el-form label-position="left" label-width="62px" size="small" @submit.prevent>
+            <el-form-item label="天平品牌">
+              <el-select v-model="scaleBrand" style="width:130px" :disabled="connected || connecting" @change="onBrandChange">
+                <el-option v-for="(b, k) in SCALE_BRANDS" :key="k" :value="k" :label="b.label"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="波特率">
+              <el-select v-model="baudRate" style="width:90px" :disabled="connected">
+                <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
+              </el-select>
+            </el-form-item>
+            <!-- label-width="0": 无 label 的 form-item 默认吃 form 的 label-width 当 margin-left
+                 (element-plus form-item 的 contentStyle), 不显式归零这排按钮会右移 62px 并被挤到换行 -->
+            <el-form-item label-width="0">
+              <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect">
+                <el-icon><Link /></el-icon>连接设备
+              </el-button>
+              <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
+                <el-icon><SwitchButton /></el-icon>断开
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <div class="st"><el-tag :type="connTag.type" size="small" effect="plain">{{ connTag.text }}</el-tag></div>
+          <div v-if="connected" class="st">
+            <el-tag :type="weightTag.type" size="small" effect="plain">{{ weightTag.text }}</el-tag>
           </div>
-          <div class="row">
-            <span class="lbl">波特率</span>
-            <el-select v-model="baudRate" size="small" style="width:90px" :disabled="connected">
-              <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
-            </el-select>
-          </div>
-          <div class="row" style="gap:8px;">
-            <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect">
-              <el-icon style="margin-right:4px;"><Link /></el-icon>连接设备
-            </el-button>
-            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
-              <el-icon style="margin-right:4px;"><SwitchButton /></el-icon>断开
-            </el-button>
-          </div>
-          <div class="st"><span class="dot" :class="{on:connected}"></span>{{ connecting ? '连接中...' : connected ? '已连接 ' + cfgInfo : '未连接 — 可手动输入' }}</div>
-          <div v-if="connected" class="st" style="color:#67c23a;">
-            <span class="dot" :class="{on:weight!=null}"></span>{{ weight != null ? '读取正常: ' + weight.toFixed(3) : '等待数据... 按天平 PRINT 键' }}
-          </div>
-        </div>
+        </el-card>
 
         <!-- 重量 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>重量 (g)</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>重量 (g)</div>
+          </template>
+          <!-- 框壳保留: 琥珀虚线框=手输, 绿实线框=天平正在读数 -->
           <div class="wtbox" :class="{live:connected}">
-            <span v-if="!connected">
-              <el-input-number v-model="weight" :precision="3" :min="0" :step="0.001" controls-position="right" style="width:100%" placeholder="手动输入"/>
-            </span>
-            <span v-else class="wtval">{{ weight != null ? weight.toFixed(3) : '---' }}</span>
+            <el-input-number v-if="!connected" v-model="weight" :precision="3" :min="0" :step="0.001" controls-position="right" style="width:100%" placeholder="手动输入"/>
+            <el-statistic v-else-if="weight != null" class="wtstat" :value="weight" :precision="3"/>
+            <span v-else class="wtval">---</span>
           </div>
-        </div>
+        </el-card>
 
         <!-- 测试类型切换 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Grid /></el-icon>测试类型</div>
-          <el-radio-group v-model="testType" size="small" style="width:100%" @change="onTestTypeChange">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Grid /></el-icon>测试类型</div>
+          </template>
+          <el-radio-group v-model="testType" class="tt-group" size="small" @change="onTestTypeChange">
             <el-radio-button value="area" style="width:33.33%">面积克重</el-radio-button>
             <el-radio-button value="length" style="width:33.33%" :disabled="!supportsType('length')">长度克重</el-radio-button>
             <el-radio-button value="piece" style="width:33.33%" :disabled="!supportsType('piece')">条重</el-radio-button>
           </el-radio-group>
-          <div class="st" style="color:#909399;">{{ TYPE_LABEL[testType] }}</div>
-          <div v-if="!supportsType('length')" class="st" style="color:#e6a23c;">{{ buyer }} 报告模板只有面积克重的列</div>
-        </div>
+          <div class="st"><el-text size="small" type="info">{{ TYPE_LABEL[testType] }}</el-text></div>
+          <div v-if="!supportsType('length')" class="st">
+            <el-tag type="warning" size="small" effect="plain">{{ buyer }} 报告模板只有面积克重的列</el-tag>
+          </div>
+        </el-card>
 
         <!-- 试样面积 (面积克重) -->
-        <div v-if="testType==='area'" class="card">
-          <div class="ctitle" style="justify-content:space-between;">
-            <span><el-icon><Grid /></el-icon>试样面积 (cm²)</span>
-            <el-switch v-model="areaByCalc" size="small" active-text="长×宽" inactive-text="直接" style="--el-switch-on-color:#409eff;" />
-          </div>
-          <template v-if="areaByCalc">
-            <div class="row" style="gap:4px;padding-right:16px;">
-              <span class="lbl">长</span>
-              <el-input-number v-model="areaLen" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
-              <span class="lbl">宽</span>
-              <el-input-number v-model="areaWid" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm"/>
+        <el-card v-if="testType==='area'" shadow="hover">
+          <template #header>
+            <div class="ctitle" style="justify-content:space-between;">
+              <span><el-icon><Grid /></el-icon>试样面积 (cm²)</span>
+              <el-switch v-model="areaByCalc" size="small" active-text="长×宽" inactive-text="直接" style="--el-switch-on-color:#409eff;" />
             </div>
-            <span v-if="areaLen>0 && areaWid>0" class="hint">= {{ areaValue }} cm²</span>
           </template>
-          <!-- NEXT 直接模式: 单块试样固定 100 cm², 不填(一次称 N 块时靠下面的样品数乘出总面积) -->
-          <el-input-number v-else-if="areaFixed" :model-value="NEXT_AREA" disabled :precision="2" controls-position="right" style="width:100%"/>
-          <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
-          <span v-if="areaFixed" class="hint">NEXT 单块固定 100 cm², 总面积 = 样品数 × 100</span>
-          <!-- FOCUS 报告汇总表有 g/m 那一列, 面积模式下页面没有长度可录 → 每条记录单独录一次长度 -->
-          <div v-if="buyer==='FOCUS'" class="row" style="gap:4px;margin-top:6px;padding-right:16px;">
-            <span class="lbl">长度</span>
-            <el-input-number v-model="focusLen" :precision="2" :min="0" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="cm (算 g/m)"/>
-          </div>
-          <span v-if="buyer==='FOCUS' && focusLen>0" class="hint">g/m = 重量 ÷ 长度 × 100</span>
-          <!-- NEXT 登记表要 Number of sample: 该次称重覆盖了几块试样, 每条记录录一次 -->
-          <div v-if="buyer==='NEXT'" class="row" style="gap:4px;margin-top:6px;padding-right:16px;">
-            <span class="lbl">样品数</span>
-            <el-input-number v-model="sampleCount" :precision="0" :min="1" :step="1" controls-position="right" size="small" style="flex:1;width:0" placeholder="样品数 (默认1)"/>
-          </div>
-        </div>
+          <el-form size="small" @submit.prevent>
+            <template v-if="areaByCalc">
+              <el-form-item>
+                <div class="pair">
+                  <span class="lbl">长</span>
+                  <el-input-number v-model="areaLen" :precision="2" :min="0" :step="1" controls-position="right" style="flex:1;width:0" placeholder="cm"/>
+                  <span class="lbl">宽</span>
+                  <el-input-number v-model="areaWid" :precision="2" :min="0" :step="1" controls-position="right" style="flex:1;width:0" placeholder="cm"/>
+                </div>
+              </el-form-item>
+              <el-text v-if="areaLen>0 && areaWid>0" class="hint block" size="small" type="info">= {{ areaValue }} cm²</el-text>
+            </template>
+            <!-- NEXT 直接模式: 单块试样固定 100 cm², 不填(一次称 N 块时靠下面的样品数乘出总面积) -->
+            <el-form-item v-else>
+              <el-input-number v-if="areaFixed" :model-value="NEXT_AREA" disabled :precision="2" controls-position="right" style="width:100%"/>
+              <el-input-number v-else v-model="area" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入面积"/>
+            </el-form-item>
+            <el-text v-if="areaFixed" class="hint block" size="small" type="info">NEXT 单块固定 100 cm², 总面积 = 样品数 × 100</el-text>
+            <!-- FOCUS 报告汇总表有 g/m 那一列, 面积模式下页面没有长度可录 → 每条记录单独录一次长度 -->
+            <el-form-item v-if="buyer==='FOCUS'">
+              <div class="pair">
+                <span class="lbl">长度</span>
+                <el-input-number v-model="focusLen" :precision="2" :min="0" :step="1" controls-position="right" style="flex:1;width:0" placeholder="cm (算 g/m)"/>
+              </div>
+            </el-form-item>
+            <el-text v-if="buyer==='FOCUS' && focusLen>0" class="hint block" size="small" type="info">g/m = 重量 ÷ 长度 × 100</el-text>
+            <!-- NEXT 登记表要 Number of sample: 该次称重覆盖了几块试样, 每条记录录一次 -->
+            <el-form-item v-if="buyer==='NEXT'">
+              <div class="pair">
+                <span class="lbl">样品数</span>
+                <el-input-number v-model="sampleCount" :precision="0" :min="1" :step="1" controls-position="right" style="flex:1;width:0" placeholder="样品数 (默认1)"/>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 试样长度 (长度克重) -->
-        <div v-if="testType==='length'" class="card">
-          <div class="ctitle"><el-icon><Grid /></el-icon>试样长度 (cm)</div>
-          <el-input-number v-model="lengthCm" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入长度 cm"/>
-        </div>
+        <el-card v-if="testType==='length'" shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Grid /></el-icon>试样长度 (cm)</div>
+          </template>
+          <el-form size="small" @submit.prevent>
+            <el-form-item>
+              <el-input-number v-model="lengthCm" :precision="2" :min="0" :step="1" controls-position="right" style="width:100%" placeholder="输入长度 cm"/>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 试样条重 (条重) -->
-        <div v-if="testType==='piece'" class="card">
-          <div class="ctitle"><el-icon><Grid /></el-icon>试样条重 (piece)</div>
-          <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" placeholder="称重条数 (默认12)"/>
-        </div>
+        <el-card v-if="testType==='piece'" shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Grid /></el-icon>试样条重 (piece)</div>
+          </template>
+          <el-form size="small" @submit.prevent>
+            <el-form-item>
+              <el-input-number v-model="pieceCount" :precision="0" :min="1" :step="1" controls-position="right" style="width:100%" placeholder="称重条数 (默认12)"/>
+            </el-form-item>
+          </el-form>
+        </el-card>
       </div>
 
       <!-- ==================== 中间按钮 ==================== -->
-      <div class="mid card">
-        <el-button type="primary" round @click="record"><el-icon><CirclePlus /></el-icon>结果记录</el-button>
-        <el-button type="warning" round @click="clearAll"><el-icon><RefreshLeft /></el-icon>清除数据</el-button>
-        <el-button type="danger" round :disabled="!sel.length" @click="delSel"><el-icon><Delete /></el-icon>删除选中</el-button>
-        <el-button type="success" round :disabled="!rows.length" @click="doExport"><el-icon><Download /></el-icon>导出Excel</el-button>
-        <el-button type="primary" round :disabled="!rows.length" @click="doReport"><el-icon><Document /></el-icon>生成报告</el-button>
-        <el-button round :disabled="!rows.length" @click="doPrint"><el-icon><Printer /></el-icon>打印</el-button>
-        <el-button round :disabled="!rows.length" @click="doSave"><el-icon><Upload /></el-icon>保存到服务器</el-button>
-      </div>
+      <el-card class="mid" shadow="hover">
+        <el-space direction="vertical" :size="10" fill>
+          <el-button type="primary" round @click="record"><el-icon><CirclePlus /></el-icon>结果记录</el-button>
+          <el-button type="warning" round @click="clearAll"><el-icon><RefreshLeft /></el-icon>清除数据</el-button>
+          <el-button type="danger" round :disabled="!sel.length" @click="delSel"><el-icon><Delete /></el-icon>删除选中</el-button>
+          <el-button type="success" round :disabled="!rows.length" @click="doExport"><el-icon><Download /></el-icon>导出Excel</el-button>
+          <el-button type="primary" round :disabled="!rows.length" @click="doReport"><el-icon><Document /></el-icon>生成报告</el-button>
+          <el-button round :disabled="!rows.length" @click="doPrint"><el-icon><Printer /></el-icon>打印</el-button>
+          <el-button round :disabled="!rows.length" @click="doSave"><el-icon><Upload /></el-icon>保存到服务器</el-button>
+        </el-space>
+      </el-card>
 
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right">
-        <div class="card" style="display:flex;flex-direction:column;gap:10px;padding:10px 14px;">
+        <el-card class="info-card" shadow="hover">
           <!-- 第一排: 试样编号 + 试样测点 -->
-          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;">
+          <div class="fields">
             <span class="field">试样编号
               <el-input v-model="rep1" style="width:52px" disabled/>
               <el-select v-model="rep2" style="width:76px"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
@@ -128,7 +164,7 @@
             <span class="field">试样测点 <el-input v-model="point" placeholder="试样测点" style="width:120px" clearable/></span>
           </div>
           <!-- 第二排: 环境温度 + 环境湿度 + 买家 -->
-          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:14px 24px;align-items:center;">
+          <div class="fields">
             <span class="field">环境温度(℃) <el-input-number v-model="temp" :precision="1" :min="-50" :max="100" style="width:110px" controls-position="right"/></span>
             <span class="field">环境湿度(%) <el-input-number v-model="humid" :precision="1" :min="0" :max="100" style="width:110px" controls-position="right"/></span>
             <span class="field">买家
@@ -137,9 +173,9 @@
               </el-select>
             </span>
           </div>
-        </div>
+        </el-card>
         <div class="tbl-wrap">
-          <el-table ref="tblRef" :data="rows" border stripe class="removeTableGaps" style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
+          <el-table ref="tblRef" :data="rows" border stripe style="width:100%;height:100%;" @selection-change="s=>sel=s" row-key="id">
             <el-table-column type="selection" width="40"/>
             <el-table-column prop="ri" label="次数" width="60" align="center"/>
             <el-table-column prop="sid" label="试样编号" width="200"/>
@@ -269,6 +305,15 @@ const portObj = ref(null)
 const portCfg = ref(null)  // 实际打开的端口配置 {dataBits,parity,...}
 const weight = ref(null)
 const lastRxTime = ref(0)          // 最近一次收到串口数据的时间戳
+// 状态行显示(文字与颜色一起给, 模板里不再写嵌套三元)
+const connTag = computed(() => {
+  if (connecting.value) return { type: 'warning', text: '连接中...' }
+  if (connected.value) return { type: 'success', text: '已连接 ' + cfgInfo.value }
+  return { type: 'info', text: '未连接 — 可手动输入' }
+})
+const weightTag = computed(() => weight.value != null
+  ? { type: 'success', text: '读取正常: ' + weight.value.toFixed(3) }
+  : { type: 'info', text: '等待数据... 按天平 PRINT 键' })
 // ---- 测试类型: area(面积克重) | length(长度克重) | piece(条重) ----
 const testType = ref('area')
 const TYPE_LABEL = { area: '面积克重', length: '长度克重', piece: '条重' }
@@ -680,46 +725,49 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 页面容器: 渐变背景 + 圆角面板 */
-.allContainer { padding: 14px; box-sizing: border-box; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%); }
-.main { display: flex; width: 100%; height: 100%; gap: 12px; box-sizing: border-box; }
+/* 容器/骨架(.allContainer / .main)、卡片内边距、el-form-item 间距、table 下边距
+   一律见 src/assets/css/instrument-panel.css —— 那些是 5 个仪器页逐字相同的部分。 */
 
 /* 左右侧列 */
 .left { width: 248px; display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; overflow-y: auto; }
 .right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 
-/* 卡片 */
-.card { background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); transition: box-shadow .2s; }
-.card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.07); }
-.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+/* 卡片标题: 不叫 card-header, 那个类名 bootstrap 也有 */
+.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; display: flex; align-items: center; gap: 6px; }
 .ctitle .el-icon { color: #409eff; }
 
-/* 行/标签 */
-.row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding-left: 16px; }
+/* 标签: 仅剩卡片内联的"长/宽"这类随控件同行的小字(其余标签交给 el-form-item) */
 .lbl { font-size: 12px; color: #666; white-space: nowrap; }
+/* 不带标签的 form-item 里放的两个控件同行(长 宽 / 长度 / 样品数) */
+.pair { display: flex; align-items: center; gap: 4px; width: 100%; }
 
-/* 连接状态 */
-.st { margin-top: 8px; font-size: 12px; color: #666; display: flex; align-items: center; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #c0c4cc; margin-right: 5px; transition: all .2s; }
-.dot.on { background: #67c23a; box-shadow: 0 0 4px #67c23a; }
+/* 连接状态行 */
+.st { margin-top: 6px; }
 
-/* 重量框 */
+/* 重量框: 琥珀虚线=手输, 绿实线=天平正在读数。el-statistic 给不了这圈边框, 保留 */
 .wtbox { padding: 12px; border-radius: 8px; text-align: center; min-height: 56px; display: flex; align-items: center; justify-content: center; background: #fdf6ec; border: 1px dashed #e6a23c; transition: all .25s; }
 .wtbox.live { background: #f0f9eb; border: 2px solid #67c23a; }
 .wtval { font-size: 30px; font-weight: 700; font-family: 'Consolas', 'Courier New', monospace; color: #1f3d2b; }
+.wtstat :deep(.el-statistic__content) { font-size: 30px; font-weight: 700; font-family: 'Consolas', 'Courier New', monospace; color: #1f3d2b; }
 
 .hint { font-size: 11px; color: #909399; }
+.hint.block { display: block; margin-top: 6px; }
 
-/* 中间按钮列 (卡片化, 贴合内容高度) */
-.mid { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; align-self: center; width: 138px; padding: 14px; box-sizing: border-box; }
-.mid .el-button { width: 100%; margin: 0; }
+/* 测试类型: el-radio-group 是 inline-flex, 不给 display:flex 就落在行内盒里, 下方多出基线空隙 */
+.tt-group { display: flex; width: 100%; }
+
+/* 中间按钮列 (el-card 贴合内容高度; 宽度按最长按钮 "保存到服务器" 定:
+   图标 14+4 + 6个汉字 84 + 按钮左右内边距 30 = 132, 加卡片内边距 24 与边框 2 → 158) */
+.mid { flex-shrink: 0; align-self: center; width: 160px; }
+/* el-space 是 inline-flex, 不撑满卡片内容宽, 按钮就不会等宽 */
+.mid :deep(.el-space) { display: flex; width: 100%; }
 .mid .el-button .el-icon { margin-right: 4px; }
 
-/* 右侧信息栏: 4个输入框一行横排 (容器用内联 flex:row, 保证不折行) */
+/* 右侧信息栏: 两组"标签+控件"各占一行, 组内横向排、组间可折行 */
+.info-card :deep(.el-card__body) { display: flex; flex-direction: column; gap: 10px; }
+.fields { display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 24px; align-items: center; }
 .field { font-size: 13px; color: #444; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+/* 表格容器: 不是卡, 是 .info-card 的兄弟 —— flex:1;min-height:0 + el-table height:100% 的高度链 */
 .tbl-wrap { flex: 1; min-height: 0; background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-/* 清除全局样式 table{margin-bottom:30px} 造成的表头与首行之间的空行 */
-.removeTableGaps :deep(table) {
-  margin-bottom: 0 !important;
-}
 </style>

@@ -1,75 +1,74 @@
 <template>
-  <div class="allContainer">
+  <div class="allContainer instrument-page">
     <div class="main">
       <!-- ========== Left Panel 20% ========== -->
       <div class="left-panel">
         <!-- Device Connection Card -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Connection /></el-icon>Device Connection</div>
-
-          <div class="field-row">
-            <label class="lbl">Balance Brand</label>
-            <el-select v-model="scaleBrand" size="small" class="full-width" :disabled="connected || connecting" @change="onBrandChange">
-              <el-option v-for="(b, k) in SCALE_BRANDS" :key="k" :value="k" :label="b.label" />
-            </el-select>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Connection /></el-icon>Device Connection</div>
+          </template>
+          <!-- label 在上: 这一列只有 200~280px, 放不下左侧 14px 的 "Balance Brand" -->
+          <el-form label-position="top" size="small" @submit.prevent>
+            <el-form-item label="Balance Brand">
+              <el-select v-model="scaleBrand" class="full-width" :disabled="connected || connecting" @change="onBrandChange">
+                <el-option v-for="(b, k) in SCALE_BRANDS" :key="k" :value="k" :label="b.label" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="Baud Rate">
+              <el-select v-model="baudRate" class="full-width" :disabled="connected">
+                <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label-width="0">
+              <div class="btn-row">
+                <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect" class="btn-half">
+                  <el-icon><Link /></el-icon> Connect
+                </el-button>
+                <el-button type="danger" size="small" :disabled="!connected" @click="disconnect" class="btn-half">
+                  <el-icon><SwitchButton /></el-icon> Disconnect
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+          <div class="status-text"><el-tag :type="connTag.type" size="small" effect="plain">{{ connTag.text }}</el-tag></div>
+          <div v-if="connected" class="status-text">
+            <el-tag :type="weightTag.type" size="small" effect="plain">{{ weightTag.text }}</el-tag>
           </div>
-
-          <div class="field-row">
-            <label class="lbl">Baud Rate</label>
-            <el-select v-model="baudRate" size="small" class="full-width" :disabled="connected">
-              <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)" />
-            </el-select>
-          </div>
-
-          <div class="btn-row">
-            <el-button type="primary" size="small" :disabled="connected" :loading="connecting" @click="connect" class="btn-half">
-              <el-icon><Link /></el-icon> Connect
-            </el-button>
-            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect" class="btn-half">
-              <el-icon><SwitchButton /></el-icon> Disconnect
-            </el-button>
-          </div>
-
-          <div class="status-text">
-            <span class="dot" :class="{on:connected}"></span>
-            {{ connecting ? 'Connecting...' : connected ? 'Connected ' + cfgInfo : 'Disconnected — Manual' }}
-          </div>
-          <div v-if="connected" class="status-text" style="color:#67c23a;">
-            <span class="dot" :class="{on:weight!=null}"></span>
-            {{ weight != null ? 'Reading: ' + weight.toFixed(4) + ' g' : 'Waiting for data...' }}
-          </div>
-        </div>
+        </el-card>
 
         <!-- Weight Card -->
-        <div class="card">
-          <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>Weight (g)</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><ScaleToOriginal /></el-icon>Weight (g)</div>
+          </template>
+          <!-- 框壳保留: 琥珀虚线框=手输, 绿实线框=天平正在读数 -->
           <div class="wtbox" :class="{live:connected}">
-            <span v-if="!connected" style="width:100%;">
-              <el-input-number v-model="weight" :precision="4" :min="0" :step="0.0001" controls-position="right" class="full-width" placeholder="Manual" />
-            </span>
-            <span v-else class="wtval">{{ weight != null ? weight.toFixed(4) : '---' }}</span>
+            <el-input-number v-if="!connected" v-model="weight" :precision="4" :min="0" :step="0.0001" controls-position="right" class="full-width" placeholder="Manual" />
+            <el-statistic v-else-if="weight != null" class="wtstat" :value="weight" :precision="4" />
+            <span v-else class="wtval">---</span>
           </div>
-        </div>
+        </el-card>
 
-        <!-- Operation Buttons -->
-        <div class="card btn-group">
-          <el-button type="primary" round size="default" @click="recordResults" class="full-width"><el-icon><CirclePlus /></el-icon> Record Results</el-button>
-          <el-button type="warning" round size="default" @click="clearAll" class="full-width"><el-icon><RefreshLeft /></el-icon> Clear All</el-button>
-          <el-button type="danger" round size="default" :disabled="!sel.length" @click="delSel" class="full-width"><el-icon><Delete /></el-icon> Delete Selected</el-button>
-          <el-button type="info" round size="default" :disabled="!rows.length" @click="doExport" class="full-width"><el-icon><Download /></el-icon> Export Excel</el-button>
-          <el-button type="primary" round size="default" @click="generateReport" class="full-width">
-            <el-icon><Document /></el-icon> Generate Report
-          </el-button>
-          <el-button round size="default" @click="doPrint" class="full-width">
-            <el-icon><Printer /></el-icon> Print
-          </el-button>
-        </div>
+        <!-- Operation Buttons (类名不叫 btn-group: bootstrap 也有这个类) -->
+        <el-card class="op-buttons" shadow="hover">
+          <el-space direction="vertical" :size="6" fill>
+            <el-button type="primary" round @click="recordResults"><el-icon><CirclePlus /></el-icon> Record Results</el-button>
+            <el-button type="warning" round @click="clearAll"><el-icon><RefreshLeft /></el-icon> Clear All</el-button>
+            <el-button type="danger" round :disabled="!sel.length" @click="delSel"><el-icon><Delete /></el-icon> Delete Selected</el-button>
+            <el-button type="info" round :disabled="!rows.length" @click="doExport"><el-icon><Download /></el-icon> Export Excel</el-button>
+            <el-button type="primary" round @click="generateReport"><el-icon><Document /></el-icon> Generate Report</el-button>
+            <el-button round @click="doPrint"><el-icon><Printer /></el-icon> Print</el-button>
+          </el-space>
+        </el-card>
       </div>
 
       <!-- ========== Right Panel 80% ========== -->
       <div class="right-panel">
         <!-- Upper 30% : Report Info -->
-        <div class="right-top card">
+        <!-- 这两张卡不设 #header: 标题是卡自己的行内排版, 加 el-card header 会凭空多出一行高度,
+             而 .right-top/.right-bottom 是按 23%/77% 分高度的, 加不起 -->
+        <el-card class="right-top" shadow="hover">
           <div style="display:flex; flex-direction:column; height:100%; gap:6px;">
             <div style="display:flex; gap:24px; width:100%;">
               <!-- 第一列：3个字段 -->
@@ -180,10 +179,10 @@
               </div>
             </div>
           </div>
-        </div>
+        </el-card>
 
         <!-- Lower 70% : Abrasion Data -->
-        <div class="right-bottom card">
+        <el-card class="right-bottom" shadow="hover">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
             <span style="font-weight:600; color:#2b3a4a; font-size:14px;">
               <el-icon><Grid /></el-icon> Abrasion Resistance Data
@@ -480,7 +479,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </el-card>
       </div>
     </div>
   </div>
@@ -623,6 +622,16 @@
   const portCfg = ref(null)
   const weight = ref(null)
   const lastRxTime = ref(0)
+
+  // 状态行显示(文字与颜色一起给, 模板里不再写嵌套三元)
+  const connTag = computed(() => {
+    if (connecting.value) return { type: 'warning', text: 'Connecting...' }
+    if (connected.value) return { type: 'success', text: 'Connected ' + cfgInfo.value }
+    return { type: 'info', text: 'Disconnected — Manual' }
+  })
+  const weightTag = computed(() => weight.value != null
+    ? { type: 'success', text: 'Reading: ' + weight.value.toFixed(4) + ' g' }
+    : { type: 'info', text: 'Waiting for data...' })
 
   // ---- Specimen Info ----
   const twoDigitYear = new Date().getFullYear() % 100
@@ -1851,24 +1860,10 @@
 </script>
 
 <style scoped>
+  /* 容器/骨架(.allContainer / .main)、卡片内边距、el-form-item 间距、table 下边距
+     一律见 src/assets/css/instrument-panel.css —— 那些是 5 个仪器页逐字相同的部分。 */
   * {
     box-sizing: border-box;
-  }
-
-  .allContainer {
-    padding: 14px;
-    box-sizing: border-box;
-    height: 100%;
-    background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%);
-  }
-
-  .main {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    gap: 12px;
-    box-sizing: border-box;
-    min-width: 0;
   }
 
   .left-panel {
@@ -1883,10 +1878,9 @@
     box-sizing: border-box;
   }
 
-    .left-panel .card {
+    /* el-card 自带 overflow:hidden; 宽度显式撑满这一列 */
+    .left-panel .el-card {
       width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
   .right-panel {
@@ -1898,6 +1892,7 @@
     overflow: hidden;
   }
 
+  /* 23% / 77% 分高度: 弹性收缩会把 12px gap 摊掉, 改不成 flex:0 0 auto — 那样就溢出了 */
   .right-top {
     height: 23%;
     min-height: 90px;
@@ -1907,26 +1902,14 @@
   .right-bottom {
     height: 77%;
     min-height: 200px;
-    display: flex;
-    flex-direction: column;
     overflow: auto;
   }
 
-  .card {
-    background: #fff;
-    border: 1px solid #e6e8eb;
-    border-radius: 10px;
-    padding: 10px 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04);
-    box-sizing: border-box;
-    width: 100%;
-  }
-
+  /* 卡片标题: 不叫 card-header, 那个类名 bootstrap 也有 */
   .ctitle {
     font-size: 13px;
     font-weight: 600;
     color: #2b3a4a;
-    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1936,24 +1919,7 @@
       color: #409eff;
     }
 
-  .field-row {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 8px;
-    width: 100%;
-  }
-
-    .field-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .field-row .lbl {
-      font-size: 11px;
-      color: #666;
-      font-weight: 500;
-    }
-
+  /* 这几个 !important 打的是 Element 自己的宽度, 不是 bootstrap, 留着 */
   .full-width {
     width: 100% !important;
   }
@@ -1974,7 +1940,6 @@
     display: flex;
     gap: 6px;
     width: 100%;
-    margin-bottom: 6px;
   }
 
     .btn-row .btn-half {
@@ -1984,54 +1949,31 @@
       font-size: 12px;
     }
 
-      .btn-row .btn-half .el-icon {
+      .btn-half .el-icon {
         margin-right: 2px;
         font-size: 14px;
       }
 
-  .btn-group {
+  /* 操作按钮列: el-space 是 inline-flex, 不撑满卡片内容宽按钮就不等宽 */
+  .op-buttons :deep(.el-space) {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 10px 12px;
+    width: 100%;
   }
 
-    .btn-group .full-width {
-      width: 100% !important;
-      margin: 0;
+    .op-buttons .el-button {
       font-size: 13px;
       padding: 8px 0;
     }
 
-      .btn-group .full-width .el-icon {
+      .op-buttons .el-button .el-icon {
         margin-right: 4px;
       }
 
   .status-text {
-    font-size: 11px;
-    color: #666;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 4px;
-    word-break: break-all;
-    line-height: 1.4;
+    margin-top: 6px;
   }
 
-  .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #c0c4cc;
-    transition: all .2s;
-    flex-shrink: 0;
-  }
-
-    .dot.on {
-      background: #67c23a;
-      box-shadow: 0 0 4px #67c23a;
-    }
-
+  /* 重量框: 琥珀虚线=手输, 绿实线=天平正在读数。el-statistic 给不了这圈边框, 保留 */
   .wtbox {
     padding: 10px;
     border-radius: 8px;
@@ -2059,6 +2001,13 @@
     color: #1f3d2b;
   }
 
+  .wtstat :deep(.el-statistic__content) {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'Consolas', monospace;
+    color: #1f3d2b;
+  }
+
   .field {
     font-size: 12px;
     color: #444;
@@ -2072,25 +2021,6 @@
     .field .el-select,
     .field .el-input-number {
       flex-shrink: 0;
-    }
-
-  .tbl-wrap {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-    .tbl-wrap :deep(.el-table) {
-      height: 100%;
-    }
-
-    .tbl-wrap :deep(.el-table__inner-wrapper) {
-      height: 100%;
-    }
-
-    .tbl-wrap :deep(.el-table__body-wrapper) {
-      height: calc(100% - 40px);
-      overflow-y: auto;
     }
 
   @media (max-width: 900px) {
@@ -2113,7 +2043,7 @@
       flex-wrap: wrap;
     }
 
-      .left-panel .card {
+      .left-panel .el-card {
         flex: 1;
         min-width: 180px;
       }

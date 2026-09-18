@@ -1,134 +1,174 @@
 <template>
-  <div class="allContainer">
+  <div class="allContainer instrument-page">
     <div class="main">
 
       <!-- ==================== 左侧面板 ==================== -->
       <div class="left-panel">
 
         <!-- 设备连接 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
-          <div class="row">
-            <span class="lbl">波特率</span>
-            <el-select v-model="baudRate" size="small" style="width:110px" :disabled="connected || connecting">
-              <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
-            </el-select>
-            <span class="lbl" style="margin-left:6px;">仿真</span>
-            <el-switch v-model="simMode" size="small" @change="onSimModeChange" :disabled="connected || connecting"/>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Connection /></el-icon>设备连接</div>
+          </template>
+          <el-form label-position="left" label-width="62px" size="small" @submit.prevent>
+            <el-form-item label="波特率">
+              <div class="pair">
+                <el-select v-model="baudRate" style="width:110px" :disabled="connected || connecting">
+                  <el-option v-for="b in rates" :key="b" :value="b" :label="String(b)"/>
+                </el-select>
+                <span class="lbl">仿真</span>
+                <el-switch v-model="simMode" size="small" @change="onSimModeChange" :disabled="connected || connecting"/>
+              </div>
+            </el-form-item>
+            <!-- label-width="0": 无 label 的 form-item 默认吃 form 的 label-width 当 margin-left
+                 (element-plus form-item 的 contentStyle), 不显式归零这排按钮会右移 62px 并换行 -->
+            <el-form-item label-width="0">
+              <el-button type="primary" size="small" :disabled="connected || simMode" :loading="connecting" @click="connect">
+                <el-icon><Link /></el-icon>连接设备
+              </el-button>
+              <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
+                <el-icon><SwitchButton /></el-icon>断开
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <div class="st"><el-tag :type="connTag.type" size="small" effect="plain">{{ connTag.text }}</el-tag></div>
+          <div v-if="!simMode && connected" class="st">
+            <el-tag v-if="handshakeOk" :type="spaceTimeSynced ? 'success' : 'warning'" size="small" effect="plain">
+              {{ spaceTimeSynced
+                ? '设备握手成功, 采样间隔 ' + spaceTime + 'min'
+                : '采样间隔不一致: 本次设定 ' + spaceTime + 'min / 设备 ' + deviceSpaceTime + 'min, 请点「下发」' }}
+            </el-tag>
+            <template v-else>
+              <el-tag type="warning" size="small" effect="plain">串口已开, 未收到设备握手回帧 (已收 {{ rxBytes }}B/{{ rxFrames }}帧)</el-tag>
+              <el-button size="small" link type="primary" @click="doHandshake">重发握手</el-button>
+            </template>
           </div>
-          <div class="row" style="gap:8px;">
-            <el-button type="primary" size="small" :disabled="connected || simMode" :loading="connecting" @click="connect">
-              <el-icon style="margin-right:4px;"><Link /></el-icon>连接设备
-            </el-button>
-            <el-button type="danger" size="small" :disabled="!connected" @click="disconnect">
-              <el-icon style="margin-right:4px;"><SwitchButton /></el-icon>断开
-            </el-button>
-          </div>
-          <div class="st"><span class="dot" :class="{on:connected || simMode}"></span>
-            {{ simMode ? '仿真模式（无真机）' : connecting ? '连接中...' : connected ? '已连接 ' + baudRate + ' 8N1' : '未连接' }}
-          </div>
-          <div v-if="!simMode && connected" class="st" :style="{ color: handshakeOk ? '#67c23a' : '#e6a23c' }">
-            <span class="dot" :class="{on:true}"></span>
-            <template v-if="handshakeOk">设备握手成功, 采样间隔 {{ spaceTime }}min</template>
-            <template v-else>串口已开, 未收到设备握手回帧 (已收 {{ rxBytes }}B/{{ rxFrames }}帧)</template>
-            <el-button v-if="!handshakeOk" size="small" text type="primary" style="margin-left:6px;" @click="doHandshake">重发握手</el-button>
-          </div>
-          <div v-if="!simMode && connected && lastRxHex" class="st" style="color:#909399; word-break:break-all;">RX: {{ lastRxHex }}</div>
-        </div>
+          <div v-if="!simMode && connected && lastRxHex" class="st raw">RX: {{ lastRxHex }}</div>
+        </el-card>
 
         <!-- 样品区 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Document /></el-icon>样品信息</div>
-          <div class="row row-col"><span class="lbl">报告号</span>
-            <span class="repno">
-              <el-input v-model="rep1" size="small" style="width:38px" disabled/>
-              <el-select v-model="rep2" size="small" style="width:58px" :disabled="testing"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
-              <el-select v-model="rep3" size="small" style="width:52px" :disabled="testing"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
-              <el-input v-model="rep4" size="small" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="testing"/>
-              <el-input v-model="rep5" size="small" style="width:40px" :disabled="testing"/>
-            </span>
-          </div>
-          <div class="row"><span class="lbl">样品名称</span>
-            <el-input v-model="sampleName" size="small" :disabled="testing"/>
-          </div>
-          <div class="row"><span class="lbl">环境温度</span>
-            <el-input v-model="temperature" size="small" placeholder="℃" :disabled="testing"/>
-          </div>
-          <div class="row"><span class="lbl">环境湿度</span>
-            <el-input v-model="humidity" size="small" placeholder="%" :disabled="testing"/>
-          </div>
-          <el-button type="primary" size="small" class="full-width" @click="onInput" :disabled="testing">
-            <el-icon style="margin-right:4px;"><Check /></el-icon>录入
-          </el-button>
-        </div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Document /></el-icon>样品信息</div>
+          </template>
+          <!-- label 在上: 报告号是五段式, 左侧留出标签位就放不下了 -->
+          <el-form label-position="top" size="small" @submit.prevent>
+            <el-form-item label="报告号">
+              <span class="repno">
+                <el-input v-model="rep1" style="width:38px" disabled/>
+                <el-select v-model="rep2" style="width:58px" :disabled="testing"><el-option value="405.">405.</el-option><el-option value="441.">441.</el-option></el-select>
+                <el-select v-model="rep3" style="width:52px" :disabled="testing"><el-option :value="twoDigitYear + '.'">{{ twoDigitYear }}</el-option><el-option :value="(twoDigitYear - 1) + '.'">{{ twoDigitYear - 1 }}</el-option></el-select>
+                <el-input v-model="rep4" style="width:50px" @blur="data4Blur" placeholder="序号" :disabled="testing"/>
+                <el-input v-model="rep5" style="width:40px" :disabled="testing"/>
+              </span>
+            </el-form-item>
+            <el-form-item label="样品名称">
+              <el-input v-model="sampleName" :disabled="testing"/>
+            </el-form-item>
+            <!-- 环境温度/湿度同一排(原来是两行) -->
+            <el-form-item label-width="0">
+              <div class="env-row">
+                <div class="env-cell">
+                  <span class="lbl">环境温度</span>
+                  <el-input v-model="temperature" placeholder="℃" :disabled="testing"/>
+                </div>
+                <div class="env-cell">
+                  <span class="lbl">环境湿度</span>
+                  <el-input v-model="humidity" placeholder="%" :disabled="testing"/>
+                </div>
+              </div>
+            </el-form-item>
+            <el-form-item label-width="0">
+              <el-button type="primary" size="small" style="width:100%" @click="onInput" :disabled="testing">
+                <el-icon><Check /></el-icon>录入
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 标准与参数 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Setting /></el-icon>测试参数</div>
-          <div class="row">
-            <span class="lbl">标准</span>
-            <el-select v-model="testMethod" size="small" style="flex:1;" :disabled="testing">
-              <el-option :value="0" label="GBT 21655.1 2008"/>
-              <el-option :value="1" label="GBT 21655.1 2023"/>
-            </el-select>
-          </div>
-          <div class="row">
-            <span class="lbl">采样间隔</span>
-            <el-input-number v-model="spaceTime" :min="1" :max="60" size="small" style="width:100px;" :disabled="testing" controls-position="right"/>
-            <span class="lbl" style="margin-left:4px;">min(设备@帧)</span>
-          </div>
-          <div class="row">
-            <span class="lbl">残留时刻</span>
-            <el-input-number v-model="residualMinute" :min="1" :max="600" size="small" style="width:100px;" :disabled="testing" controls-position="right"/>
-            <span class="lbl" style="margin-left:4px;">min</span>
-          </div>
-        </div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Setting /></el-icon>测试参数</div>
+          </template>
+          <el-form label-position="left" label-width="72px" size="small" @submit.prevent>
+            <el-form-item label="标准">
+              <el-select v-model="testMethod" style="width:100%" :disabled="testing">
+                <el-option :value="0" label="GBT 21655.1 2008"/>
+                <el-option :value="1" label="GBT 21655.1 2023"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="采样间隔">
+              <div class="pair">
+                <el-input-number v-model="spaceTime" :min="3" :max="60" style="width:100px" :disabled="testing" controls-position="right"/>
+                <!-- 只是设设备参数(照原件「参数设置」), 不需要录样品信息 / 选工位, 接上串口就能下发 -->
+                <el-button size="small" :disabled="(!connected && !simMode) || testing" @click="doSetSpaceTime">下发</el-button>
+              </div>
+              <el-text size="small" :type="handshakeOk && !spaceTimeSynced ? 'danger' : 'info'">
+                min{{ handshakeOk ? (spaceTimeSynced ? '' : '（设备 ' + deviceSpaceTime + '，不一致）') : '（点下发写到设备）' }}
+              </el-text>
+            </el-form-item>
+            <!-- 「残留时刻」输入框已撤: 固定 30 分钟, 照原软件(textBox11 隐藏死的 30)。
+                 原软件的残留率 = 第 30 分钟那一刻还剩多少水, 与测试何时结束无关; 时刻写在结果表列头上 -->
+
+          </el-form>
+        </el-card>
 
         <!-- 工位选择 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><Grid /></el-icon>测试工位</div>
-          <div class="row" style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; justify-items:center;">
-            <el-checkbox v-for="i in 6" :key="i" v-model="stationChecked[i-1]" :disabled="testing" size="small">{{ i }}</el-checkbox>
-          </div>
-        </div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Grid /></el-icon>测试工位</div>
+          </template>
+          <el-form size="small" @submit.prevent>
+            <el-form-item label-width="0">
+              <div class="grid6">
+                <el-checkbox v-for="i in 6" :key="i" v-model="stationChecked[i-1]" :disabled="testing" size="small">{{ i }}</el-checkbox>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
         <!-- 操作键 -->
-        <div class="card conn-card">
-          <div class="ctitle"><el-icon><VideoPlay /></el-icon>操作</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><VideoPlay /></el-icon>操作</div>
+          </template>
           <div class="btn-grid">
             <el-button size="small" type="primary" @click="doTare" :disabled="!canOperate">去皮</el-button>
             <el-button size="small" type="primary" @click="doDryCloth" :disabled="!canOperate">称干布</el-button>
             <el-button size="small" type="warning" @click="doTest" :disabled="!canTest">{{ testing ? '测试中' : '开始测试' }}</el-button>
             <el-button size="small" type="danger" @click="doStop" :disabled="!testing">停止</el-button>
           </div>
-          <div class="row" style="margin-top:8px;">
-            <span class="lbl">滴水工位:</span>
-          </div>
-          <div class="row drip-grid">
-            <el-button v-for="i in 6" :key="i" size="small" style="width:100%;" :type="stationChecked[i-1] ? 'primary' : 'info'" :disabled="!canOperate || !stationChecked[i-1]" @click="doDrip(i)">{{ i }}</el-button>
-          </div>
-          <div class="row" style="margin-top:6px;">
+          <!-- 手动「滴水工位」按钮已撤: 滴水量只由「开始测试」(%1) 测出。
+               原软件的单站滴水命令 `!!!!!!%2<工位>`(dev_status 4)仍留在协议镜像里, 只是不再暴露入口 -->
+          <div class="btn-row">
             <el-button size="small" @click="doRelease" :disabled="!canOperate">解除扩散</el-button>
           </div>
-          <div class="st" style="margin-top:6px;">{{ statusText }}</div>
-        </div>
+          <div class="st">{{ statusText }}</div>
+        </el-card>
 
         <!-- 操作导航 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><Files /></el-icon>数据</div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Files /></el-icon>数据</div>
+          </template>
           <div class="btn-grid">
             <el-button size="small" @click="historyVisible = true">历史报告</el-button>
-            <el-button size="small" type="success" :disabled="!computeResult" @click="generateReport"><el-icon style="margin-right:4px;"><Download /></el-icon>生成报告</el-button>
+            <el-button size="small" type="success" :disabled="!computeResult" @click="generateReport"><el-icon><Download /></el-icon>生成报告</el-button>
           </div>
-        </div>
+        </el-card>
       </div>
 
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right-panel">
 
         <!-- 实时数值 Tab（架子/干布/滴水量/蒸发量） -->
-        <div class="card right-top">
-          <div class="ctitle"><el-icon><DataAnalysis /></el-icon>实时数据 <span class="st" style="margin:0 0 0 auto;">{{ devStatusText }}</span></div>
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><DataAnalysis /></el-icon>实时数据
+              <el-tag type="info" size="small" effect="plain" class="push-r">{{ devStatusText }}</el-tag>
+            </div>
+          </template>
           <el-tabs v-model="activeTab" size="small">
             <el-tab-pane label="架子(mg)" name="frame">
               <div class="stat-grid">
@@ -163,18 +203,22 @@
               </div>
             </el-tab-pane>
           </el-tabs>
-        </div>
+        </el-card>
 
-        <!-- 实时蒸发曲线 -->
-        <div class="card">
-          <div class="ctitle"><el-icon><TrendCharts /></el-icon>蒸发曲线 (mg/点数)</div>
+        <!-- 实时蒸发曲线 (高度全部来自内联 style, 别把它再包进没有高度的容器) -->
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><TrendCharts /></el-icon>蒸发曲线 (mg/点数)</div>
+          </template>
           <v-chart :option="chartOpt" autoresize style="height:250px;"/>
-        </div>
+        </el-card>
 
         <!-- 结果表 -->
-        <div class="card right-bottom">
-          <div class="ctitle"><el-icon><Tickets /></el-icon>计算结果</div>
-          <el-table :data="resultRows" border stripe size="small" class="removeTableGaps" style="width:100%;">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Tickets /></el-icon>计算结果</div>
+          </template>
+          <el-table :data="resultRows" border stripe size="small" style="width:100%;">
             <el-table-column prop="station" label="工位" width="60" align="center"/>
             <el-table-column label="滴水量(mg)" align="right">
               <template #default="{ row }">{{ row.participated ? fmt1(row.waterMg) : '-' }}</template>
@@ -188,20 +232,22 @@
             <el-table-column label="干燥速率(g/h)" align="right">
               <template #default="{ row }">{{ row.participated ? fmt3(row.rateGPerHour) : '-' }}</template>
             </el-table-column>
-            <el-table-column label="残留率(‰)" align="right">
+            <el-table-column :label="'残留率(' + RESIDUAL_MINUTE + 'min,‰)'" align="right">
               <template #default="{ row }">{{ row.participated ? fmt1(row.sfclPermille) : '-' }}</template>
             </el-table-column>
           </el-table>
-        </div>
+        </el-card>
       </div>
     </div>
 
     <!-- 历史报告列表 -->
     <el-dialog v-model="historyVisible" title="历史报告文件" width="640px">
-      <div class="filter-row">
-        <el-input v-model="historyKeyword" size="small" clearable placeholder="按报告号筛选" style="width:220px;"/>
-      </div>
-      <el-table :data="filteredHistory" border stripe size="small" class="removeTableGaps" style="width:100%;">
+      <el-form size="small" @submit.prevent>
+        <el-form-item label-width="0">
+          <el-input v-model="historyKeyword" clearable placeholder="按报告号筛选" style="width:220px;"/>
+        </el-form-item>
+      </el-form>
+      <el-table :data="filteredHistory" border stripe size="small" style="width:100%;">
         <el-table-column prop="reportNumber" label="报告号" width="160"/>
         <el-table-column label="生成时间" width="170">
           <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
@@ -276,8 +322,15 @@ const sampleName = ref('')
 const temperature = ref('')
 const humidity = ref('')
 const testMethod = ref(1)            // 0=GBT 2008, 1=GBT 2023
-const spaceTime = ref(3)             // 采样间隔分钟 (设备 @帧; GB/T 21655.1 自然蒸发, 对拍验证 time×rate≈water)
-const residualMinute = ref(30)       // 残留率检测时刻 min
+const spaceTime = ref(3)             // 采样间隔分钟 —— 操作员输入的权威值: 下发给设备、算速率、排报告网格都用它
+const deviceSpaceTime = ref(null)    // 设备回读的采样间隔(原始字节), null = 还没收到 @ 握手回帧
+// 一致才允许开测: 后端速率 x_k = sp·k/60 与报告结果表取点都按这个 sp 走, 设备实际间隔不同
+// 会让整份报告的速率全错(不只是表格标签难看), 所以不一致要阻断而不是提示
+const spaceTimeSynced = computed(() => deviceSpaceTime.value === spaceTime.value)
+// 残留率检测时刻(min) —— 固定 30 不可改, 照原软件(反编译 textBox11 隐藏死 30, 标签"水分残留测试时刻")。
+// 原软件的残留率取的是"第 30 分钟那一刻还剩多少水", 与测试何时结束无关(别改成终止点);
+// 结果表列头把它标出来, 免得操作员不知道这列是什么时刻的数。
+const RESIDUAL_MINUTE = 30
 const inputDone = ref(false)         // 录入标志 (原 rulu_flg)
 const stationChecked = ref([false, false, false, false, false, false])
 
@@ -334,6 +387,14 @@ function stationMask() {
 const selectedCount = computed(() => stationChecked.value.filter(Boolean).length)
 const canOperate = computed(() => (connected.value || simMode.value) && inputDone.value && selectedCount.value > 0 && !testing.value)
 const canTest = computed(() => canOperate.value)
+
+// 连接状态行显示(文字与颜色一起给, 模板里不再写嵌套三元)
+const connTag = computed(() => {
+  if (simMode.value) return { type: 'warning', text: '仿真模式（无真机）' }
+  if (connecting.value) return { type: 'warning', text: '连接中...' }
+  if (connected.value) return { type: 'success', text: '已连接 ' + baudRate.value + ' 8N1' }
+  return { type: 'info', text: '未连接' }
+})
 
 const devStatusText = computed(() => {
   switch (devStatus.value) {
@@ -497,7 +558,19 @@ function pumpBuffer() {
       else if (sub === '3') len = 63
       else { i++; continue }
       if (rxBuf.length - i < len) break
-      frames.push(rxBuf.substring(i, i + len)); i += len
+      const f = rxBuf.substring(i, i + len)
+      // &1 真帧形状 = &1 + 1 字节 + 站号'1'-'6' + 6 位十进制, 不符则按噪声重新同步。
+      // 为什么必须: 本页下发的 "!!!!!!&1<间隔字节>"(8 字节)若被设备回显, 会留在收缓冲里;
+      // 它后面无论跟的是 @ 握手回帧(2 字节, 凑成恰好 10 字节)还是 &1 称重帧,
+      // 都会被切成一个假 &1 帧 —— 回读被吃掉、真帧错位。判定与 handleStationWeight 的
+      // 站号/数字校验同款, 所以真帧行为不变(该丢的本来就丢)。
+      if (sub === '1' && !/^&1[\s\S][1-6]\d{6}$/.test(f)) {
+        // 跳到下一个帧起始符(`@`/`&`): 噪声里不会藏真帧头, 所以这样既不误跳也不会停住不动
+        const next = rxBuf.slice(i + 1).search(/[@&]/)
+        i += next < 0 ? 1 : next + 1
+        continue
+      }
+      frames.push(f); i += len
     } else i++
   }
   rxBuf = rxBuf.substring(i)
@@ -508,11 +581,14 @@ function handleFrame(f) {
   rxFrames.value++
   const c0 = f[0]
   if (c0 === '@') {
-    // @<间隔字节> —— 原始字节值, 兼容 ASCII 数字
+    // @<间隔字节> —— 原始字节值, 兼容 ASCII 数字。只记设备值(deviceSpaceTime),
+    // 绝不回写 spaceTime: 否则操作员刚输入 3 就被设备的旧值冲掉, 输入框等于没用。
     const v = f.charCodeAt(1)
-    spaceTime.value = (v >= 48 && v <= 57) ? v - 48 : v
+    deviceSpaceTime.value = (v >= 48 && v <= 57) ? v - 48 : v
     handshakeOk.value = true
-    statusText.value = '设备握手成功, 采样间隔 ' + spaceTime.value + 'min'
+    statusText.value = spaceTimeSynced.value
+      ? '设备握手成功, 采样间隔 ' + deviceSpaceTime.value + 'min'
+      : '设备采样间隔 ' + deviceSpaceTime.value + 'min, 与本次设定的 ' + spaceTime.value + 'min 不一致, 请点「下发」'
     return
   }
   if (c0 !== '&') return
@@ -539,8 +615,11 @@ function handleStationWeight(f) {
     case 2:  // 称干布: 干布重 = 当前 - 架重
       clothWeight.value[st] = w - frameWeight.value[st]
       break
+    // 测试/滴水: 记原始重量时序, 首点定滴水量, 后续算蒸发量。
+    // 状态 4 = 原软件的手动单站滴水(`!!!!!!%2`): 前端已不暴露该入口(滴水量只由开始测试测出),
+    // 这一支保留作协议镜像 —— 按钮加回来时收帧逻辑不用动。
     case 3:
-    case 4:  // 测试/滴水: 记原始重量时序, 首点定滴水量, 后续算蒸发量
+    case 4:
       onTestWeight(st, w)
       break
     default:
@@ -643,6 +722,22 @@ function doHandshake() {
   setTimeout(() => { if (connected.value && !handshakeOk.value) statusText.value = '等待设备握手回帧...' }, 300)
 }
 
+// 把输入框的采样间隔下发给设备 —— 逐字节照抄原件「参数设置」→「设置」按钮(反编译 Form2.cs:
+// "!!!!!!&1" + Convert.ToChar(间隔)): 间隔是**原始字节**(3 → 0x03), 不是 ASCII '3'(0x33)。
+// 发完补读一次 @1: 回帧是设备侧的真值, 用来确认它真的接受了(失败则输入框旁/握手标签转红提示)。
+function doSetSpaceTime() {
+  if (simMode.value) {
+    deviceSpaceTime.value = spaceTime.value
+    handshakeOk.value = true
+    statusText.value = '仿真模式: 设备采样间隔记为 ' + spaceTime.value + 'min'
+    return
+  }
+  if (!connected.value) { ElMessage.warning('请先连接设备'); return }
+  sendCmd('!!!!!!&1' + String.fromCharCode(spaceTime.value))
+  statusText.value = '采样间隔已下发(' + spaceTime.value + 'min), 等待设备回读...'
+  setTimeout(() => { if (connected.value) sendCmd('!!!!!!@1') }, 200)
+}
+
 function onInput() {
   if (!reportNoReady.value) { ElMessage.warning('请填写报告号序号'); return }
   if (!sampleName.value.trim()) { ElMessage.warning('请填写样品名称'); return }
@@ -655,7 +750,7 @@ function doTare() {
   devStatus.value = 1
   statusText.value = '去皮命令已发送, 等待各工位架重...'
   sendCmd('!!!!!!%4' + String.fromCharCode(m))
-  if (simMode.value) simulateResponse('tare', m)
+  if (simMode.value) simulateResponse('tare')
 }
 
 function doDryCloth() {
@@ -663,15 +758,12 @@ function doDryCloth() {
   devStatus.value = 2
   statusText.value = '称干布命令已发送, 等待各工位干布重...'
   sendCmd('!!!!!!%3' + String.fromCharCode(m))
-  if (simMode.value) simulateResponse('cloth', m)
+  if (simMode.value) simulateResponse('cloth')
 }
 
-function doDrip(st) {
-  devStatus.value = 4
-  statusText.value = '滴水' + st + ' 称重中...'
-  sendCmd('!!!!!!%2' + String.fromCharCode(st))
-  if (simMode.value) simulateResponse('drip', st)
-}
+// 手动单站滴水(原软件 `!!!!!!%2<工位>`, dev_status 4)已撤掉入口 —— 滴水量只由「开始测试」(%1) 测出:
+// 两个入口测的是同一个量, 留着容易点错(先手动滴了再开测, 首点被当第二次滴水)。
+// 收帧处理仍在 handleStationWeight 的 case 4, 需要恢复时把按钮和这个函数一起加回来即可。
 
 // 全局测试时长兜底: 60min (对齐 GBT2023 方法已有的 sp×(n−1)≥60 时长上限; 2008 方法无上限,
 // 设备断帧/波动不满足 ±5mg 判定时测试永久挂起 → 超时强制结束, 后端对永不触发有末点兜底 resultPoint=n)
@@ -702,6 +794,12 @@ function doTest() {
   }
   // 报告号必填(测试期间输入框禁用, 无法中途补填): 源头消除"停止后缺号 → finishTest 结果静默丢失"
   if (!reportNoReady.value) { ElMessage.warning('请填写报告号序号'); return }
+  // 采样间隔必须与设备一致才开测: 后端速率 x_k = sp·k/60、报告结果表网格都按这个 sp 算,
+  // 设备实际间隔不同 → 整份报告的速率全错。不一致就阻断, 不降级成"仅提示"。
+  if (!simMode.value && handshakeOk.value && !spaceTimeSynced.value) {
+    ElMessage.error('采样间隔与设备不一致(设备 ' + deviceSpaceTime.value + 'min): 请点「下发」写设备, 或把输入框改成设备值')
+    return
+  }
   // 清掉上一轮计算结果, 防止新旧结果混显 / 误用旧结果生成报告 (P1)
   computeResult.value = null
   testing.value = true
@@ -767,7 +865,7 @@ async function compute(stations) {
       temperature: temperature.value,
       humidity: humidity.value,
       spaceTimeMin: spaceTime.value,
-      residualMinute: residualMinute.value,
+      residualMinute: RESIDUAL_MINUTE,
       testMethod: testMethod.value,
       stations
     })
@@ -870,19 +968,13 @@ function onSimModeChange() {
   }
 }
 
-// 仿真响应: 直接喂 handleFrame 同款 ASCII
-function simulateResponse(kind, arg) {
+// 仿真响应: 直接喂 handleFrame 同款 ASCII (只剩去皮/称干布两个动作, 滴水已随手动入口一起撤掉)
+function simulateResponse(kind) {
   setTimeout(() => {
     if (kind === 'tare') {
       for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(12300 + i * 100).padStart(6, '0'))
     } else if (kind === 'cloth') {
       for (let i = 0; i < 6; i++) if (stationChecked.value[i]) handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(18300 + i * 50).padStart(6, '0'))
-    } else if (kind === 'drip') {
-      const st = arg - 1
-      // 秤读数 = 架重 + 干布重 + 滴水量: 由已称好的架/布推出, 保证各工位滴水量都等于 SIM_WATER_MG。
-      // (以前写死 18500+60×工位号, 减去架/布后各站是 200/210/220…, 到点时刻各不同)
-      const raw = frameWeight.value[st] + clothWeight.value[st] + SIM_WATER_MG
-      handleFrame('&1' + '0' + String.fromCharCode(49 + st) + String(raw).padStart(6, '0'))
     }
   }, 120)
 }
@@ -961,43 +1053,45 @@ onActivated(() => resumeAll())
 </script>
 
 <style scoped>
+/* 容器/骨架(.allContainer / .main)、卡片内边距、el-form-item 间距、table 下边距
+   一律见 src/assets/css/instrument-panel.css —— 那些是 5 个仪器页逐字相同的部分。 */
 * { box-sizing: border-box; }
-.allContainer { padding: 14px; box-sizing: border-box; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%); overflow: auto; }
-.main { display: flex; width: 100%; height: 100%; gap: 12px; box-sizing: border-box; min-width: 0; }
-.left-panel { width: 24%; min-width: 250px; max-width: 330px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box; }
+.allContainer { overflow: auto; }
+.left-panel { width: 24%; min-width: 250px; max-width: 330px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-shrink: 0; }
 .right-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: auto; }
-.right-top { flex-shrink: 0; }
-.right-bottom { flex-shrink: 0; }
-.card { background: #fff; border: 1px solid #e6e8eb; border-radius: 10px; padding: 10px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.04); box-sizing: border-box; width: 100%; }
-.card.conn-card .row, .card.conn-card .st { margin-left: 1px; }
-.card.conn-card .row { width: calc(100% - 1px); }
-.card.conn-card .row :deep(.el-checkbox) { margin-right: 0; }
-.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+/* 面板是 flex 列, 卡片的 flex-shrink 默认是 1 —— 内容比面板高时卡片被压扁, 而
+   .el-card__body 自带 overflow:auto, 卡内就冒出一条滚动条。
+   给卡片 flex-shrink:0 让它们保持内容高度, 溢出交给面板自己的 overflow
+   (.left-panel 是 overflow-y:auto, .right-panel 是 overflow:auto, 本来就有),
+   卡内不再出现滚动条。 */
+.left-panel > .el-card, .right-panel > .el-card { flex-shrink: 0; }
+
+/* 卡片标题: 不叫 card-header, 那个类名 bootstrap 也有 */
+.ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; display: flex; align-items: center; gap: 6px; }
 .ctitle .el-icon { color: #409eff; }
-.row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; width: 100%; }
-.row:last-child { margin-bottom: 0; }
+/* 标题右侧的状态 tag 顶到最右 */
+.push-r { margin-left: auto; }
+
 .lbl { font-size: 12px; color: #666; font-weight: 500; white-space: nowrap; }
-.repno { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; flex: 1; min-width: 0; }
+/* 一个 form-item 里并排的控件(波特率+仿真 / 数值+单位 / 温湿度两格) */
+.pair { display: flex; align-items: center; gap: 4px; width: 100%; min-width: 0; }
+.env-row { display: flex; gap: 8px; width: 100%; }
+.env-cell { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+.repno { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; width: 100%; min-width: 0; }
 .repno :deep(.el-input), .repno :deep(.el-select) { flex: 1 1 auto; }
-.row-col { flex-direction: column; align-items: flex-start; gap: 4px; }
-.row-col .repno { width: 100%; }
-.st { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 4px; word-break: break-all; line-height: 1.4; }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: #c0c4cc; transition: all .2s; flex-shrink: 0; }
-.dot.on { background: #67c23a; box-shadow: 0 0 4px #67c23a; }
-.full-width { width: 100% !important; }
+
+/* 状态行: 固定短状态用 el-tag, 动态长文本(状态提示/RX 原始帧)仍是纯文字 */
+.st { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; margin-top: 6px; word-break: break-all; line-height: 1.4; }
+.st.raw { color: #909399; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .btn-grid .el-button { margin: 0; }
-.drip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.drip-grid .el-button { margin: 0; }
-/* 对话框筛选行: 全局 bootstrap .row 带 -15px 负边距, 用独立类避免筛选框贴边框 */
-.filter-row { display: flex; align-items: center; gap: 4px; margin: 0 0 8px; width: 100%; }
+.btn-row { display: flex; margin-top: 8px; }
+.grid6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; justify-items: center; width: 100%; }
+.grid6 :deep(.el-checkbox) { margin-right: 0; }
+
 .stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
 .stat-cell { background: #f7f8fa; border-radius: 6px; padding: 6px 4px; text-align: center; }
 .stat-cell .lbl { font-size: 11px; color: #909399; }
 .stat-cell .val { font-size: 13px; font-weight: 600; color: #2b3a4a; font-family: Consolas, monospace; }
 :deep(.el-tabs__header) { margin-bottom: 6px; }
-/* 清除全局样式 table{margin-bottom:30px} 造成的表头与首行之间的空行 */
-.removeTableGaps :deep(table) {
-  margin-bottom: 0 !important;
-}
 </style>
