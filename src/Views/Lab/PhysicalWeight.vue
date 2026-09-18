@@ -328,7 +328,7 @@ const supportsType = t => BUYER_TYPES[buyer.value].includes(t)
 const BUYER_AREA_OZ = { Normal: true, Adidas: false, FOCUS: true, NEXT: false }
 const areaShowsOz = computed(() => BUYER_AREA_OZ[buyer.value])
 // ---- 面积 ----
-const area = ref(null)             // 直接输入模式
+const area = ref(100)              // 直接输入模式(默认 100 cm², 照旧可改)
 const areaByCalc = ref(false)      // 长×宽计算模式
 const areaLen = ref(null)
 const areaWid = ref(null)
