@@ -216,6 +216,9 @@
             <el-menu-item index="/main/AbrasionResistance_RotatingDrum">
               <span>Abrasion Resistance(FW)</span>
             </el-menu-item>
+            <el-menu-item index="/main/YarnCount">
+              <span>Yarn Count</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- Personal Center -->

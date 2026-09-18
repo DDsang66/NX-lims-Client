@@ -31,6 +31,7 @@ import RuleConfig from "@/Views/Config/RuleConfig.vue";
 import PhysicalWeight from "@/Views/Lab/PhysicalWeight.vue";
 import Nf5022DryingRate from "@/Views/Equipment/Nf5022DryingRate.vue";
 import Aatcc201DryingRate from "@/Views/Equipment/Aatcc201DryingRate.vue";
+import YarnCount from "@/Views/Equipment/YarnCount.vue";
 import AbrasionResistance_RotatingDrum from "@/Views/Lab/AbrasionResistance-RotatingDrum.vue";
 import MenuManagement from "@/Views/Config/MenuManagement.vue";
 import StructureConfig from "@/Views/Config/StructureConfig.vue";
@@ -72,7 +73,8 @@ const useRoleStore = defineStore('role', {
         { path: 'Nf5022DryingRate', name: 'Nf5022DryingRate', component: Nf5022DryingRate, meta: { title: 'NF5022 MoistureDryingRate' } },
         { path: 'Aatcc201DryingRate', name: 'Aatcc201DryingRate', component: Aatcc201DryingRate, meta: { title: 'AATCC 201 MoistureDryingRate' } },
         { path: 'AbrasionResistance_RotatingDrum', name: 'AbrasionResistance_RotatingDrum', component: AbrasionResistance_RotatingDrum, meta: { title: 'Abrasion Resistance_Rotating Drum' } },
-        { path: 'DataSheetTask', name: 'DataSheetTask', component: DataSheetTask, meta: { title: 'DataSheetTask' } }
+        { path: 'DataSheetTask', name: 'DataSheetTask', component: DataSheetTask, meta: { title: 'DataSheetTask' } },
+        { path: 'YarnCount', name: 'YarnCount', component: YarnCount, meta: { title: 'Yarn Count' } },
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },
