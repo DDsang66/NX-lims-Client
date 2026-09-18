@@ -145,7 +145,7 @@
           <template #header>
             <div class="ctitle">
               <el-icon><Grid /></el-icon>记录网格
-              <el-text class="hint" size="small" type="info">与报告表逐格对应（点列头的 × 删掉该试样）</el-text>
+              <el-text class="hint" size="small" type="info">与报告表逐格对应</el-text>
             </div>
           </template>
           <div class="tbl-wrap">
