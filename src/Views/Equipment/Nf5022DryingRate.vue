@@ -141,9 +141,10 @@
           </div>
           <!-- 手动「滴水工位」按钮已撤: 滴水量只由「开始测试」(%1) 测出。
                原软件的单站滴水命令 `!!!!!!%2<工位>`(dev_status 4)仍留在协议镜像里, 只是不再暴露入口 -->
-          <div class="btn-row">
-            <el-button size="small" @click="doRelease" :disabled="!canOperate">解除扩散</el-button>
-          </div>
+          <!-- 「解除扩散」按钮已撤: 它是原软件「扩散模式」(单个工位滴水扩散后称重)的退出键,
+               与 %60 配对。本页面只做 %1 六工位自动测试, 从来没有进入该模式的入口
+               (原件入口是 button14「扩散」, 未实现), 只有出口的按钮留着只会误导操作员。
+               `!!!!!!%60` 仍留在协议镜像里, 需要时按上一条注解的位置补回按钮 -->
           <div class="st">{{ statusText }}</div>
         </el-card>
 
@@ -162,7 +163,7 @@
       <!-- ==================== 右侧面板 ==================== -->
       <div class="right-panel">
 
-        <!-- 实时数值 Tab（架子/干布/滴水量/蒸发量） -->
+        <!-- 实时数值 Tab（架子/干布/滴水量/蒸发量）—— 单位一律 g, 三位小数(内部仍 mg, 见 fmtG) -->
         <el-card shadow="hover">
           <template #header>
             <div class="ctitle"><el-icon><DataAnalysis /></el-icon>实时数据
@@ -170,35 +171,35 @@
             </div>
           </template>
           <el-tabs v-model="activeTab" size="small">
-            <el-tab-pane label="架子(mg)" name="frame">
+            <el-tab-pane label="架子(g)" name="frame">
               <div class="stat-grid">
                 <div v-for="i in 6" :key="i" class="stat-cell">
                   <span class="lbl">工位{{ i }}</span>
-                  <span class="val">{{ fmt(frameWeight[i-1]) }}</span>
+                  <span class="val">{{ fmtG(frameWeight[i-1]) }}</span>
                 </div>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="干布(mg)" name="cloth">
+            <el-tab-pane label="干布(g)" name="cloth">
               <div class="stat-grid">
                 <div v-for="i in 6" :key="i" class="stat-cell">
                   <span class="lbl">工位{{ i }}</span>
-                  <span class="val">{{ fmt(clothWeight[i-1]) }}</span>
+                  <span class="val">{{ fmtG(clothWeight[i-1]) }}</span>
                 </div>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="滴水量(mg)" name="water">
+            <el-tab-pane label="滴水量(g)" name="water">
               <div class="stat-grid">
                 <div v-for="i in 6" :key="i" class="stat-cell">
                   <span class="lbl">工位{{ i }}</span>
-                  <span class="val">{{ fmt(waterWeight[i-1]) }}</span>
+                  <span class="val">{{ fmtG(waterWeight[i-1]) }}</span>
                 </div>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="蒸发量(mg)" name="evap">
+            <el-tab-pane label="蒸发量(g)" name="evap">
               <div class="stat-grid">
                 <div v-for="i in 6" :key="i" class="stat-cell">
                   <span class="lbl">工位{{ i }}</span>
-                  <span class="val">{{ fmt(curEvap[i-1]) }}</span>
+                  <span class="val">{{ fmtG(curEvap[i-1]) }}</span>
                 </div>
               </div>
             </el-tab-pane>
@@ -220,15 +221,14 @@
           </template>
           <el-table :data="resultRows" border stripe size="small" style="width:100%;">
             <el-table-column prop="station" label="工位" width="60" align="center"/>
-            <el-table-column label="滴水量(mg)" align="right">
-              <template #default="{ row }">{{ row.participated ? fmt1(row.waterMg) : '-' }}</template>
+            <el-table-column label="滴水量(g)" align="right">
+              <template #default="{ row }">{{ row.participated ? fmtG(row.waterMg) : '-' }}</template>
             </el-table-column>
             <el-table-column label="蒸发时间(min)" align="right">
               <template #default="{ row }">{{ row.participated ? fmt1(row.timeMin) : '-' }}</template>
             </el-table-column>
-            <el-table-column label="干燥速率(mg/h)" align="right">
-              <template #default="{ row }">{{ row.participated ? fmt0(row.rateMgPerHour) : '-' }}</template>
-            </el-table-column>
+            <!-- 干燥速率只留 g/h 一列: mg/h 那列是同一个数的另一量纲(rateMgPerHour = rateGPerHour×1000),
+                 报告里也只写 g/h, 并排摆着徒增两处要对齐的口径 -->
             <el-table-column label="干燥速率(g/h)" align="right">
               <template #default="{ row }">{{ row.participated ? fmt3(row.rateGPerHour) : '-' }}</template>
             </el-table-column>
@@ -369,8 +369,9 @@ const historyKeyword = ref('')
 const historyList = ref([])
 
 // ---- 辅助格式化 ----
-const fmt = v => (v == null || isNaN(v)) ? '---' : Number(v).toFixed(1)
-const fmt0 = v => Number(v).toFixed(0)
+// 实时数据卡片四个页签统一按 g 显示(保留三位小数): 内部一律还是 mg(帧解析/位图命令/提交后端的量纲都不动),
+// 只在这一层 ÷1000 —— 与报告表格的 g/F3 同口径, 页面上看到一个数就能直接与报告核对
+const fmtG = v => (v == null || isNaN(v)) ? '---' : (Number(v) / 1000).toFixed(3)
 const fmt1 = v => Number(v).toFixed(1)
 const fmt3 = v => Number(v).toFixed(3)
 function ts(s) { if (!s) return '-'; const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}` }
@@ -823,11 +824,7 @@ async function doStop() {
   finishTest()
 }
 
-function doRelease() {
-  devStatus.value = 0
-  statusText.value = '扩散功能已解除'
-  sendCmd('!!!!!!%60')
-}
+// doRelease()(解除扩散 → `!!!!!!%60`)已撤: 那是原软件「扩散模式」的退出键, 本页面没有入口, 见模板处注解
 
 function finishTest() {
   if (computedForTest) return      // 已提交过本轮计算 (自动终止/手动停止只算一次)
@@ -1085,7 +1082,6 @@ onActivated(() => resumeAll())
 .st.raw { color: #909399; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .btn-grid .el-button { margin: 0; }
-.btn-row { display: flex; margin-top: 8px; }
 .grid6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; justify-items: center; width: 100%; }
 .grid6 :deep(.el-checkbox) { margin-right: 0; }
 
