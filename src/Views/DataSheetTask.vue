@@ -76,7 +76,7 @@
         <el-input v-model="attachReportNo" size="small" placeholder="Report No (optional)" style="width: 200px" />
         <el-button size="small" type="primary" @click="attachRealTask">Attach Task</el-button>
         <span class="hintText">
-          Listening to {{ baseUrl }}/api/checklist/&lt;id&gt;/datasheet-progress/stream
+          Listening to {{ baseUrl }}/datasheet/datasheet-progress/stream?checkListId=&lt;id&gt;
         </span>
       </div>
 
@@ -108,9 +108,9 @@
                 </div>
               </div>
               <el-table :data="row.items" border size="small">
-                <el-table-column prop="projectId" label="Project" width="90" />
-                <el-table-column prop="projectName" label="Project Name" width="140" />
-                <el-table-column prop="datasheetId" label="Datasheet ID" width="150" />
+                <el-table-column prop="testItemId" label="Test Item" width="120" />
+                <el-table-column prop="modelIndex" label="Index" width="70" />
+                <el-table-column prop="modelKey" label="Model Key" width="140" />
                 <el-table-column label="Status" width="120">
                   <template #default="{ row: item }">
                     <el-tag :type="statusTagType(item.status)" size="small">
@@ -121,7 +121,7 @@
                 <el-table-column prop="retryCount" label="Retries" width="80" />
                 <el-table-column label="Actions" width="180">
                   <template #default="{ row: item }">
-                    <el-button v-if="item.status === 'SUCCESS' && item.fileUrl"
+                    <el-button v-if="item.status === 'CREATED' && item.fileUrl"
                                size="small"
                                @click="openFile(item.fileUrl)">
                       Download
@@ -136,9 +136,7 @@
                 </el-table-column>
                 <el-table-column prop="errorMessage" label="Error Message" min-width="240">
                   <template #default="{ row: item }">
-                    <span v-if="item.errorMessage" class="errorText">
-                      {{ item.errorMessage }}
-                    </span>
+                    <span v-if="item.errorMessage" class="errorText">{{ item.errorMessage }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column prop="updatedAt" label="Updated At" width="180">
@@ -182,282 +180,357 @@
 </template>
 
 <script setup>
-  import { ref, computed, watch, onBeforeUnmount  } from 'vue'
+  import { ref, computed, watch, onBeforeUnmount } from 'vue'
   import { ElMessage } from 'element-plus'
+  import request from '@/utils/request'
+  import { API_BASE } from '@/utils/config.js'
 
   /* ---------------- State ---------------- */
   const STORAGE_KEY = 'datasheet-progress-tasks'
   const STORAGE_VERSION = 1
   const taskList = ref(loadFromStorage())
   const expandedKeys = ref([])
+
   /* ---------------- Filter & data source ---------------- */
-const keyword = ref('')
-const statusFilter = ref('')
-const dataSource = ref('mock')          // 'mock' | 'real'
-const baseUrl = ref('http://localhost:8080')
+  const keyword = ref('')
+  const statusFilter = ref('')
+  const dataSource = ref('mock')          // 'mock' | 'real'
+  const baseUrl = ref(API_BASE)
+
   /* ---------------- Persistence ---------------- */
-function loadFromStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    // 兼容：可能是数组（旧）或 {version, tasks}（新）
-    if (Array.isArray(parsed)) {
-      return parsed.map(migrateTask)
-    }
-    if (parsed && parsed.version === STORAGE_VERSION && Array.isArray(parsed.tasks)) {
-      return parsed.tasks.map(migrateTask)
-    }
-    return []
-  } catch (e) {
-    console.warn('loadFromStorage failed', e)
-    return []
-  }
-}
-
-// 防止历史数据缺字段导致页面崩溃
-function migrateTask(t) {
-  return {
-    checkListId: t.checkListId || '',
-    reportNo: t.reportNo || '',
-    total: t.total || (t.items ? t.items.length : 0),
-    success: t.success || 0,
-    failed: t.failed || 0,
-    generating: t.generating || 0,
-    pending: t.pending || 0,
-    status: t.status || 'PENDING',
-    mergedPdfUrl: t.mergedPdfUrl || null,
-    items: (t.items || []).map(i => ({
-      projectId: i.projectId || '',
-      projectName: i.projectName || '',
-      datasheetId: i.datasheetId || '',
-      status: i.status || 'PENDING',
-      fileUrl: i.fileUrl || null,
-      errorMessage: i.errorMessage || null,
-      retryCount: i.retryCount || 0,
-      updatedAt: i.updatedAt || new Date().toISOString()
-    }))
-  }
-}
-
-watch(
-  taskList,
-  (val) => {
+  function loadFromStorage() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ version: STORAGE_VERSION, tasks: val })
-      )
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return []
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return parsed.map(migrateTask)
+      }
+      if (parsed && parsed.version === STORAGE_VERSION && Array.isArray(parsed.tasks)) {
+        return parsed.tasks.map(migrateTask)
+      }
+      return []
     } catch (e) {
-      console.warn('saveToStorage failed', e)
+      console.warn('loadFromStorage failed', e)
+      return []
     }
-  },
-  { deep: true }
-)
-/* ---------------- Real SSE ---------------- */
-const activeConnections = new Map() // checkListId -> { es, pollTimer, retryCount, closed }
-
-/**
- * 启动真实进度订阅。两种入口：
- *  1. 已知 checkListId（例如从后端 generate 接口拿到）→ attachTaskStream
- *  2. 手动粘贴一个 checkListId 来观察（本 demo 用「Attach Task」按钮触发）
- */
-function attachTaskStream(checkListId, reportNo = '') {
-  if (!checkListId) {
-    ElMessage.warning('checkListId is required')
-    return
-  }
-  // 已存在连接，先关闭
-  detachTaskStream(checkListId)
-
-  // 若 task 不存在，先占位
-  let task = taskList.value.find(t => t.checkListId === checkListId)
-  if (!task) {
-    task = createTask(checkListId, reportNo || checkListId.slice(0, 12), 0)
-    task.total = 0
-    task.pending = 0
-    task.status = 'GENERATING'
-    taskList.value.unshift(task)
-    expandedKeys.value = [checkListId]
   }
 
-  const url = `${baseUrl.value.replace(/\/$/, '')}/api/checklist/${checkListId}/datasheet-progress/stream`
-  const conn = { es: null, pollTimer: null, retryCount: 0, closed: false }
-  activeConnections.set(checkListId, conn)
+  // 防止历史数据缺字段导致页面崩溃
+  function migrateTask(t) {
+    return {
+      checkListId: t.checkListId || '',
+      batchId: t.batchId || null,
+      reportNo: t.reportNo || '',
+      total: t.total || (t.items ? t.items.length : 0),
+      success: t.success || 0,
+      failed: t.failed || 0,
+      generating: t.generating || 0,
+      pending: t.pending || 0,
+      status: t.status || 'PENDING',
+      mergedPdfUrl: t.mergedPdfUrl || null,
+      items: (t.items || []).map(i => ({
+        datasheetId: i.datasheetId || '',
+        projectId: i.projectId || '',
+        testItemId: i.testItemId || '',
+        modelIndex: i.modelIndex ?? 0,
+        modelKey: i.modelKey || null,
+        status: i.status || 'PENDING',
+        fileUrl: i.fileUrl || null,
+        errorMessage: i.errorMessage || null,
+        retryCount: i.retryCount || 0,
+        updatedAt: i.updatedAt || new Date().toISOString()
+      }))
+    }
+  }
 
-  const open = () => {
-    if (conn.closed) return
+  watch(
+    taskList,
+    (val) => {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ version: STORAGE_VERSION, tasks: val })
+        )
+      } catch (e) {
+        console.warn('saveToStorage failed', e)
+      }
+    },
+    { deep: true }
+  )
 
-    let es
-    try {
-      es = new EventSource(url)
-    } catch (e) {
-      console.warn('EventSource not supported, fallback to polling', e)
-      startPolling(checkListId, task, conn)
+  /* ---------------- 响应式引用辅助 ---------------- */
+  // ★ 从 taskList 里拿响应式代理引用；拿不到就返回传入的 task
+  function getTaskRef(task) {
+    if (!task) return null
+    return taskList.value.find(t => t.checkListId === task.checkListId) || task
+  }
+
+  /* ---------------- Real SSE ---------------- */
+  const activeConnections = new Map() // checkListId -> { abort, pollTimer, retryCount, closed }
+
+  function attachTaskStream(checkListId, reportNo = '') {
+    if (!checkListId) {
+      ElMessage.warning('checkListId is required')
       return
     }
-    conn.es = es
+    detachTaskStream(checkListId)
 
-    es.addEventListener('progress', (e) => {
-      const data = safeParse(e.data)
-      if (!data) return
-      applyProgressSnapshot(task, data)
+    let task = taskList.value.find(t => t.checkListId === checkListId)
+
+    if (!task) {
+      task = createTask(checkListId, reportNo || checkListId.slice(0, 12), 0)
+      task.total = 0
+      task.pending = 0
+      task.status = 'GENERATING'
+      taskList.value.unshift(task)
+      expandedKeys.value = [checkListId]
+      // ★ 重拿代理引用
+      task = taskList.value.find(t => t.checkListId === checkListId)
+    }
+
+    const conn = { abort: null, pollTimer: null, retryCount: 0, closed: false }
+    activeConnections.set(checkListId, conn)
+
+    openSseStream(checkListId, task, conn)
+  }
+
+  function openSseStream(checkListId, task, conn) {
+    if (conn.closed) return
+
+    const controller = new AbortController()
+    conn.abort = controller
+
+    const token = localStorage.getItem('accessToken')
+    const url = `${API_BASE}/datasheet/datasheet-progress/stream?checkListId=${encodeURIComponent(checkListId)}`
+
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'text/event-stream',
+        ...(token ? { accessToken: token } : {})
+      },
+      signal: controller.signal
     })
+      .then(async (res) => {
+        if (!res.ok || !res.body) {
+          throw new Error(`SSE HTTP ${res.status}`)
+        }
+        conn.retryCount = 0
 
-    es.addEventListener('item-failed', (e) => {
-      const data = safeParse(e.data)
-      if (!data) return
-      const item = task.items.find(i => i.projectId === data.projectId)
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+
+          let idx
+          while ((idx = buffer.indexOf('\n\n')) >= 0) {
+            const rawEvent = buffer.slice(0, idx)
+            buffer = buffer.slice(idx + 2)
+            handleSseEvent(rawEvent, task, checkListId)
+          }
+        }
+      })
+      .catch((err) => {
+        if (conn.closed || err.name === 'AbortError') return
+        console.warn('SSE error', err)
+        conn.retryCount += 1
+        if (conn.retryCount > 3) {
+          console.warn('SSE retry exceeded, fallback to polling')
+          startPolling(checkListId, task, conn)
+        } else {
+          setTimeout(() => openSseStream(checkListId, task, conn), 1000 * conn.retryCount)
+        }
+      })
+  }
+
+  // ★ 所有分支统一拿代理引用；字段名统一按后端的大驼峰
+  function handleSseEvent(rawEvent, task, checkListId) {
+    const lines = rawEvent.split('\n')
+    let eventName = 'message'
+    let dataStr = ''
+
+    for (const line of lines) {
+      if (line.startsWith('event:')) eventName = line.slice(6).trim()
+      else if (line.startsWith('data:')) dataStr += line.slice(5).trim()
+    }
+
+    if (!dataStr) return
+    const data = safeParse(dataStr)
+    if (!data) return
+
+    const t = getTaskRef(task)          // ★ 统一拿代理引用
+    if (!t) return
+
+    if (eventName === 'progress') {
+      applyProgressSnapshot(t, data)
+    } else if (eventName === 'item-failed') {
+      const item = t.items.find(i => i.projectId === data.ProjectId || i.testItemId === data.ProjectId)
       if (item) {
         item.status = 'FAILED'
-        item.errorMessage = data.errorMessage
-        item.retryCount = data.retryCount ?? item.retryCount
-        item.updatedAt = data.updatedAt || new Date().toISOString()
+        item.errorMessage = data.ErrorMessage
+        item.retryCount = data.RetryCount ?? item.retryCount
+        item.updatedAt = data.UpdatedAt || new Date().toISOString()
       }
-      recalcAggregates(task)
-    })
-
-    es.addEventListener('completed', (e) => {
-      const data = safeParse(e.data)
-      if (data) {
-        task.status = data.status || task.status
-        task.total = data.total ?? task.total
-        task.success = data.success ?? task.success
-        task.failed = data.failed ?? task.failed
-      }
-      // 链路一：completed 后关闭；链路二：等 merged
-      // 这里保守起见，等 merged 或手动关闭
-    })
-
-    es.addEventListener('merged', (e) => {
-      const data = safeParse(e.data)
-      if (data?.mergedPdfUrl) {
-        task.mergedPdfUrl = data.mergedPdfUrl
-        task.status = task.failed > 0 ? 'PARTIAL_FAILED' : 'MERGED'
-        ElMessage.success(`Task ${task.reportNo} merged PDF ready`)
+    } else if (eventName === 'completed') {
+      t.status = data.Status || t.status
+      t.total = data.Total ?? t.total
+      t.success = data.Success ?? t.success
+      t.failed = data.Failed ?? t.failed
+    } else if (eventName === 'merged') {
+      if (data.MergedPdfUrl) {
+        t.mergedPdfUrl = data.MergedPdfUrl
+        t.status = t.failed > 0 ? 'PARTIAL_FAILED' : 'MERGED'
+        ElMessage.success(`Task ${t.reportNo} merged PDF ready`)
       }
       closeConnection(checkListId)
-    })
-
-    es.onerror = () => {
-      // EventSource 会自动重连；若重试太多则降级轮询
-      conn.retryCount += 1
-      if (conn.retryCount > 3) {
-        console.warn('SSE retry exceeded, fallback to polling')
-        try { es.close() } catch {}
-        conn.es = null
-        startPolling(checkListId, task, conn)
-      }
     }
+    // heartbeat 忽略
   }
 
-  open()
-}
+  function detachTaskStream(checkListId) {
+    const conn = activeConnections.get(checkListId)
+    if (!conn) return
+    conn.closed = true
+    try { conn.abort?.abort() } catch { }
+    if (conn.pollTimer) clearInterval(conn.pollTimer)
+    activeConnections.delete(checkListId)
+  }
 
-function detachTaskStream(checkListId) {
-  const conn = activeConnections.get(checkListId)
-  if (!conn) return
-  conn.closed = true
-  try { conn.es?.close() } catch {}
-  if (conn.pollTimer) clearInterval(conn.pollTimer)
-  activeConnections.delete(checkListId)
-}
+  function closeConnection(checkListId) {
+    detachTaskStream(checkListId)
+  }
 
-function closeConnection(checkListId) {
-  detachTaskStream(checkListId)
-}
-
-function startPolling(checkListId, task, conn) {
-  if (conn.pollTimer) return
-  const poll = async () => {
+  async function generateDatasheets(checkListId, reportNo, forceRegenerate = false) {
     try {
-      const res = await fetch(
-        `${baseUrl.value.replace(/\/$/, '')}/api/checklist/${checkListId}/datasheet-progress`
-      )
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      applyProgressSnapshot(task, data)
-      if (['SUCCESS', 'MERGED', 'FAILED', 'PARTIAL_FAILED'].includes(data.status)) {
-        clearInterval(conn.pollTimer)
-        conn.pollTimer = null
-        activeConnections.delete(checkListId)
+      const res = await request.post('/datasheet/datasheet-generate', {
+        checkListId,
+        reportNo,
+        forceRegenerate
+      })
+      const data = res.data?.value
+      if (!data) {
+        ElMessage.error('Generate failed')
+        return null
       }
+
+      const task = createTask(data.checkListId, reportNo, data.total)
+      task.batchId = data.batchId
+      taskList.value.unshift(task)
+      expandedKeys.value = [data.checkListId]
+
+      attachTaskStream(data.checkListId, reportNo)
+
+      return data
     } catch (e) {
-      console.warn('polling error', e)
+      ElMessage.error('Generate request failed')
+      return null
     }
   }
-  poll()
-  conn.pollTimer = setInterval(poll, 2000)
-}
 
-function applyProgressSnapshot(task, data) {
-  task.total = data.total ?? task.total
-  task.success = data.success ?? task.success
-  task.failed = data.failed ?? task.failed
-  task.generating = data.generating ?? task.generating
-  task.pending = data.pending ?? task.pending
-  task.status = data.status ?? task.status
-  task.mergedPdfUrl = data.mergedPdfUrl ?? task.mergedPdfUrl
+  async function startPolling(checkListId, task, conn) {
+    if (conn.pollTimer) return
 
-  if (Array.isArray(data.items)) {
-    // 以 snapshot 为准，合并到现有 items（按 projectId）
-    const map = new Map(task.items.map(i => [i.projectId, i]))
-    data.items.forEach(dto => {
-      const old = map.get(dto.projectId) || {}
-      map.set(dto.projectId, { ...old, ...dto })
-    })
-    task.items = Array.from(map.values())
-  } else if (data.changedItem) {
-    const item = task.items.find(i => i.projectId === data.changedItem.projectId)
-    if (item) Object.assign(item, data.changedItem)
-    else task.items.push(data.changedItem)
+    const poll = async () => {
+      try {
+        const res = await request.get('/datasheet/datasheet-progress', {
+          params: { checkListId }
+        })
+        const data = res.data?.value
+        if (!data) return
+
+        applyProgressSnapshot(task, data)   // 内部会 getTaskRef
+
+        if (['SUCCESS', 'MERGED', 'FAILED', 'PARTIAL_FAILED'].includes(data.Status)) {
+          clearInterval(conn.pollTimer)
+          conn.pollTimer = null
+          activeConnections.delete(checkListId)
+        }
+      } catch (e) {
+        console.warn('polling error', e)
+      }
+    }
+
+    poll()
+    conn.pollTimer = setInterval(poll, 2000)
   }
-}
 
-function safeParse(str) {
-  try { return JSON.parse(str) } catch { return null }
-}
+  // ★ 统一用 getTaskRef + 大驼峰字段
+  function applyProgressSnapshot(task, data) {
+    const t = getTaskRef(task)
+    if (!t) return
 
-/* ---------------- Real mode: attach by ID ---------------- */
-const attachCheckListId = ref('')
-const attachReportNo = ref('')
+    t.total = data.Total ?? t.total
+    t.success = data.Success ?? t.success
+    t.failed = data.Failed ?? t.failed
+    t.generating = data.Generating ?? t.generating
+    t.pending = data.Pending ?? t.pending
+    t.status = data.Status ?? t.status
+    t.mergedPdfUrl = data.MergedPdfUrl ?? t.mergedPdfUrl
+    t.batchId = data.BatchId ?? t.batchId
 
-function attachRealTask() {
-  if (dataSource.value !== 'real') {
-    ElMessage.warning('Switch Data Source to "Real SSE" first')
-    return
+    if (Array.isArray(data.Items)) {
+      t.items = data.Items.map(dto => ({
+        datasheetId: dto.DataSheetId,
+        projectId: dto.ProjectId,
+        testItemId: dto.TestItemId,
+        modelIndex: dto.ModelIndex,
+        modelKey: dto.ModelKey,
+        status: dto.Status,
+        fileUrl: dto.FileUrl,
+        errorMessage: dto.ErrorMessage,
+        retryCount: dto.RetryCount,
+        updatedAt: dto.UpdatedAt
+      }))
+    }
   }
-  if (!attachCheckListId.value.trim()) {
-    ElMessage.warning('Please enter a CheckList ID')
-    return
-  }
-  attachTaskStream(attachCheckListId.value.trim(), attachReportNo.value.trim())
-  attachCheckListId.value = ''
-  attachReportNo.value = ''
-}
 
+  function safeParse(str) {
+    try { return JSON.parse(str) } catch { return null }
+  }
+
+  /* ---------------- Real mode: attach by ID ---------------- */
+  const attachCheckListId = ref('')
+  const attachReportNo = ref('')
+
+  function attachRealTask() {
+    if (dataSource.value !== 'real') {
+      ElMessage.warning('Switch Data Source to "Real SSE" first')
+      return
+    }
+    if (!attachCheckListId.value.trim()) {
+      ElMessage.warning('Please enter a CheckList ID')
+      return
+    }
+    attachTaskStream(attachCheckListId.value.trim(), attachReportNo.value.trim())
+    attachCheckListId.value = ''
+    attachReportNo.value = ''
+  }
 
   /* ---------------- Computed ---------------- */
-const filteredTaskList = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  return taskList.value.filter(t => {
-    // status filter
-    if (statusFilter.value && t.status !== statusFilter.value) return false
-    // keyword filter: reportNo / checkListId / projectName / datasheetId
-    if (kw) {
-      const hitTask =
-        (t.reportNo || '').toLowerCase().includes(kw) ||
-        (t.checkListId || '').toLowerCase().includes(kw)
-      const hitItem = (t.items || []).some(
-        i =>
-          (i.projectName || '').toLowerCase().includes(kw) ||
-          (i.datasheetId || '').toLowerCase().includes(kw)
-      )
-      if (!hitTask && !hitItem) return false
-    }
-    return true
+  const filteredTaskList = computed(() => {
+    const kw = keyword.value.trim().toLowerCase()
+    return taskList.value.filter(t => {
+      if (statusFilter.value && t.status !== statusFilter.value) return false
+      if (kw) {
+        const hitTask =
+          (t.reportNo || '').toLowerCase().includes(kw) ||
+          (t.checkListId || '').toLowerCase().includes(kw)
+        const hitItem = (t.items || []).some(
+          i =>
+            (i.testItemId || '').toLowerCase().includes(kw) ||
+            (i.datasheetId || '').toLowerCase().includes(kw)
+        )
+        if (!hitTask && !hitItem) return false
+      }
+      return true
+    })
   })
-})
 
   const summary = computed(() => {
     const s = { generating: 0, success: 0, failed: 0 }
@@ -483,6 +556,7 @@ const filteredTaskList = computed(() => {
     switch (status) {
       case 'SUCCESS':
       case 'MERGED':
+      case 'CREATED':
         return 'success'
       case 'FAILED':
       case 'PARTIAL_FAILED':
@@ -505,9 +579,11 @@ const filteredTaskList = computed(() => {
   /* ---------------- Task creation ---------------- */
   function createTask(checkListId, reportNo, projectCount) {
     const projects = Array.from({ length: projectCount }, (_, i) => ({
-      projectId: `P${String(i + 1).padStart(3, '0')}`,
-      projectName: `Project ${i + 1}`,
       datasheetId: `ds-${checkListId.slice(0, 6)}-${i + 1}`,
+      projectId: `P${String(i + 1).padStart(3, '0')}`,
+      testItemId: '',
+      modelIndex: i,
+      modelKey: null,
       status: 'PENDING',
       fileUrl: null,
       errorMessage: null,
@@ -516,6 +592,7 @@ const filteredTaskList = computed(() => {
     }))
     return {
       checkListId,
+      batchId: null,
       reportNo,
       total: projectCount,
       success: 0,
@@ -558,7 +635,7 @@ const filteredTaskList = computed(() => {
       setTimeout(() => {
         const roll = Math.random()
         if (roll < 0.8) {
-          item.status = 'SUCCESS'
+          item.status = 'CREATED'
           item.fileUrl = `/mock/files/${item.datasheetId}.docx`
           task.success += 1
         } else {
@@ -640,13 +717,13 @@ const filteredTaskList = computed(() => {
 
     setTimeout(() => {
       if (Math.random() < 0.8) {
-        item.status = 'SUCCESS'
+        item.status = 'CREATED'
         item.fileUrl = `/mock/files/${item.datasheetId}.docx`
-        ElMessage.success(`${item.projectName} retry succeeded`)
+        ElMessage.success(`${item.testItemId || item.projectId} retry succeeded`)
       } else {
         item.status = 'FAILED'
         item.errorMessage = pickRandomError()
-        ElMessage.error(`${item.projectName} retry failed again`)
+        ElMessage.error(`${item.testItemId || item.projectId} retry failed again`)
       }
       item.updatedAt = new Date().toISOString()
       if (task) {
@@ -657,7 +734,7 @@ const filteredTaskList = computed(() => {
   }
 
   function recalcAggregates(task) {
-    task.success = task.items.filter(i => i.status === 'SUCCESS').length
+    task.success = task.items.filter(i => i.status === 'CREATED').length
     task.failed = task.items.filter(i => i.status === 'FAILED').length
     task.generating = task.items.filter(i => i.status === 'GENERATING').length
     task.pending = task.items.filter(i => i.status === 'PENDING').length
@@ -669,11 +746,130 @@ const filteredTaskList = computed(() => {
   }
 
   onBeforeUnmount(() => {
-  activeConnections.forEach((_, id) => detachTaskStream(id))
-})
-
+    activeConnections.forEach((_, id) => detachTaskStream(id))
+  })
 </script>
+
 <style scoped>
+  .datasheetDemo {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding: 16px;
+    background: #f5f7fa;
+  }
+
+  .sidePanel {
+    position: sticky;
+    top: 16px;
+    flex: 0 0 180px;
+    width: 180px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+  }
+
+  .mainContent {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+    .headerRow h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+  .headerActions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .sidePanelTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 8px;
+  }
+
+  .summaryItem {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #606266;
+    margin-bottom: 6px;
+  }
+
+  .summaryValue {
+    font-weight: 600;
+    color: #303133;
+  }
+
+    .summaryValue.success {
+      color: #67c23a;
+    }
+
+    .summaryValue.danger {
+      color: #f56c6c;
+    }
+
+  .progressText {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+  }
+
+  .subTableWrapper {
+    padding: 12px 20px;
+    background: #fafafa;
+  }
+
+  .subHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #303133;
+    font-size: 13px;
+  }
+
+  .errorText {
+    color: #f56c6c;
+    font-size: 12px;
+  }
+
+  .attachBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .hintText {
+    font-size: 12px;
+    color: #909399;
+  }
+</style>
+<!--<style scoped>
   /* 整体：flex 两栏，占满整页 */
   .datasheetDemo {
     display: flex;
@@ -795,4 +991,4 @@ const filteredTaskList = computed(() => {
     font-size: 12px;
     color: #909399;
   }
-</style>
+</style>-->
