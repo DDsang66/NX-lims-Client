@@ -333,9 +333,19 @@ async function handleGenerate() {
       dateTime: new Date().toISOString(),
       items: checkListData.value.items.map(item => {
         const testItemInfo = props.testItemMap[item.testItemId]
-        const testItemName = testItemInfo?.nameEn
-          || testItemInfo?.nameChn
-          || item.testItemId
+        // 英文名 + 中文名，格式：Colour Fastness to Washing(皂洗色牢度)
+        const enName = testItemInfo?.nameEn || ''
+        const chnName = testItemInfo?.nameChn || ''
+        let testItemName = ''
+        if (enName && chnName) {
+          testItemName = `${enName}(${chnName})`
+        } else if (enName) {
+          testItemName = enName
+        } else if (chnName) {
+          testItemName = chnName
+        } else {
+          testItemName = item.testItemId
+        }
 
         const standardNames = (item.standards || []).map(stdId =>
           props.standardIdToCodeMap[stdId] || stdId

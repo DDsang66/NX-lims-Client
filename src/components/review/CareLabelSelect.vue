@@ -331,7 +331,7 @@ const bleachProceduresEurope = ref([
 ]);
 
 // 洗标地区
-const washLabelRegion = ref(props.modelValue.washLabelRegionDefault || 'Europe')
+const washLabelRegion = ref(props.modelValue?.washLabelRegionDefault || 'Europe')
 const washLabelRegionOptions = ['Europe', 'USA','Japan'];
 
 // 汇总数据 - 所有地区统一用欧标格式返回（修复：Japan 也使用 Europe 的数据）
@@ -464,7 +464,7 @@ function getSelectedValue(key) {
   const itemConfig = labelItemsMap[key];
   if (!itemConfig) return { value: '', label: '', src: [] };
 
-  const value = props.modelValue[itemConfig.selectedKey];
+  const value = props.modelValue?.[itemConfig.selectedKey];
   return value ? {
     value: value.value || '',
     label: value.label || '',
@@ -572,33 +572,36 @@ function mapRegionToMachineType(region) {
 }
 
 // 切换洗标地区
-function washLabelRegionChange() {
-  const updateData = {
-    ...props.modelValue,
-    MachineType: mapRegionToMachineType(washLabelRegion.value)
-  };
+  function washLabelRegionChange() {
+    const updateData = {
+      ...props.modelValue,
+      MachineType: mapRegionToMachineType(washLabelRegion.value)
+    };
 
-  const items = Object.values(labelItemsMap);
-  items.forEach((item) => {
-    const standardOpts = item.standardOptionses.value.find(s => s.region === washLabelRegion.value);
-    item.standardOptions.value = standardOpts?.value || item.standardOptionses.value[0]?.value || [];
-    item.standard.value = item.standardOptions.value[0] || '';
+    const items = Object.values(labelItemsMap);
+    items.forEach((item) => {
+      const standardOpts = item.standardOptionses.value.find(s => s.region === washLabelRegion.value);
+      item.standardOptions.value = standardOpts?.value || item.standardOptionses.value[0]?.value || [];
+      item.standard.value = item.standardOptions.value[0] || '';
 
-    const labelOpts = item.procedureses.value.find(p => p.region === washLabelRegion.value && p.standard === item.standard.value);
-    item.labelOptions.value = labelOpts?.value || item.procedureses.value[0]?.value || [];
+      const labelOpts = item.procedureses.value.find(p => p.region === washLabelRegion.value && p.standard === item.standard.value);
+      item.labelOptions.value = labelOpts?.value || item.procedureses.value[0]?.value || [];
 
-    if (item.labelOptions.value.length > 0) {
-      const selectedLabel = item.labelOptions.value[0];
-      updateData[item.selectedKey] = {
-        value: selectedLabel.value,
-        label: selectedLabel.label,
-        src: selectedLabel.src
-      };
-    }
-  });
+      // 只有当前没有选中值时才填默认，避免覆盖已保存数据
+      const current = props.modelValue?.[item.selectedKey];
+      const hasValue = current && current.value;
+      if (!hasValue && item.labelOptions.value.length > 0) {
+        const selectedLabel = item.labelOptions.value[0];
+        updateData[item.selectedKey] = {
+          value: selectedLabel.value,
+          label: selectedLabel.label,
+          src: selectedLabel.src
+        };
+      }
+    });
 
-  emit('update:modelValue', updateData);
-}
+    emit('update:modelValue', updateData);
+  }
 
 // 关闭选择器的下拉框
 function closeSelectPopover(e) {
@@ -614,12 +617,25 @@ function closeSelectPopover(e) {
   });
 }
 
+  const initialized = ref(false);
 
-onMounted(() => {
-  props.modelValue.MachineType = mapRegionToMachineType(washLabelRegion.value);
-  washLabelRegionChange();
-  document.addEventListener('mousedown', closeSelectPopover);
-});
+  //onMounted(() => {
+  //  if (!initialized.value) {
+  //    initialized.value = true;
+  //    if (!props.modelValue.MachineType) {
+  //      props.modelValue.MachineType = mapRegionToMachineType(washLabelRegion.value);
+  //    }
+  //    washLabelRegionChange();
+  //  }
+  //  document.addEventListener('mousedown', closeSelectPopover);
+  //});
+  onMounted(() => {
+    if (!initialized.value) {
+      initialized.value = true;
+      washLabelRegionChange();
+    }
+    document.addEventListener('mousedown', closeSelectPopover);
+  });
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', closeSelectPopover);

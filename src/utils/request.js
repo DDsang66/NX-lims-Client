@@ -22,6 +22,10 @@ function createAxiosInstance(config) {
     if (accessToken) {
       config.headers['accessToken'] = accessToken;
     }
+    // ★ 新增：FormData 请求删除默认 Content-Type，让 axios 自动设置 multipart boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     if (config.method === 'get') {
       config.paramsSerializer = function (params) {
         return qs.stringify(params, { arrayFormat: 'repeat' })

@@ -10,27 +10,75 @@
             <div class="careLabelWrapper">
               <!-- 洗标选择 -->
               <div class="careLabelLeft">
-                <CareLabelSelect class="pieceContent" v-model="careLabelData" />
-
-                <div class="specialCareContent">
-                  <div class="careInstructionItem">
-                    <span class="instructionLabel">{{$t('AfterWashing')}}</span>
-                    <AfterWashingSelect class="pieceContent" :afterWashItems="afterWashItems" :sampleSummary="allSample" />
-                  </div>
-                  <div class="careInstructionItem">
-                    <span class="instructionLabel">{{$t('Detergent')}}</span>
-                    <DetergentSelect class="pieceContent" :detergentItems="detergentItems" :sampleSummary="allSample" />
-                  </div>
-                  <!-- Special Care Instruction + After Iron 同一行 -->
-                  <div class="careInstructionItem combinedCareRow">
-                    <span class="instructionLabel">{{$t('After Iron')}}</span>
-                    <el-select v-model="afterIronValue" placeholder="" style="width: 200px">
-                      <el-option v-for="option in afterIronOptions"
-                                 :key="option.value"
-                                 :value="option.value"
-                                 :label="option.label" />
+                <!-- 按测点分组的 CareLabel：初始化就有一组，组头直接选测点 -->
+                <div v-for="(group, index) in careLabelGroups"
+                     :key="index"
+                     class="oneGroupCareLabel">
+                  <!-- 组头：测点选择 -->
+                  <div class="line-flex-container groupSamples">
+                    <span class="samplesLabel">{{ $t('samples') }}</span>
+                    <el-select v-model="group.samples"
+                               multiple
+                               style="flex: 1"
+                               @change="oneCareLabelGroupSamplesChange">
+                      <el-option v-for="s in allSample" :key="s" :value="s" />
                     </el-select>
+                    <el-button v-if="careLabelGroups.length > 1"
+                               type="danger"
+                               @click="deleteCareLabelGroup(index)">
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
                   </div>
+                  <div class="warningMy" v-if="group.warnMessage">
+                    {{ $t(group.warnMessage) }}
+                  </div>
+
+                  <!-- careLabel 本体 -->
+                  <CareLabelSelect v-model="group.careLabel" />
+
+                  <!-- 特殊护理说明：每组一份 -->
+                  <div class="specialCareContent">
+                    <div class="careInstructionItem">
+                      <span class="instructionLabel">{{ $t('AfterWashing') }}</span>
+                      <AfterWashingSelect class="pieceContent"
+                                          v-model="group.afterWashItems"
+                                          :afterWashOptionsList="afterWashOptions" />
+                    </div>
+                    <div class="careInstructionItem">
+                      <span class="instructionLabel">{{ $t('Detergent') }}</span>
+                      <DetergentSelect class="pieceContent"
+                                       v-model="group.detergentItems"
+                                       :detergentOptionsList="detergentOptions" />
+                    </div>
+                    <div class="careInstructionItem combinedCareRow">
+                      <span class="instructionLabel">{{ $t('After Iron') }}</span>
+                      <el-select v-model="group.afterIronValue" placeholder="" style="width: 200px">
+                        <el-option v-for="option in afterIronOptions"
+                                   :key="option.value"
+                                   :value="option.value"
+                                   :label="option.label" />
+                      </el-select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 底部：剩余样品 + 新建组 -->
+                <div class="line-flex-container addCareLabelGroupRow">
+                  <span class="samplesLabel">{{ $t('remainingSamples') }}</span>
+                  <el-select v-model="newCareLabelSampleGroup" multiple style="flex: 1" clearable>
+                    <template #header>
+                      <el-checkbox v-model="careLabelRemainCheckAll"
+                                   :indeterminate="careLabelRemainIndeterminate"
+                                   @change="handleCareLabelRemainCheckAll"
+                                   style="width: 100%">
+                        All
+                      </el-checkbox>
+                    </template>
+                    <el-option v-for="s in unGroupedCareLabelSamples" :key="s" :value="s" />
+                  </el-select>
+                  <el-button @click="addNewCareLabelGroup">
+                    <el-icon><Check /></el-icon>
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -97,7 +145,10 @@
   import DetergentSelect from "@/components/review/ItemRequire/DetergentSelect.vue";
   import { isEqual } from 'lodash-es';
   import request from "@/utils/request.js";
+  import { Delete, Check } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
+  import { useI18n } from 'vue-i18n'
+  const { t } = useI18n()
 
   const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
@@ -117,11 +168,10 @@
     buyerIsIndividualTraveler: { type: Boolean, default: false },
   })
 
-  const afterWashItems = ref(["item1", "item2"])
-  const detergentItems = ref(["item1", "item2"])
+  const afterWashOptions = ref(["item1", "item2"])
+  const detergentOptions = ref(["item1", "item2"])
 
   // AfterIron 数据（现在作为 Special Care Instruction 的值）
-  const afterIronValue = ref('')
   const afterIronOptions = [
     { label: 'After Iron', value: 'After Iron' },
     { label: 'Before and After Iron', value: 'Before and After Iron' },
@@ -129,37 +179,90 @@
   ]
 
   //洗标数据
-  const careLabelData = ref({
-    washLabelRegionDefault: "Europe",
-    MachineType: 'Type A',
-    Temperature: '',
-    WashingProcess: '',
-    WashingProcedure: {
-      value: '',
-      label: '',
-      src: [new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
-    },
-    DryProcedure: {
-      value: '',
-      label: '',
-      src: [new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
-    },
-    DryCleanProcedure: {
-      value: '',
-      label: '',
-      src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
-    },
-    IronMethod: {
-      value: '',
-      label: '',
-      src: [new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
-    },
-    BleachProcedure: {
-      value: '',
-      label: '',
-      src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
+  //const careLabelData = ref({
+  //  washLabelRegionDefault: "Europe",
+  //  MachineType: 'Type A',
+  //  Temperature: '',
+  //  WashingProcess: '',
+  //  WashingProcedure: {
+  //    value: '',
+  //    label: '',
+  //    src: [new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
+  //  },
+  //  DryProcedure: {
+  //    value: '',
+  //    label: '',
+  //    src: [new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
+  //  },
+  //  DryCleanProcedure: {
+  //    value: '',
+  //    label: '',
+  //    src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
+  //  },
+  //  IronMethod: {
+  //    value: '',
+  //    label: '',
+  //    src: [new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
+  //  },
+  //  BleachProcedure: {
+  //    value: '',
+  //    label: '',
+  //    src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
+  //  }
+  //})
+
+  // ========== CareLabel 按测点分组 ==========
+  // 空 careLabel 模板（字段与原来 careLabelData 一致）
+  function createEmptyCareLabel() {
+    return {
+      washLabelRegionDefault: "Europe",
+      MachineType: 'Type A',
+      Temperature: '',
+      WashingProcess: '',
+      WashingProcedure: {
+        value: '',
+        label: '',
+        src: []
+      },
+      DryProcedure: {
+        value: '',
+        label: '',
+        src: []
+      },
+      DryCleanProcedure: {
+        value: '',
+        label: '',
+        src: []
+      },
+      IronMethod: {
+        value: '',
+        label: '',
+        src: []
+      },
+      BleachProcedure: {
+        value: '',
+        label: '',
+        src: []
+      }
     }
-  })
+  }
+
+  // 初始化就一组，samples 为空，用户直接在组头勾测点
+  const careLabelGroups = ref([
+    {
+      samples: [],
+      careLabel: createEmptyCareLabel(),
+      afterWashItems: [],
+      detergentItems: '',
+      afterIronValue: '',
+      warnMessage: ''
+    }
+  ])
+
+  // 新建组用的剩余样品选择
+  const newCareLabelSampleGroup = ref([])
+  const careLabelRemainCheckAll = ref(false)
+  const careLabelRemainIndeterminate = ref(false)
 
   //---------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -185,6 +288,24 @@
       }
     })
     return Array.from(samples).sort()
+  })
+
+  // careLabel 维度未分组测点
+  const unGroupedCareLabelSamples = computed(() => {
+    const grouped = careLabelGroups.value.flatMap(g => g.samples)
+    return allSample.value.filter(s => !grouped.includes(s))
+  })
+
+  watch(newCareLabelSampleGroup, (val) => {
+    if (val.length === 0) {
+      careLabelRemainCheckAll.value = false
+      careLabelRemainIndeterminate.value = false
+    } else if (val.length === unGroupedCareLabelSamples.value.length) {
+      careLabelRemainCheckAll.value = true
+      careLabelRemainIndeterminate.value = false
+    } else {
+      careLabelRemainIndeterminate.value = true
+    }
   })
 
   //ConditionPool初始化
@@ -306,19 +427,82 @@
     { deep: true, immediate: true }
   );
 
+  const CARE_LABEL_KEYS = [
+    'washLabelRegionDefault',
+    'MachineType',
+    'Temperature',
+    'WashingProcess',
+    'WashingProcedure',
+    'DryProcedure',
+    'DryCleanProcedure',
+    'IronMethod',
+    'BleachProcedure',
+    'afterWashItems',
+    'detergentItems',
+    'afterIron'
+  ]
+
+  // 输出 [{ sample, careLabel, afterWashItems, detergentItems, afterIronValue }]
+  const careLabelBySample = computed(() => {
+    const list = []
+    for (const group of careLabelGroups.value) {
+      for (const sample of group.samples) {
+        list.push({
+          sample,
+          careLabel: group.careLabel,
+          afterWashItems: group.afterWashItems,
+          detergentItems: group.detergentItems,
+          afterIronValue: group.afterIronValue
+        })
+      }
+    }
+    return list
+  })
+
+  watch(
+    careLabelBySample,
+    (list) => {
+      // 1. 收集本次要写入的 sample 集合
+      const coveredSamples = new Set(list.map(item => item.sample))
+
+      // 2. 只清除「不再被覆盖」的 sample 的 careLabel 字段
+      conditionsGroups.value.forEach(group => {
+        const stillCovered = group.testPoints.some(tp => coveredSamples.has(tp))
+        if (!stillCovered) {
+          CARE_LABEL_KEYS.forEach(k => {
+            if (Object.prototype.hasOwnProperty.call(group.conditions, k)) {
+              delete group.conditions[k]
+            }
+          })
+        }
+      })
+
+      // 3. 按 sample 写入（覆盖式）
+      list.forEach(({ sample, careLabel, afterWashItems, detergentItems, afterIronValue }) => {
+        const group = conditionsGroups.value.find(g => g.testPoints.includes(sample))
+        if (group) {
+          group.conditions.washLabelRegionDefault = careLabel.washLabelRegionDefault
+          group.conditions.MachineType = careLabel.MachineType
+          group.conditions.Temperature = careLabel.Temperature
+          group.conditions.WashingProcess = careLabel.WashingProcess
+          group.conditions.WashingProcedure = careLabel.WashingProcedure?.value
+          group.conditions.DryProcedure = careLabel.DryProcedure?.value
+          group.conditions.DryCleanProcedure = careLabel.DryCleanProcedure?.value
+          group.conditions.IronMethod = careLabel.IronMethod?.value
+          group.conditions.BleachProcedure = careLabel.BleachProcedure?.value
+
+          group.conditions.afterWashItems = [...(afterWashItems || [])]
+          group.conditions.detergentItems = detergentItems || ''
+          group.conditions.afterIron = afterIronValue
+        }
+      })
+    },
+    { deep: true, immediate: true }
+  )
+
   // 3. 同步共享参数（CareLabel、AfterIron、OtherParams 等）
   // 定义计算属性，提取需要放入 conditions 的字段
   const sharedConditions = computed(() => ({
-    washLabelRegionDefault: careLabelData.value.washLabelRegionDefault,
-    MachineType: careLabelData.value.MachineType,
-    Temperature: careLabelData.value.Temperature,
-    WashingProcess: careLabelData.value.WashingProcess,
-    WashingProcedure: careLabelData.value.WashingProcedure?.value,
-    DryProcedure: careLabelData.value.DryProcedure?.value,
-    DryCleanProcedure: careLabelData.value.DryCleanProcedure?.value,
-    IronMethod: careLabelData.value.IronMethod?.value,
-    BleachProcedure: careLabelData.value.BleachProcedure?.value,
-    afterIron: afterIronValue.value,
     otherParams: Object.fromEntries(orderParams.value.map(p => [p.name, p.value])),
   }));
 
@@ -440,7 +624,62 @@
   const handleRowsSingle = (fiberCom) => {
     fiberCompositionSingle.value = fiberCom;
   };
+  // ========== CareLabel 分组操作 ==========
+  function handleCareLabelRemainCheckAll() {
+    careLabelRemainIndeterminate.value = false
+    if (newCareLabelSampleGroup.value.length === 0) {
+      newCareLabelSampleGroup.value = [...unGroupedCareLabelSamples.value]
+    } else {
+      newCareLabelSampleGroup.value = []
+    }
+  }
 
+  function addNewCareLabelGroup() {
+    if (newCareLabelSampleGroup.value.length === 0) {
+      ElMessage.warning(t('message.selectSamples'))
+      return
+    }
+    careLabelGroups.value.push({
+      samples: [...newCareLabelSampleGroup.value],
+      careLabel: createEmptyCareLabel(),
+      afterWashItems: [],
+      detergentItems: '',
+      afterIronValue: '',
+      warnMessage: ''
+    })
+    newCareLabelSampleGroup.value = []
+  }
+
+  function deleteCareLabelGroup(index) {
+    careLabelGroups.value.splice(index, 1)
+  }
+
+  function oneCareLabelGroupSamplesChange() {
+    checkCareLabelDuplicateSamples()
+  }
+
+  function checkCareLabelDuplicateSamples() {
+    const groups = careLabelGroups.value
+    const sampleMap = new Map()
+    groups.forEach(group => {
+      (group.samples || []).forEach(sample => {
+        if (!sample) return
+        if (!sampleMap.has(sample)) sampleMap.set(sample, new Set())
+        sampleMap.get(sample).add(group)
+      })
+    })
+    const groupsWithIssues = new Set()
+    for (const [, groupSet] of sampleMap.entries()) {
+      if (groupSet.size > 1) groupSet.forEach(g => groupsWithIssues.add(g))
+    }
+    groups.forEach(group => {
+      const duplicateMsg = 'message.group.sampleDuplicated'
+      const should = groupsWithIssues.has(group)
+      const current = group.warnMessage === duplicateMsg
+      if (should && !current) group.warnMessage = duplicateMsg
+      else if (!should && current) group.warnMessage = ''
+    })
+  }
   //---------------------------------------------- 提交----------------------------
   const isSubmitting = ref(false)  // 👈 添加提交状态
 
@@ -926,4 +1165,60 @@
     }
   }
 }
+
+  /* ========== CareLabel 按测点分组 ========== */
+  .oneGroupCareLabel {
+    @include column-stretch-flex-container;
+    gap: 8px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #ffffff;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #c8d2e0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  .oneGroupCareLabel .groupSamples {
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background-color: #f0f4fa;
+    padding: 6px 8px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .oneGroupCareLabel .samplesLabel {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--h1-color);
+    align-self: center;
+    margin-right: 8px;
+  }
+
+  .oneGroupCareLabel .specialCareContent {
+    @include column-stretch-flex-container;
+    gap: 10px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--el-border-color-lighter);
+  }
+
+  .addCareLabelGroupRow {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px dashed var(--el-border-color);
+    border-radius: 8px;
+    background: #fafbfd;
+
+    .samplesLabel {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--h1-color);
+      align-self: center;
+      margin-right: 8px;
+    }
+  }
 </style>

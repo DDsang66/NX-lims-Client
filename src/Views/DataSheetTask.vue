@@ -741,6 +741,8 @@
   }
 
   function clearAll() {
+    // ★ 先关闭所有 SSE 连接，再清列表
+    activeConnections.forEach((_, id) => detachTaskStream(id))
     taskList.value = []
     expandedKeys.value = []
   }
