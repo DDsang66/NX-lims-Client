@@ -111,8 +111,7 @@
 
           <el-form label-position="left" label-width="48px" size="small" @submit.prevent>            <el-form-item label="方向">
               <el-radio-group v-model="direction">
-                <el-radio-button value="Warp">Warp</el-radio-button>
-                <el-radio-button value="Weft">Weft</el-radio-button>
+                <el-radio-button v-for="d in DIRECTIONS" :key="d.name" :value="d.name">{{ d.name }}</el-radio-button>
               </el-radio-group>
               <span class="lbl2">试样号</span>
               <el-select v-model="specIndex" style="width:82px">
@@ -170,11 +169,9 @@
           <el-descriptions :column="3" size="small" border>
             <el-descriptions-item label="Warp (Tex)"><span class="sum">{{ fmt(warpTex, 2) }}</span></el-descriptions-item>
             <el-descriptions-item label="Weft (Tex)"><span class="sum">{{ fmt(weftTex, 2) }}</span></el-descriptions-item>
-            <el-descriptions-item label="Knit (Tex)">
-              <el-input-number v-model="knitTex" :precision="2" :min="0" :step="0.01" :controls="false" size="small" style="width:96px" placeholder="手工输入"/>
-            </el-descriptions-item>
+            <el-descriptions-item label="Knit (Tex)"><span class="sum">{{ fmt(knitTex, 2) }}</span></el-descriptions-item>
           </el-descriptions>
-          <el-text class="hint block" size="small" type="info">Warp/Weft = 该方向各试样 Tex 的算术平均；Knit 手工输入，留空则报告该格空白</el-text>
+          <el-text class="hint block" size="small" type="info">三个方向同口径 = 该方向各试样 Tex 的算术平均；没测的方向报告该格空白</el-text>
         </el-card>
       </div>
     </div>
@@ -190,8 +187,23 @@ const api = inject('request')
 
 // ---- 口径常量: 与后端 YarnCountReportRequestDto 的常量一一对应 ----
 // 页面即时显示的数就是报告上要印的数, 两边必须逐位一致, 改一处就得改另一处。
-const WARP_COUNT = 2         // 模板表1 经向 2 格(刻意不对称, 别"修正"成 5)
-const WEFT_COUNT = 5         // 纬向 5 格
+// 方向表与模板表1 的 R0(Warp | Weft | Knit)按序对应, count 是该方向的试样列数。
+// 2026-09 模板改版: 原为 Warp 2 / Weft 5, 现三方向各 2 列; Knit 也从"页面手工输入一个汇总值"
+// 改为与经纬向同口径按试样测, 所以三个方向走的是同一条链路, 不再有特例分支。
+const DIRECTIONS = [
+  { name: 'Warp', count: 2 },
+  { name: 'Weft', count: 2 },
+  { name: 'Knit', count: 2 },
+]
+
+// 方向写错时**抛异常**, 不兜底成某个方向 —— 与后端 YarnCountDocxEngine.ColumnOf 同一原则:
+// 静默走错分支会把数字填进别人的列, 比当场报错难查得多。
+function countOf(dir) {
+  const d = DIRECTIONS.find(x => x.name === dir)
+  if (!d) throw new Error(`未知方向: ${dir}`)
+  return d.count
+}
+
 const LENGTH_COUNT = 10      // 每试样 10 个长度读数
 const LENGTH_DECIMALS = 2
 const AVERAGE_DECIMALS = 2
@@ -314,12 +326,11 @@ const humid = ref(null)
 // ---- 当前试样录入 ----
 const direction = ref('Warp')
 const specIndex = ref(1)
-const specCount = computed(() => direction.value === 'Warp' ? WARP_COUNT : WEFT_COUNT)
+const specCount = computed(() => countOf(direction.value))
 const lengths = reactive(Array(LENGTH_COUNT).fill(null))
 
 // ---- 已录试样: key = "Warp#1" → { direction, index, lengths, average, mass, tex, t } ----
 const specimens = reactive(new Map())
-const knitTex = ref(null)
 const keyOf = (dir, idx) => `${dir}#${idx}`
 
 // ---- 算数: 与后端 YarnCountMath 同一套口径 ----
@@ -351,7 +362,7 @@ function texOf(average, mass) {
 // 方向汇总 = 该方向各试样 Tex 的算术平均(等权), 算不出 Tex 的试样不拉低汇总
 function meanTex(dir) {
   const list = []
-  for (let i = 1; i <= (dir === 'Warp' ? WARP_COUNT : WEFT_COUNT); i++) {
+  for (let i = 1; i <= countOf(dir); i++) {
     const s = specimens.get(keyOf(dir, i))
     if (s?.tex != null) list.push(s.tex)
   }
@@ -364,6 +375,8 @@ const liveMass = computed(() => roundTo(mass.value, MASS_DECIMALS))
 const liveTex = computed(() => texOf(liveAverage.value, liveMass.value))
 const warpTex = computed(() => meanTex('Warp'))
 const weftTex = computed(() => meanTex('Weft'))
+// Knit 与经纬向同口径: 针织各试样 Tex 的算术平均(不再是手工输入)
+const knitTex = computed(() => meanTex('Knit'))
 
 // 数字显示: 没有数就显示破折号(与报告留空对应)
 const fmt = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toFixed(d))
@@ -372,7 +385,7 @@ const fmt = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toFixed(d))
 watch(direction, () => { specIndex.value = firstFreeIndex(direction.value) })
 
 function firstFreeIndex(dir) {
-  const count = dir === 'Warp' ? WARP_COUNT : WEFT_COUNT
+  const count = countOf(dir)
   for (let i = 1; i <= count; i++) if (!specimens.has(keyOf(dir, i))) return i
   return count
 }
@@ -380,7 +393,7 @@ function firstFreeIndex(dir) {
 // ---- 记录网格: 行跟着模板表1 的行序走, 列跟着格序走, 方便肉眼对报告 ----
 const GRID_ROWS = [
   ...Array.from({ length: LENGTH_COUNT }, (_, i) => ({
-    label: `${i + 1}.`,
+    label: `${i + 1}. (cm)`,
     cell: s => s?.lengths?.[i],
     dec: LENGTH_DECIMALS
   })),
@@ -391,8 +404,8 @@ const GRID_ROWS = [
 
 const gridCols = computed(() => {
   const cols = []
-  for (let i = 1; i <= WARP_COUNT; i++) cols.push(colOf('Warp', i))
-  for (let i = 1; i <= WEFT_COUNT; i++) cols.push(colOf('Weft', i))
+  for (const d of DIRECTIONS)
+    for (let i = 1; i <= d.count; i++) cols.push(colOf(d.name, i))
   return cols
 })
 const colOf = (dir, idx) => ({
@@ -627,14 +640,33 @@ async function clearAll() {
   try {
     await ElMessageBox.confirm(`确定要清空全部 ${specimens.size} 个试样吗？`, '确认', { type: 'warning' })
     specimens.clear()
-    knitTex.value = null
     clearCurrent()
     specIndex.value = firstFreeIndex(direction.value)
   } catch { /* */ }
 }
 
+// 提交/导出前的范围兜底: 清掉试样号超出该方向列数的条目。
+//
+// 正常路径下不会有(录入时按 specCount 限过号), 但 specimens 是 Map 而不是从网格反推的列表 ——
+// keep-alive 或 HMR 跨版本时里面可能留着旧编号的记录(比如模板改成 Weft 2 列之前录的 Weft#3),
+// 它们**不在网格里、没有删除按钮、却照样提交**, 被后端整单拒绝后操作员看不到也删不掉肇事者。
+// 方向认不出来的一并按超范围处理(不抛异常: 这里要的是能收尾, 不是中断导出)。
+function dropOutOfRange() {
+  const dropped = []
+  for (const s of [...specimens.values()]) {
+    const max = DIRECTIONS.find(d => d.name === s.direction)?.count ?? 0
+    if (s.index < 1 || s.index > max) {
+      specimens.delete(keyOf(s.direction, s.index))
+      dropped.push(`${s.direction} #${s.index}`)
+    }
+  }
+  if (dropped.length) ElMessage.warning(`已忽略超出模板列数的记录: ${dropped.join('、')}`)
+}
+
 async function doExport() {
   if (!specimens.size) return
+  dropOutOfRange()
+  if (!specimens.size) { ElMessage.warning('没有可导出的试样数据'); return }
   const XLSX = await import('xlsx')
   const list = [...specimens.values()].sort((a, b) => a.direction.localeCompare(b.direction) || a.index - b.index)
   const ws = XLSX.utils.json_to_sheet(list.map(s => {
@@ -655,17 +687,20 @@ async function doExport() {
 async function doReport() {
   if (!specimens.size) { ElMessage.warning('请先记录数据'); return }
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(报告号)'); return }
+  dropOutOfRange()
+  if (!specimens.size) { ElMessage.warning('没有可提交的试样数据'); return }
   try {
     const res = await api.post('/YarnCountReport/report', {
       reportNumber: sid.value.trim(),
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      knitTex: knitTex.value,
+      // 三个方向都传(没测的方向 specimens 为空, 会被下面 filter 掉 → 后端该方向汇总留空)。
+      // Knit 不再单独传: 它现在跟经纬向一样由试样算出, 后端取该方向各试样 Tex 的算术平均。
       // 长度原样带上 10 个槽位(含空槽): 模板第 1~10 行是固定的, 空槽留空才对齐行号
-      directions: ['Warp', 'Weft'].map(d => ({
-        direction: d,
+      directions: DIRECTIONS.map(d => ({
+        direction: d.name,
         specimens: [...specimens.values()]
-          .filter(s => s.direction === d)
+          .filter(s => s.direction === d.name)
           .sort((a, b) => a.index - b.index)
           .map(s => ({ index: s.index, lengths: s.lengths, mass: s.mass }))
       })).filter(d => d.specimens.length)
