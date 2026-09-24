@@ -41,19 +41,19 @@
                     <div class="careInstructionItem">
                       <span class="instructionLabel">{{ $t('AfterWashing') }}</span>
                       <AfterWashingSelect class="pieceContent"
-                                          v-model="group.afterWashItems"
-                                          :afterWashOptionsList="afterWashOptions" />
+                                          v-model="group.AfterWashItems"
+                                          :AfterWashOptionsList="AfterWashOptions" />
                     </div>
                     <div class="careInstructionItem">
                       <span class="instructionLabel">{{ $t('Detergent') }}</span>
                       <DetergentSelect class="pieceContent"
-                                       v-model="group.detergentItems"
-                                       :detergentOptionsList="detergentOptions" />
+                                       v-model="group.DetergentItems"
+                                       :DetergentOptionsList="DetergentOptions" />
                     </div>
                     <div class="careInstructionItem combinedCareRow">
                       <span class="instructionLabel">{{ $t('After Iron') }}</span>
-                      <el-select v-model="group.afterIronValue" placeholder="" style="width: 200px">
-                        <el-option v-for="option in afterIronOptions"
+                      <el-select v-model="group.AfterIronValue" placeholder="" style="width: 200px">
+                        <el-option v-for="option in AfterIronOptions"
                                    :key="option.value"
                                    :value="option.value"
                                    :label="option.label" />
@@ -155,7 +155,7 @@
   const conditionsGroups = ref([]);
   //和样品绑定的成分
   const fiberCompositionSingle = ref([])
-  //订单参数 (移除 afterIron，因为它已移到 Care Label 中)
+  //订单参数 (移除 AfterIron，因为它已移到 Care Label 中)
   const orderParams = ref([
     // 可以在这里添加其他参数
   ])
@@ -168,48 +168,15 @@
     buyerIsIndividualTraveler: { type: Boolean, default: false },
   })
 
-  const afterWashOptions = ref(["item1", "item2"])
-  const detergentOptions = ref(["item1", "item2"])
+  const AfterWashOptions = ref(["item1", "item2"])
+  const DetergentOptions = ref(["item1", "item2"])
 
   // AfterIron 数据（现在作为 Special Care Instruction 的值）
-  const afterIronOptions = [
+  const AfterIronOptions = [
     { label: 'After Iron', value: 'After Iron' },
     { label: 'Before and After Iron', value: 'Before and After Iron' },
     { label: 'Do Not Iron', value: '' }
   ]
-
-  //洗标数据
-  //const careLabelData = ref({
-  //  washLabelRegionDefault: "Europe",
-  //  MachineType: 'Type A',
-  //  Temperature: '',
-  //  WashingProcess: '',
-  //  WashingProcedure: {
-  //    value: '',
-  //    label: '',
-  //    src: [new URL('../../assets/img/wet Care Label/Europe/Washing/No Wash.jpg', import.meta.url).href]
-  //  },
-  //  DryProcedure: {
-  //    value: '',
-  //    label: '',
-  //    src: [new URL('../../assets/img/wet Care Label/Europe/Dry/Do not tumble dry.jpg', import.meta.url).href]
-  //  },
-  //  DryCleanProcedure: {
-  //    value: '',
-  //    label: '',
-  //    src: [new URL('../../assets/img/wet Care Label/Europe/DC/Do not dry-clean.jpg', import.meta.url).href]
-  //  },
-  //  IronMethod: {
-  //    value: '',
-  //    label: '',
-  //    src: [new URL('../../assets/img/wet Care Label/Europe/Iron/Do not iron.jpg', import.meta.url).href]
-  //  },
-  //  BleachProcedure: {
-  //    value: '',
-  //    label: '',
-  //    src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
-  //  }
-  //})
 
   // ========== CareLabel 按测点分组 ==========
   // 空 careLabel 模板（字段与原来 careLabelData 一致）
@@ -252,9 +219,9 @@
     {
       samples: [],
       careLabel: createEmptyCareLabel(),
-      afterWashItems: [],
-      detergentItems: '',
-      afterIronValue: '',
+      AfterWashItems: [],
+      DetergentItems: '',
+      AfterIronValue: '',
       warnMessage: ''
     }
   ])
@@ -435,14 +402,24 @@
     'WashingProcedure',
     'DryProcedure',
     'DryCleanProcedure',
+    'SpecialCareInstruction', 
     'IronMethod',
     'BleachProcedure',
-    'afterWashItems',
-    'detergentItems',
-    'afterIron'
+    'AfterWashItems',
+    'DetergentItems',
+    'AfterIron'
   ]
 
-  // 输出 [{ sample, careLabel, afterWashItems, detergentItems, afterIronValue }]
+  // 拼接 specialCareInstruction：第一个保持原样，其余首字母小写
+  function formatSpecialCareInstruction(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return ''
+    return arr.map((instruction, index) => {
+      if (index === 0) return instruction
+      return instruction.charAt(0).toLowerCase() + instruction.slice(1)
+    }).join(', ')
+  }
+
+  // 输出 [{ sample, careLabel, AfterWashItems, DetergentItems, AfterIronValue }]
   const careLabelBySample = computed(() => {
     const list = []
     for (const group of careLabelGroups.value) {
@@ -450,9 +427,9 @@
         list.push({
           sample,
           careLabel: group.careLabel,
-          afterWashItems: group.afterWashItems,
-          detergentItems: group.detergentItems,
-          afterIronValue: group.afterIronValue
+          AfterWashItems: group.AfterWashItems,
+          DetergentItems: group.DetergentItems,
+          AfterIronValue: group.AfterIronValue
         })
       }
     }
@@ -478,7 +455,7 @@
       })
 
       // 3. 按 sample 写入（覆盖式）
-      list.forEach(({ sample, careLabel, afterWashItems, detergentItems, afterIronValue }) => {
+      list.forEach(({ sample, careLabel, AfterWashItems, DetergentItems, AfterIronValue }) => {
         const group = conditionsGroups.value.find(g => g.testPoints.includes(sample))
         if (group) {
           group.conditions.washLabelRegionDefault = careLabel.washLabelRegionDefault
@@ -490,10 +467,12 @@
           group.conditions.DryCleanProcedure = careLabel.DryCleanProcedure?.value
           group.conditions.IronMethod = careLabel.IronMethod?.value
           group.conditions.BleachProcedure = careLabel.BleachProcedure?.value
-
-          group.conditions.afterWashItems = [...(afterWashItems || [])]
-          group.conditions.detergentItems = detergentItems || ''
-          group.conditions.afterIron = afterIronValue
+          group.conditions.SpecialCareInstruction = formatSpecialCareInstruction(
+            careLabel.SpecialCareInstruction
+          )
+          group.conditions.AfterWashItems = [...(AfterWashItems || [])]
+          group.conditions.DetergentItems = DetergentItems || ''
+          group.conditions.AfterIron = AfterIronValue
         }
       })
     },
@@ -642,9 +621,9 @@
     careLabelGroups.value.push({
       samples: [...newCareLabelSampleGroup.value],
       careLabel: createEmptyCareLabel(),
-      afterWashItems: [],
-      detergentItems: '',
-      afterIronValue: '',
+      AfterWashItems: [],
+      DetergentItems: '',
+      AfterIronValue: '',
       warnMessage: ''
     })
     newCareLabelSampleGroup.value = []

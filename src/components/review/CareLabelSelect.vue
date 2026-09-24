@@ -64,16 +64,16 @@
         </div>
       </div>
     </div>
-    <div class="specialCareInstructionContainer">
-      <label>{{ $t('specialCareInstruction') }}</label>
-      <el-select v-model="modelValue.specialCareInstruction"
+    <div class="SpecialCareInstructionContainer">
+      <label>{{ $t('SpecialCareInstruction') }}</label>
+      <el-select v-model="modelValue.SpecialCareInstruction"
                  multiple
                  allow-create
                  default-first-option
                  filterable
                  style="flex: 1; min-width: 100px;"
                  clearable>
-        <el-option v-for="instruction in specialCareInstructionOptions"
+        <el-option v-for="instruction in SpecialCareInstructionOptions"
                    :key="instruction.value"
                    :value="instruction.value"
                    :label="instruction.label" />
@@ -157,20 +157,20 @@ const props = defineProps({
         label: '',
         src: [new URL('../../assets/img/wet Care Label/Europe/Bleach/Do not bleach.jpg', import.meta.url).href]
       },
-      specialCareInstruction: []
+      SpecialCareInstruction: []
     })
   }
 });
 
 const emit = defineEmits(['updateData', 'update:modelValue']);
 
-  const specialCareInstructionText = computed(() => {
-    if (!props.modelValue.specialCareInstruction || props.modelValue.specialCareInstruction.length === 0) {
+  const SpecialCareInstructionText = computed(() => {
+    if (!props.modelValue.SpecialCareInstruction || props.modelValue.SpecialCareInstruction.length === 0) {
       return '';
     }
 
     // 处理每个选项：如果是第一个选项，保持原样；否则将首字母转为小写
-    return props.modelValue.specialCareInstruction.map((instruction, index) => {
+    return props.modelValue.SpecialCareInstruction.map((instruction, index) => {
       if (index === 0) {
         return instruction; // 第一个选项保持不变
       }
@@ -180,7 +180,7 @@ const emit = defineEmits(['updateData', 'update:modelValue']);
   });
 
 // 特殊洗语选项
-const specialCareInstructionOptions = [
+const SpecialCareInstructionOptions = [
   { value: 'Front zippers must be opened', label: 'Front zippers must be opened' },
   { value: 'Wash inside out', label: 'Wash inside out' },
   { value: 'Wash in laundry bag', label: 'Wash in laundry bag' },

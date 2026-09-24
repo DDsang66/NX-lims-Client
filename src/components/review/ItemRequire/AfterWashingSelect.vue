@@ -17,8 +17,8 @@
 <script setup>
   import { ref } from "vue";
   const props = defineProps({
-    // 选项列表（原 afterWashItems 重命名，避免和 v-model 数据冲突）
-    afterWashOptionsList: {
+    // 选项列表（原 AfterWashItems 重命名，避免和 v-model 数据冲突）
+    AfterWashOptionsList: {
       type: Array,
       required: true
     },
@@ -30,10 +30,10 @@
   const emit = defineEmits(['update:modelValue'])
 
 
-  //洗后遍数选项（如果父组件传选项就用 props.afterWashOptionsList，否则用本地常量）
+  //洗后遍数选项（如果父组件传选项就用 props.AfterWashOptionsList，否则用本地常量）
   const washesOptions = ['1 Wash', '3 Wash', '5 Wash', '10 Wash', '15 Wash', '20 Wash', '25 Wash', '32 Wash', '45 Wash'];
 /*
-{items，afterWashData}
+{items，AfterWashData}
 * */
 //项目分组
 //const itemGroups = ref([])
@@ -42,7 +42,7 @@
 //const unGroupedItems = computed(() => {
 //  //已分组项目
 //  let groupedItems = itemGroups.value.flatMap(g => g.items)
-//  return props.afterWashItems.filter(s => !groupedItems.includes(s))
+//  return props.AfterWashItems.filter(s => !groupedItems.includes(s))
 //})
 ////remainItem是否全选
 //const remainItemCheckAll = ref(false)
@@ -60,13 +60,13 @@
 //  let washesWarnMessage = 'message.inputIsEmpty';
 //  let sampleWarnMessage = 'message.inputIsEmpty';
 //  groups.forEach(group => {
-//    if(!group.afterWashes || !Array.isArray(group.afterWashes) || group.afterWashes.length===0){
-//      if(group.afterWashesWarnMessage!==washesWarnMessage)
-//        group.afterWashesWarnMessage =washesWarnMessage;
+//    if(!group.AfterWashes || !Array.isArray(group.AfterWashes) || group.AfterWashes.length===0){
+//      if(group.AfterWashesWarnMessage!==washesWarnMessage)
+//        group.AfterWashesWarnMessage =washesWarnMessage;
 //    }
 //    else{
-//      if(group.afterWashesWarnMessage===washesWarnMessage)
-//        group.afterWashesWarnMessage = '';
+//      if(group.AfterWashesWarnMessage===washesWarnMessage)
+//        group.AfterWashesWarnMessage = '';
 //    }
 //    if (!group.samples || !Array.isArray(group.samples) || group.samples.length===0) {
 //      if(group.sampleWarnMessage!==sampleWarnMessage)
@@ -157,16 +157,16 @@
 //}
 ////移除某已选遍数
 //function removeAfterWash(group,index){
-//  group.afterWashData.splice(index,1)
+//  group.AfterWashData.splice(index,1)
 //}
 ////添加洗后次数
 //function addAfterWash(group){
-//  group.afterWashData.push({
+//  group.AfterWashData.push({
 //    samples: group.addForm.samples,
-//    afterWashes: group.addForm.afterWashes
+//    AfterWashes: group.addForm.AfterWashes
 //  })
 //  group.addForm.samples = []
-//  group.addForm.afterWashes = []
+//  group.addForm.AfterWashes = []
 //}
 ////删除某一组
 //function deleteGroup(index){
@@ -194,10 +194,10 @@
 //    addForm: {
 //      samples: [],
 //      //洗后次数
-//      afterWashes: []
+//      AfterWashes: []
 //    },
 //    //数据
-//    afterWashData: []
+//    AfterWashData: []
 //  })
 //  newItemGroup.value = []
 //}
@@ -222,7 +222,7 @@
 ////监听数据。样品重复警告，数据空值警告
 //watch(itemGroups, () => {
 //  for (const group of itemGroups.value) {
-//    checkAllSamplesAndAfterWashes(group.afterWashData);
+//    checkAllSamplesAndAfterWashes(group.AfterWashData);
 //  }
 //},{deep:true})
 </script>

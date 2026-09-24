@@ -83,7 +83,11 @@
                   <b>Param Structure ID:</b> {{ row.paramStructureId || '-' }}
                 </div>
                 <el-table :data="matchRows(row)" border size="small" style="width: 100%">
-                  <el-table-column prop="type" label="Type" width="120"></el-table-column>
+                  <el-table-column prop="type" label="Type" width="120">
+                    <template #default="{ row: matchRow }">
+                      <el-tag :type="matchTypeTag(matchRow.type)" size="small">{{ matchRow.type }}</el-tag>
+                    </template>
+                  </el-table-column>
                   <el-table-column prop="field" label="Field" width="200"></el-table-column>
                   <el-table-column prop="value" label="Value" min-width="200" show-overflow-tooltip></el-table-column>
                 </el-table>
@@ -186,7 +190,7 @@
         </el-form-item>
         <el-form-item v-else label="Matches (JSON)">
           <el-input v-model="dialogForm.matchesJson" type="textarea" :rows="6"
-                    placeholder='{"equalMatches":[],"comparisonMatches":[],"inMatches":[],"compositeMatches":[]}'></el-input>
+                    placeholder='{"equalMatches":[],"comparisonMatches":[],"inMatches":[],"compositeMatches":[],"assignMatches":[]}'></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -284,10 +288,25 @@ function formulaRowClassName({ row }) {
   return row.id === selectedFormulaId.value ? 'selected-item-row' : '';
 }
 
+// ==================== 【新增】Assign 模式支持 ====================
+
+// 判断 Rule Text 是否为 Assign 模式（包含 Assign{...} 槽）
+const isAssignMode = computed(() => {
+  const text = dialogForm.value.ruleText || '';
+  return /(^|\+)\s*Assign\s*\{/i.test(text);
+});
+
 // 从 Rule Text 推导符右侧提取结果值（后端就是这么解析的，前端只读预览用）
+// 【修改】Assign 模式下，右侧是目标参数名，不是结果值，所以显示提示
 const paramResultFromText = computed(() => {
   const text = dialogForm.value.ruleText;
   if (!text) return '';
+
+  // Assign 模式：结果由运行时从条件池取值，配置态无固定结果
+  if (isAssignMode.value) {
+    return '(Runtime-generated from Assign slot)';
+  }
+
   // 贪婪 .* 定位到最后一个推导符，右侧到行尾即结果值
   const m = text.match(/.*(?:→|->|=>|~|\bto\b)\s*([^+]+)\s*$/i);
   return m ? m[1].trim() : '';
@@ -309,6 +328,7 @@ function onFormulaSelect(formulaId) {
 }
 
 // 根据公式 ExpressionTemplate 生成结构合法的规则文本（占位值用字段名 / >=50 / [字段名]）
+// 【修改】新增 Assign 槽的处理：槽内写源字段路径
 function generateRuleTextFromTemplate(template) {
   if (!template) return '';
   const m = template.match(/(.*?)\s*(?:→|->|=>|~|\bto\b)\s*(.*)/i);
@@ -323,6 +343,7 @@ function generateRuleTextFromTemplate(template) {
       const vals = fields.map(f => {
         if (type === 'comparer') return f + '>=50';  // Comparer 槽
         if (type === 'inner') return '[' + f + ']';  // Inner 槽（数组）
+        if (type === 'assign') return f;             // Assign 槽：槽内写源字段路径
         return f;                                    // Equal / 其他槽
       });
       return sm[1] + '{' + vals.join(', ') + '}';
@@ -393,7 +414,15 @@ const dialogForm = ref({
   ruleText: ''
 });
 
-const jsonTemplate = JSON.stringify({ equalMatches: [], comparisonMatches: [], inMatches: [], compositeMatches: [] }, null, 2);
+// 【修改】jsonTemplate 增加 assignMatches
+const jsonTemplate = JSON.stringify({
+  equalMatches: [],
+  comparisonMatches: [],
+  inMatches: [],
+  compositeMatches: [],
+  assignMatches: []
+}, null, 2);
+
 watch(inputMode, (mode) => {
   if (mode === 'json' && !dialogForm.value.matchesJson) {
     dialogForm.value.matchesJson = jsonTemplate;
@@ -419,6 +448,7 @@ function addOpen() {
   dialogVisible.value = true;
 }
 
+// 【修改】editOpen 序列化 assignMatches
 function editOpen(row) {
   dialogTitle.value = 'Edit Rule';
   inputMode.value = 'json';
@@ -435,7 +465,8 @@ function editOpen(row) {
       equalMatches: row.equalMatches || [],
       comparisonMatches: row.comparisonMatches || [],
       inMatches: row.inMatches || [],
-      compositeMatches: row.compositeMatches || []
+      compositeMatches: row.compositeMatches || [],
+      assignMatches: row.assignMatches || []
     }, null, 2),
     ruleText: ''
   };
@@ -488,8 +519,9 @@ function confirmAdd() {
     return;
   }
 
-  // Json 模式 → add-json
-  let matches = { equalMatches: [], comparisonMatches: [], inMatches: [], compositeMatches: [] };
+  // Json 模式 → add-json / update-json
+  // 【修改】matches 默认值增加 assignMatches
+  let matches = { equalMatches: [], comparisonMatches: [], inMatches: [], compositeMatches: [], assignMatches: [] };
   if (dialogForm.value.matchesJson.trim()) {
     try {
       const parsed = JSON.parse(dialogForm.value.matchesJson);
@@ -502,7 +534,8 @@ function confirmAdd() {
         equalMatches: parsed.equalMatches || [],
         comparisonMatches: parsed.comparisonMatches || [],
         inMatches: parsed.inMatches || [],
-        compositeMatches: parsed.compositeMatches || []
+        compositeMatches: parsed.compositeMatches || [],
+        assignMatches: parsed.assignMatches || []   // 【新增】
       };
     } catch {
       ElMessage.error('Invalid JSON in Matches field');
@@ -576,9 +609,10 @@ function activeRule(row) {
 const VALID_OPERATORS = ['Equal', 'NotEqual', 'GreaterThan', 'GreaterThanOrEqual', 'LessThan', 'LessThanOrEqual'];
 const VALID_LOGICS = ['And', 'Or', 'Not'];
 
+// 【修改】validateMatches 增加 assignMatches 校验
 function validateMatches(parsed) {
   if (!parsed || typeof parsed !== 'object') return 'Matches must be a JSON object';
-  const allowedRoot = ['equalMatches', 'comparisonMatches', 'inMatches', 'compositeMatches'];
+  const allowedRoot = ['equalMatches', 'comparisonMatches', 'inMatches', 'compositeMatches', 'assignMatches'];
   for (const key of Object.keys(parsed)) {
     if (!allowedRoot.includes(key)) return `Invalid top-level key: "${key}". Allowed: ${allowedRoot.join(', ')}`;
   }
@@ -599,6 +633,15 @@ function validateMatches(parsed) {
       for (const k of Object.keys(s)) { if (!['fieldPath', 'operator', 'expectedValue'].includes(k)) return `Invalid key "${k}" in compositeMatches[].subConditions`; }
     }
   }
+  // 【新增】assignMatches 校验
+  for (const m of parsed.assignMatches || []) {
+    for (const k of Object.keys(m)) {
+      if (!['sourceFieldPath', 'isRequired', 'defaultValue'].includes(k))
+        return `Invalid key "${k}" in assignMatches. Allowed: sourceFieldPath, isRequired, defaultValue`;
+    }
+    if (!m.sourceFieldPath || typeof m.sourceFieldPath !== 'string')
+      return `assignMatches[].sourceFieldPath is required and must be a string`;
+  }
   return null; // 校验通过
 }
 
@@ -612,6 +655,7 @@ function fetchAll() {
   }).finally(() => loading.value = false);
 }
 
+// 【修改】matchRows 增加 Assign 行
 function matchRows(row) {
   const rows = [];
   for (const m of row.equalMatches || []) {
@@ -627,7 +671,29 @@ function matchRows(row) {
     const sub = (m.subConditions || []).map(s => `${s.fieldPath} ${s.operator} ${s.expectedValue}`).join('; ');
     rows.push({ type: 'Composite', field: (m.fieldNames || []).join(', '), value: `${m.logic}: ${sub}` });
   }
+  // 【新增】Assign 模式
+  for (const m of row.assignMatches || []) {
+    rows.push({
+      type: 'Assign',
+      field: m.sourceFieldPath,
+      value: m.isRequired === false
+        ? `Optional (default: ${m.defaultValue ?? '-'})`
+        : 'Required'
+    });
+  }
   return rows;
+}
+
+// 【新增】matchTypeTag 为不同匹配类型返回不同 tag 颜色
+function matchTypeTag(type) {
+  switch (type) {
+    case 'Equal': return 'success';
+    case 'Comparison': return 'warning';
+    case 'In': return 'info';
+    case 'Composite': return 'danger';
+    case 'Assign': return 'primary';   // 或 'warning'，看你的视觉偏好
+    default: return 'info';
+  }
 }
 
 // ==================== 加载数据 ====================
@@ -727,7 +793,6 @@ onMounted(() => {
   fetchParamStructures();
 });
 </script>
-
 <style scoped lang="scss">
 .domContent {
   display: flex;

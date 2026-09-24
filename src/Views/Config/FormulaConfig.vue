@@ -579,7 +579,7 @@
           paramStructureIds: formulaForm.paramStructureIds || [],
           expressionTemplate: formulaForm.expressionTemplate,
           description: formulaForm.description,
-          buyerCodes: formulaForm.buyerCodes || [],
+          buyerIds: formulaForm.buyerCodes || [],
           engineLayer: formulaForm.engineLayer || ''
         };
 

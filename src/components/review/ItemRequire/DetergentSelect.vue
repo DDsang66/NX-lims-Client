@@ -5,7 +5,7 @@
                style="width: 100%"
                class="thisMulSelect"
                @update:model-value="val => emit('update:modelValue', val)">
-      <el-option v-for="option in detergentsOptions"
+      <el-option v-for="option in DetergentsOptions"
                  :key="option"
                  :value="option"
                  :label="option" />
@@ -18,7 +18,7 @@ import {Check, Delete} from "@element-plus/icons-vue";
 import {computed, ref, watch} from "vue";
 
   const props = defineProps({
-    detergentOptionsList: {
+    DetergentOptionsList: {
       type: Array,
       required: true
     },
@@ -29,7 +29,7 @@ import {computed, ref, watch} from "vue";
   })
   const emit = defineEmits(['update:modelValue'])
 //洗涤剂选项
-  const detergentsOptions =["Mild Detergent","Wool Detergent"]
+  const DetergentsOptions =["Mild Detergent","Wool Detergent"]
 </script>
 
 <style scoped lang="scss">
