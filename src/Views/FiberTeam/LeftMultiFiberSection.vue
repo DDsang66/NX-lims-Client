@@ -121,7 +121,7 @@
                         class="cellulosic-sub-row">
                       <td class="cell-sub-composition">
                         <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
-                          <el-option v-for="f in ['hemp','cotton','linen','ramie']" :key="f" :value="f" :label="f" />
+                          <el-option v-for="f in subOptionsFor(row.composition)" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
                       <td class="cell-sub-input" colspan="2" style="text-align:center">
@@ -140,7 +140,7 @@
                         <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
                         @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
                         @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                          <el-option v-for="f in ['Polyester','Polyamide']" :key="f" :value="f" :label="f" />
+                          <el-option v-for="f in bicomponentSubOptions" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
@@ -269,7 +269,7 @@
                         class="cellulosic-sub-row">
                       <td class="cell-sub-composition">
                         <el-select clearable v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
-                          <el-option v-for="f in ['hemp','cotton','linen','ramie']" :key="f" :value="f" :label="f" />
+                          <el-option v-for="f in subOptionsFor(row.composition)" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
                       <td class="cell-sub-input" colspan="2" style="text-align:center">
@@ -288,7 +288,7 @@
                         <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
                         @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
                         @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                          <el-option v-for="f in ['Polyester','Polyamide']" :key="f" :value="f" :label="f" />
+                          <el-option v-for="f in bicomponentSubOptions" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
@@ -428,6 +428,14 @@
 
   const request = inject('request');
 
+  // 子纤维候选改由父组件传入（原先两处内联且**全小写** 'hemp'/'cotton'/'linen'/'ramie'，
+  // 与 fiber_database 的拼写不一致 —— 存进库的就是小写名，报告上照原样印出）。
+  // 候选真正的内容在 Domain 的 FiberOptions，经 /FiberAnalysis/fiber-options 下发。
+
+  // 成分去重比较大小写不敏感 —— 历史数据里 `Cotton` 与 `cotton` 并存（子纤维名原先硬编码小写），
+  // 敏感比较会把同一成分加成两行。
+  const sameComposition = (a, b) => (a || '').toLowerCase() === (b || '').toLowerCase()
+
   // cellulosic fibre 子行默认 4 行空模板
   function newCellulosicDefaults() {
     return [
@@ -471,8 +479,30 @@
     allCompositions: {
       type: Array,
       default: () => []
+    },
+    // 子纤维候选（来自后端 /FiberAnalysis/fiber-options）
+    cellulosicSubOptions: {
+      type: Array,
+      default: () => []
+    },
+    regeneratedSubOptions: {
+      type: Array,
+      default: () => []
+    },
+    bicomponentSubOptions: {
+      type: Array,
+      default: () => []
     }
   })
+
+  // 两个纤维素父槽的候选**不是同一份**：`*cellulosic fibre` 是天然（Cotton/Hemp/Linen/Ramie），
+  // `*Regenerated cellulose fibre` 是再生（Cupro/Lyocell/Modal/Rayon/Viscose）。
+  // 原先两处共用一份天然清单，于是"再生纤维素"下选不到粘胶、反倒能选到大麻。
+  function subOptionsFor(composition) {
+    return composition === '*Regenerated cellulose fibre'
+      ? props.regeneratedSubOptions
+      : props.cellulosicSubOptions
+  }
 
   const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis'])
 
@@ -610,12 +640,6 @@
     isNoticeOpen.value = !isNoticeOpen.value;
   }
 
-  /* 判断类别 */
-  const synthList = ['Acetate', 'Polyester', 'Polyamide', 'Polyurethane', 'Polyethylene', 'Elastane', 'Spandex', 'Viscose', 'Acrylic', 'Modal', 'Tencel', 'Meraklon', 'Lycra', 'Lyocell', 'Modacrylic' ,'Nylon', 'Rayon', 'Vinylon']
-  const naturalList = ['Cotton', 'Wool', 'Silk', 'Ramie', 'Mohair', 'Tussah', 'Linen', 'Asbestos']
-  const isSynth = str => synthList.includes(str)
-  const isNatural = str => naturalList.includes(str)
-
   /* 添加 Section */
   function addSection() {
     const nextNum = localSections.value.length + 1
@@ -649,8 +673,8 @@
     // 校验：必须选择成分
     if (!composition) return alert('Please select a composition')
 
-    // 查找是否已存在该成分
-    const existingRow = currentSection.rows.find(r => r.composition === composition)
+    // 查找是否已存在该成分（大小写不敏感）
+    const existingRow = currentSection.rows.find(r => sameComposition(r.composition, composition))
 
     if (existingRow) {
       // 已有成分，覆盖两个 trial 值
@@ -691,8 +715,8 @@
     // 校验：必须选择成分
     if (!composition) return alert('Please select a composition')
 
-    // 查找是否已存在该成分
-    const existingRow = splitSection.rows.find(r => r.composition === composition)
+    // 查找是否已存在该成分（大小写不敏感）
+    const existingRow = splitSection.rows.find(r => sameComposition(r.composition, composition))
 
     if (existingRow) {
       // 已有成分，覆盖两个 trial 值

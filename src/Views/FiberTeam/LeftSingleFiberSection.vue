@@ -341,11 +341,9 @@
     isNoticeOpen.value = !isNoticeOpen.value;
   }
 
-  /* 判断类别 */
-  const synthList = ['Acetate', 'Polyester', 'Polyamide', 'Polyurethane', 'Polyethylene', 'Elastane', 'Spandex', 'Viscose', 'Acrylic', 'Modal', 'Tencel', 'Meraklon', 'Lycra', 'Lyocell', 'Modacrylic' ,'Nylon', 'Rayon', 'Vinylon']
-  const naturalList = ['Cotton', 'Wool', 'Silk', 'Ramie', 'Mohair', 'Tussah', 'Linen', 'Asbestos']
-  const isSynth = str => synthList.includes(str)
-  const isNatural = str => naturalList.includes(str)
+  // 成分去重比较大小写不敏感 —— 历史数据里 `Cotton` 与 `cotton` 并存，
+  // 敏感比较会把同一成分在同一 Location 下加成两行。
+  const sameComposition = (a, b) => (a || '').toLowerCase() === (b || '').toLowerCase()
 
   /* 删除 Section */
   function removeSection(index) {
@@ -368,7 +366,9 @@
     if (!location) return alert('Please enter a Location')
     if (!composition) return alert('Please select a composition')
 
-    const existingRow = currentSection.rows.find(r => r.composition === composition && r.location === location)
+    const existingRow = currentSection.rows.find(
+      r => sameComposition(r.composition, composition) && r.location === location
+    )
 
     if (existingRow) {
       existingRow.location = location

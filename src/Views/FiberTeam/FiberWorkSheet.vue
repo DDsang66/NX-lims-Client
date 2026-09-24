@@ -18,6 +18,9 @@
                                 :key="refreshKey"
                                 v-model:rows="rows"
                                 :allCompositions="allCompositions"
+                                :cellulosicSubOptions="fiberOptions.cellulosicSub"
+                                :regeneratedSubOptions="fiberOptions.regeneratedSub"
+                                :bicomponentSubOptions="fiberOptions.bicomponentSub"
                                 @confirm="handleFiberConfirm"
                                 @save-draft="handleSaveDraft"
                                 @build-analysis="handleBuildAnalysis" />
@@ -43,7 +46,7 @@
   import LeftMultiFiberSection from './LeftMultiFiberSection.vue'
   import LeftSingleFiberSection from './LeftSingleFiberSection.vue'
   import RightPanel from './RightPanel.vue'
-  import { API_BASE } from '@/utils/config.js' 
+  import { API_BASE } from '@/utils/config.js'
   import '@/assets/css/style.css';
 
   const emit = defineEmits(['confirm']);
@@ -75,18 +78,12 @@
     { value: 'type2', label: 'Single', fiberType: 'single' }
   ])
 
-  const menuName = ref([
-    { value: 'Regulation (Eu) No. 1007/2011', label: 'Regulation (Eu) No. 1007/2011' },
-    { value: 'AATCC TM20-2021',               label: 'AATCC TM20-2021' },
-    { value: 'AATCC TM20-2021  AATCC TM20A-2025', label: 'AATCC TM20-2021  AATCC TM20A-2025' },
-    { value: 'ISO1833',                       label: 'ISO1833' },
-    { value: 'DIN EN ISO 1833',               label: 'DIN EN ISO 1833' },
-    { value: 'FZ/T 01057.1-4–2007',           label: 'FZ/T 01057.1-4–2007' },
-    { value: 'AATCC TM20-2021 AATCC TM20A-2025 (Korea)', label: 'AATCC TM20-2021 AATCC TM20A-2025 (Korea)' },
-    { value: 'CAN/CGSB-4.2 No.14-2005',       label: 'CAN/CGSB-4.2 No.14-2005' },
-    { value: 'CNS 2339-1:2013 CNS 2339-2:2013', label: 'CNS 2339-1:2013 CNS 2339-2:2013' },
-    { value: 'JIS L1030-1:2012 JIS L1030-2:2012', label: 'JIS L1030-1:2012 JIS L1030-2:2012' }
-  ])
+  // Method 候选改由后端提供—— 原先是这里 10 条硬编码, 加标准要改前端重新发版。
+  // value 与 label 相同是既有约定, 后端就按这个约定返回纯字符串列表。
+  const menuName = ref([])
+
+  // 分组候选—— 同样来自后端, 见 getFiberOptions。
+  const fiberOptions = ref({ cellulosicSub: [], regeneratedSub: [], bicomponentSub: [] })
 
   const standards = ref([
     { value: 'std1', label: 'Standard Method 1' },
@@ -129,6 +126,25 @@
   // 获取成分选项列表
   async function getCompositions() {
     baseCompositions.value = (await request.get('/render/compositionsearch')).data.data
+  }
+
+  // 获取纤维模块的分组候选（Method / cellulosic 子纤维 / bicomponent 子纤维）
+  async function getFiberOptions() {
+    try {
+      const res = await request.get('/FiberAnalysis/fiber-options')
+      if (res.data?.success) {
+        const d = res.data.data || {}
+        menuName.value = (d.methodOptions || []).map(m => ({ value: m, label: m }))
+        fiberOptions.value = {
+          cellulosicSub: d.cellulosicSub || [],
+          regeneratedSub: d.regeneratedSub || [],
+          bicomponentSub: d.bicomponentSub || []
+        }
+      }
+    } catch (e) {
+      // 与既有的 fetchLabelOptions 同口径: 失败就在控制台报, 下拉留空。
+      console.error('获取纤维候选清单失败:', e)
+    }
   }
 
   const handleFiberConfirm = (data) => {
@@ -249,6 +265,7 @@
 
   onMounted(() => {
     getCompositions()
+    getFiberOptions()
   })
 </script>
 
