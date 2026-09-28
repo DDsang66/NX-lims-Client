@@ -51,7 +51,9 @@
 
   const emit = defineEmits(['confirm']);
   const request = inject('request');
-  const docUrl = ref(`${API_BASE}/fiberdocx/get-docxUrl`)  // 初始化模板，改为从 config 拼接
+  // 右侧预览的文档地址。Build Analysis 之前看的是**模板**（随表单类型切单/多组分），
+  // 生成之后被换成带时间戳的报告地址（见 handleBuildAnalysis）—— 非空即"已有报告"。
+  const reportDocUrl = ref('')
   const refreshKey = ref(0)
 
   // Report Number 分段数据
@@ -116,6 +118,13 @@
     return selectedItem?.fiberType === 'multi'
   })
 
+  // 模板预览地址：单/多组分是两份**不同的**模板文件，必须告诉后端取哪一份
+  // （后端只认 'Single'，其余一律按多组分，见 FiberDocxController.Index）。
+  // 值取自 isMultiFiber —— 别在这儿再抄一遍 additionItem === 'type1'，那是同一个判断的第二份拷贝。
+  const docUrl = computed(() =>
+    reportDocUrl.value
+    || `${API_BASE}/fiberdocx/get-docxUrl?type=${isMultiFiber.value ? 'Multiple' : 'Single'}`)
+
   // 监听 additionItem 变化，切换时清空 rows 数据避免数据混乱
   watch(() => form.value.additionItem, (newVal, oldVal) => {
     if (newVal && newVal !== oldVal) {
@@ -163,6 +172,17 @@
     return { gsm1: Number(row.trial1) || 0, gsm2: Number(row.trial2) || 0 };
   }
 
+  // 多选备注 → 单个字符串：每条一行，'\n' 分隔。
+  // 后端 DTO / 领域 / 模板三层的字段类型仍是 string，谁都不解析它 —— 拼接只发生在这一个地方。
+  // '\n' 之所以够用：WordTemplateEngine.ReplaceBookmarksInPart → TextRunHelper.InsertTextWithLineBreaks
+  // 会把文本按 '\n' 拆成多个 run 并在其间插 <w:br/>，到 Word 里就是实打实的换行（段内软换行）。
+  // Array.isArray 兜底 + filter(Boolean)：clearable 清空给的是 []，
+  // 但 null/undefined 也可能从 JSON.parse(JSON.stringify()) 那条路上漏进来，不该让它变成 'null'。
+  function toRemarkText(value) {
+    if (Array.isArray(value)) return value.filter(Boolean).join('\n')
+    return value || ''
+  }
+
   // 构建 BuildAnalysisDto（全部 camelCase，匹配后端 System.Text.Json）
   function buildDto(payload) {
     const dto = {
@@ -170,14 +190,11 @@
       method: form.value.menuName || [],
       componentType: form.value.additionItem === 'type1' ? 'Multi' : 'Single',
       buyer: form.value.standard || '',
+      // conclusion 段删行下线（input2~input5 空号保留，勿补位）
       verifyResult: payload.extraInputs?.input1 || '',
-      finalResult: payload.extraInputs?.input2 || '',
-      durabilityLabel: payload.extraInputs?.input3 || '',
-      otherLabel: payload.extraInputs?.input4 || '',
-      comprehensive: payload.extraInputs?.input5 || '',
       recommendedLabel: payload.extraInputs?.input6 ? [payload.extraInputs.input6] : [],
-      resultRemark: payload.extraInputs?.resultRemark || '',
-      labelRemark: payload.extraInputs?.input8 || '',
+      resultRemark: toRemarkText(payload.extraInputs?.resultRemark),
+      labelRemark: toRemarkText(payload.extraInputs?.input8),
       judgmentLabelRemark: payload.extraInputs?.input9 || '',
       languageLabelRemark: payload.extraInputs?.input10 || ''
     }
@@ -232,10 +249,10 @@
     } else {
       // Single
       dto.singleBuildAnalysis = {
+        // 单组分**不称量**（B13）：不发 gsmTrail1 —— 后端该字段已退役。
         singleFiberRows: ((payload.sections || []).flatMap(s => (s.rows || []).filter(r => r.composition).map(r => ({
           sample: payload.sampleInput || r.location || '',
-          fiberName: r.composition,
-          gsmTrail1: Number(r.trial1) || 0
+          fiberName: r.composition
         }))))
       }
     }
@@ -259,7 +276,7 @@
     if (res1.data?.isSuccess) {
       // 使用接口返回的 downloadUrl（含时间戳文件名，避免缓存和覆盖）
       const origin = new URL(request.defaults.baseURL).origin
-      docUrl.value = `${origin}${res1.data.value.downloadUrl}`
+      reportDocUrl.value = `${origin}${res1.data.value.downloadUrl}`
     }
   }
 

@@ -30,10 +30,11 @@
       type: Object,
       required: true
     },
-    // 文档URL，用于OnlyOffice预览
+    // 文档URL，用于OnlyOffice预览。
+    // ?type= 决定取哪份模板（单/多组分两份文件），父组件总是显式传；这里只是兜底。
     documentUrl: {
       type: String,
-      default: `${API_BASE}/fiberdocx/get-docxUrl`
+      default: `${API_BASE}/fiberdocx/get-docxUrl?type=Multiple`
     },
     // 文档标题
     documentTitle: {

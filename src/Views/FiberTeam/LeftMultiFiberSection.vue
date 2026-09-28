@@ -34,47 +34,11 @@
               <span class="section-title">Split</span>
             </div>
 
-            <!-- 输入行（表格格式对齐下方数据列） -->
-            <div class="table-wrapper custom-table">
-              <table class="custom-table-layout">
-                <thead>
-                  <tr>
-                    <th class="header-row-2">Composition</th>
-                    <th class="header-row-2">Gradient GSM #1</th>
-                    <th class="header-row-2">Gradient GSM #2</th>
-                    <th class="header-row-2" style="text-align:center">Add</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="cell-composition">
-                      <el-select clearable v-model="splitSection.inputRow.composition" placeholder="成分" filterable style="width: 100%"
-                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
-                      </el-select>
-                    </td>
-                    <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="splitSection.inputRow.gradientGsm1"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
-                    </td>
-                    <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="splitSection.inputRow.gradientGsm2"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
-                    </td>
-                    <td class="cell-action">
-                      <el-button @click="addSplitRow" type="primary">Add</el-button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
             <!-- 表格 -->
             <div class="table-wrapper custom-table">
-              <table class="custom-table-layout">
+              <!-- 方向键/Enter/Tab 的跨格导航走**捕获阶段**委托：el-select 会在内层 input 上
+                   对 ↑↓/Enter 做 stopPropagation，冒泡阶段收不到（见 utils/tableKeyboardNav.js 注释） -->
+              <table class="custom-table-layout" @keydown.capture="handleGridKeydown">
                 <thead>
                   <tr>
                     <th class="header-row-1"></th>
@@ -94,20 +58,15 @@
                   <tr>
                     <td class="cell-composition">
                       <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%"
-                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
+                        :filter-method="onCompositionQuery" @visible-change="onCompositionVisibleChange">
+                        <el-option v-for="item in filteredCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeSplitRow(rIndex)">
@@ -125,9 +84,7 @@
                         </el-select>
                       </td>
                       <td class="cell-sub-input" colspan="2" style="text-align:center">
-                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
-                          @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                          @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -137,9 +94,7 @@
                     <tr v-for="(sub, si) in ensureBicomponentSubFibers(row)" :key="'split-bic-'+rIndex+'-'+si"
                         class="bicomponent-sub-row">
                       <td class="cell-sub-composition">
-                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
-                        @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                        @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
+                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
                           <el-option v-for="f in bicomponentSubOptions" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
@@ -156,6 +111,10 @@
                 </tbody>
               </table>
             </div>
+            <!-- 追加的行的成分与 Trial 直接在行内填，故有此按钮 -->
+            <el-button type="primary" plain class="add-row-btn" @click="appendSplitRow">
+              <el-icon><Plus /></el-icon> Add
+            </el-button>
           </div>
 
           <!-- 循环渲染多个 Section -->
@@ -168,47 +127,9 @@
               </el-button>
             </div>
 
-            <!-- 输入行（表格格式对齐下方数据列） -->
-            <div class="table-wrapper custom-table">
-              <table class="custom-table-layout">
-                <thead>
-                  <tr>
-                    <th class="header-row-2">Composition</th>
-                    <th class="header-row-2">Gradient GSM #1</th>
-                    <th class="header-row-2">Gradient GSM #2</th>
-                    <th class="header-row-2" style="text-align:center">Add</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="cell-composition">
-                      <el-select clearable v-model="section.inputRow.composition" placeholder="成分" filterable style="width: 100%"
-                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
-                      </el-select>
-                    </td>
-                    <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="section.inputRow.gradientGsm1"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
-                    </td>
-                    <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="section.inputRow.gradientGsm2"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
-                    </td>
-                    <td class="cell-action">
-                      <el-button @click="addRow(sIndex)" type="primary">Add</el-button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
             <!-- 表格区域 -->
             <div class="table-wrapper custom-table">
-              <table class="custom-table-layout">
+              <table class="custom-table-layout" @keydown.capture="handleGridKeydown">
                 <!-- 表头第一行 -->
                 <thead>
                   <tr>
@@ -221,14 +142,10 @@
                   <tr>
                     <th class="header-row-2">Composition</th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input" />
                     </th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input" />
                     </th>
                     <th class="header-row-2" style="text-align:center">
                       <!-- 这里留空或者放置其他操作，如果需要的话 -->
@@ -242,20 +159,15 @@
                   <tr>
                     <td class="cell-composition">
                       <el-select clearable v-model="row.composition" placeholder="成分" filterable style="width: 100%"
-                  @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                  @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
-                        <el-option v-for="item in allCompositions" :key="item" :value="item">{{ item }}</el-option>
+                        :filter-method="onCompositionQuery" @visible-change="onCompositionVisibleChange">
+                        <el-option v-for="item in filteredCompositions" :key="item" :value="item">{{ item }}</el-option>
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)"
-                  @keydown.enter="handleTableKeydown($event, 'enter')"
-                  @keydown.tab="handleTableKeydown($event, 'tab')" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -273,9 +185,7 @@
                         </el-select>
                       </td>
                       <td class="cell-sub-input" colspan="2" style="text-align:center">
-                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number"
-                          @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                          @keydown.tab.prevent="handleTableKeydown($event, 'tab')" />
+                        <el-input v-model="sub.percentage" placeholder="%" size="small" style="width: 100px" type="number" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -285,9 +195,7 @@
                     <tr v-for="(sub, si) in ensureBicomponentSubFibers(row)" :key="'diss-bic-'+sIndex+'-'+rIndex+'-'+si"
                         class="bicomponent-sub-row">
                       <td class="cell-sub-composition">
-                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%"
-                        @keydown.enter.prevent="handleTableKeydown($event, 'enter')"
-                        @keydown.tab.prevent="handleTableKeydown($event, 'tab')">
+                        <el-select v-model="sub.fiberName" placeholder="" size="small" style="width: 100%">
                           <el-option v-for="f in bicomponentSubOptions" :key="f" :value="f" :label="f" />
                         </el-select>
                       </td>
@@ -304,62 +212,33 @@
                 </tbody>
               </table>
             </div>
+            <!-- 追加的行的成分与 Trial 直接在行内填，故有此按钮 -->
+            <el-button type="primary" plain class="add-row-btn" @click="appendRow(sIndex)">
+              <el-icon><Plus /></el-icon> Add
+            </el-button>
           </div>
         </div>
 
         <!-- 新增：独立的12个输入框区域，位于 mainContainer 下方 -->
         <div class="extra-inputs-container">
-          <!-- 第一行：2个输入框 -->
+          <!-- 第一行：1个输入框 -->
+          <!-- 2026-09-28：Final Result / Durability Label / Other Label / Comprehensive 四项
+               随模板 conclusion 段删行一并下线。
+               ⚠️ 剩余项仍用 input1 / input6 / input8 / input9 / input10 这些**位置式旧键名**，
+               删掉的 input2~input5 必须**留空号**，不可把后面的往前挪。 -->
           <div class="row">
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-12">
               <label class="mb-2 d-block">Vertify Result</label>
               <el-select clearable v-model="extraInputs.input1" placeholder="" style="width: 100%">
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
                 <el-option label="Pending" value="Pending"></el-option>
-              </el-select>
-            </div>
-            <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Final Result</label>
-              <el-select clearable v-model="extraInputs.input2" placeholder="" style="width: 100%">
-                <el-option label="Approved" value="Approved"></el-option>
-                <el-option label="Rejected" value="Rejected"></el-option>
-                <el-option label="Review" value="Review"></el-option>
+                <el-option label="Conclusion: The information listed on the fibre content label is appropriate." value="Conclusion: The information listed on the fibre content label is appropriate."></el-option>
               </el-select>
             </div>
           </div>
 
-          <!-- 第二行：3个下拉选择 -->
-          <div class="row">
-            <div class="form-group col-xl-4">
-              <label class="mb-2 d-block">Durability Label</label>
-              <el-select clearable v-model="extraInputs.input3" placeholder="" style="width: 100%">
-                <el-option value="符合" label="符合"></el-option>
-                <el-option value="严重不符" label="严重不符"></el-option>
-                <el-option value="完全不符" label="完全不符"></el-option>
-                <el-option value="无耐久标" label="无耐久标"></el-option>
-              </el-select>
-            </div>
-            <div class="form-group col-xl-4">
-              <label class="mb-2 d-block">Other Label</label>
-              <el-select clearable v-model="extraInputs.input4" placeholder="" style="width: 100%">
-                <el-option value="符合" label="符合"></el-option>
-                <el-option value="严重不符" label="严重不符"></el-option>
-                <el-option value="完全不符" label="完全不符"></el-option>
-              </el-select>
-            </div>
-            <div class="form-group col-xl-4">
-              <label class="mb-2 d-block">Comprehensive</label>
-              <el-select clearable v-model="extraInputs.input5" placeholder="" style="width: 100%">
-                <el-option value="符合" label="符合"></el-option>
-                <el-option value="严重不符" label="严重不符"></el-option>
-                <el-option value="完全不符" label="完全不符"></el-option>
-                <el-option value="其他" label="其他"></el-option>
-              </el-select>
-            </div>
-          </div>
-
-          <!-- 第三行：1个输入框 -->
+          <!-- 第二行：1个输入框 -->
           <div class="row">
             <div class="form-group col-xl-12">
               <label class="mb-2 d-block">Recommended Label</label>
@@ -370,23 +249,25 @@
             </div>
           </div>
 
-          <!-- 第四行：2个下拉选择 -->
+          <!-- 第三行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Result Remark</label>
-              <el-select clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
+              <!-- 多选：选项 55 条、单条最长 179 字符（中英双语成对），不折叠会把表单行撑高、与右列错位 -->
+              <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
                 <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Label Remark</label>
-              <el-select clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
+              <!-- 多选，同上 -->
+              <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
                 <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
           </div>
 
-          <!-- 第五行：2个下拉选择 -->
+          <!-- 第四行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
               <label class="mb-2 d-block">Judgment Label Remark</label>
@@ -424,17 +305,14 @@
 <script setup>
   import { ref, reactive, watch, computed, inject, onMounted } from 'vue'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
-  import { handleTableKeydown } from '@/utils/tableKeyboardNav.js'
+  import { handleGridKeydown } from '@/utils/tableKeyboardNav.js'
+  import { createStartsWithFilter } from '@/utils/selectFilter.js'
 
   const request = inject('request');
 
   // 子纤维候选改由父组件传入（原先两处内联且**全小写** 'hemp'/'cotton'/'linen'/'ramie'，
   // 与 fiber_database 的拼写不一致 —— 存进库的就是小写名，报告上照原样印出）。
   // 候选真正的内容在 Domain 的 FiberOptions，经 /FiberAnalysis/fiber-options 下发。
-
-  // 成分去重比较大小写不敏感 —— 历史数据里 `Cotton` 与 `cotton` 并存（子纤维名原先硬编码小写），
-  // 敏感比较会把同一成分加成两行。
-  const sameComposition = (a, b) => (a || '').toLowerCase() === (b || '').toLowerCase()
 
   // cellulosic fibre 子行默认 4 行空模板
   function newCellulosicDefaults() {
@@ -495,6 +373,15 @@
     }
   })
 
+  // 成分下拉的检索口径：**按首字母（严格前缀）**，不再是 EP 默认的"含有"。
+  // Split 与 Dissolved 两张表共用这一份 query —— 同一时刻只可能有一个下拉展开，
+  // 收起时 onVisibleChange 会清空，所以不会串味。详见 utils/selectFilter.js。
+  const {
+    filtered: filteredCompositions,
+    onQuery: onCompositionQuery,
+    onVisibleChange: onCompositionVisibleChange
+  } = createStartsWithFilter(computed(() => props.allCompositions))
+
   // 两个纤维素父槽的候选**不是同一份**：`*cellulosic fibre` 是天然（Cotton/Hemp/Linen/Ramie），
   // `*Regenerated cellulose fibre` 是再生（Cupro/Lyocell/Modal/Rayon/Viscose）。
   // 原先两处共用一份天然清单，于是"再生纤维素"下选不到粘胶、反倒能选到大麻。
@@ -532,10 +419,8 @@
       { composition: '', trial1: null, trial2: null },
       { composition: '', trial1: null, trial2: null }
     ]
-    splitSection.inputRow = { composition: '', gradientGsm1: null, gradientGsm2: null }
     // 清空 Dissolved 表格每行值，保留表格结构
     localSections.value.forEach(sec => {
-      sec.inputRow = { composition: '', gradientGsm1: null, gradientGsm2: null }
       sec.headerInputs = { trial1: null, trial2: null }
       sec.rows.forEach(row => { row.composition = ''; row.trial1 = null; row.trial2 = null })
     })
@@ -559,7 +444,6 @@
         { composition: '', trial1: null, trial2: null },
         { composition: '', trial1: null, trial2: null }
       ],
-      inputRow: { composition: '', gradientGsm1: null, gradientGsm2: null },
       headerInputs: { trial1: null, trial2: null }
     },
     {
@@ -573,7 +457,6 @@
         { composition: '', trial1: null, trial2: null },
         { composition: '', trial1: null, trial2: null }
       ],
-      inputRow: { composition: '', gradientGsm1: null, gradientGsm2: null },
       headerInputs: { trial1: null, trial2: null }
     }
   ])
@@ -584,18 +467,19 @@
       { composition: '', trial1: null, trial2: null },
       { composition: '', trial1: null, trial2: null }
     ],
-    inputRow: { composition: '', gradientGsm1: null, gradientGsm2: null },
     headerInputs: { trial1: null, trial2: null }
   })
 
   // 初始化独立的额外输入框数据
   const searchReportNo = ref('');
 
+  // ⚠️ 键名是位置式的，input2~input5 已随模板删行下线，**空号保留不补位**
   const extraInputs = reactive({
-    input1: '', input2: '', input3: '', input4: '', input5: '',
-    input6: '', input8: '', input9: '', input10: '',
+    input1: '',
+    input6: '', input9: '', input10: '',
     input11: '', input12: '',
-    resultRemark: '',    // Result Remark 单选
+    input8: [],          // Label Remark 多选数组（键名是位置式的旧名，别当文本框）
+    resultRemark: [],    // Result Remark 多选数组
     resultRemarks: [],   // Result Remark 多选数组 (legacy, keep)
     bottleNumber: [],    // Bottle Number 多选数组
     gramWeight: ''       // Gram Weight
@@ -647,7 +531,6 @@
       id: Date.now(),
       title: `Dissolved #${nextNum}`,
       rows: [],
-      inputRow: { composition: '', gradientGsm1: null, gradientGsm2: null },
       headerInputs: { trial1: null, trial2: null }
     })
   }
@@ -662,40 +545,9 @@
     }
   }
 
-  /* 添加行 */
-  function addRow(sectionIndex) {
-    const currentSection = localSections.value[sectionIndex]
-    const inputRow = currentSection.inputRow
-    const composition = inputRow.composition.trim()
-    const gsm1 = inputRow.gradientGsm1
-    const gsm2 = inputRow.gradientGsm2
-
-    // 校验：必须选择成分
-    if (!composition) return alert('Please select a composition')
-
-    // 查找是否已存在该成分（大小写不敏感）
-    const existingRow = currentSection.rows.find(r => sameComposition(r.composition, composition))
-
-    if (existingRow) {
-      // 已有成分，覆盖两个 trial 值
-      existingRow.trial1 = gsm1
-      existingRow.trial2 = gsm2
-    } else {
-      // 新成分，创建新行
-      currentSection.rows.push({
-        composition: composition,
-        trial1: gsm1,
-        trial2: gsm2,
-        cellulosicSubFibers: (composition === '*cellulosic fibre' || composition === '*Regenerated cellulose fibre')
-          ? newCellulosicDefaults().map(s => ({ ...s }))
-          : undefined
-      })
-    }
-
-    // 重置输入行
-    inputRow.composition = ''
-    inputRow.gradientGsm1 = null
-    inputRow.gradientGsm2 = null
+  /* 在数据表末尾追加一个空行 —— 成分与 Trial 直接在行内填，不再经过顶部的输入行 */
+  function appendRow(sectionIndex) {
+    localSections.value[sectionIndex].rows.push({ composition: '', trial1: null, trial2: null })
   }
 
   //删除行
@@ -705,39 +557,9 @@
 
   /* ========== 拆分表格方法 ========== */
 
-  /* 添加拆分行 */
-  function addSplitRow() {
-    const inputRow = splitSection.inputRow
-    const composition = inputRow.composition.trim()
-    const gsm1 = inputRow.gradientGsm1
-    const gsm2 = inputRow.gradientGsm2
-
-    // 校验：必须选择成分
-    if (!composition) return alert('Please select a composition')
-
-    // 查找是否已存在该成分（大小写不敏感）
-    const existingRow = splitSection.rows.find(r => sameComposition(r.composition, composition))
-
-    if (existingRow) {
-      // 已有成分，覆盖两个 trial 值
-      existingRow.trial1 = gsm1
-      existingRow.trial2 = gsm2
-    } else {
-      // 新成分，创建新行
-      splitSection.rows.push({
-        composition: composition,
-        trial1: gsm1,
-        trial2: gsm2,
-        cellulosicSubFibers: (composition === '*cellulosic fibre' || composition === '*Regenerated cellulose fibre')
-          ? newCellulosicDefaults().map(s => ({ ...s }))
-          : undefined
-      })
-    }
-
-    // 重置输入行
-    inputRow.composition = ''
-    inputRow.gradientGsm1 = null
-    inputRow.gradientGsm2 = null
+  /* 在数据表末尾追加一个空行 —— 成分与 Trial 直接在行内填，不再经过顶部的输入行 */
+  function appendSplitRow() {
+    splitSection.rows.push({ composition: '', trial1: null, trial2: null })
   }
 
   /* 删除拆分行 */
@@ -849,6 +671,12 @@
     position: relative;
   }
 
+  // 追加行按钮：紧贴数据表下方（卡片是 gap:0 的纵向 flex，表自身 margin 也是 0）
+  .add-row-btn {
+    width: 100%;
+    margin-top: 0;
+  }
+
   /* Section 标题行样式 */
   .section-header-row {
     display: flex;
@@ -910,6 +738,9 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      /* 全局 style.css 给所有 table 塞了 margin-bottom:30px；卡片是 gap:0 的纵向 flex，
+         这条会被 .custom-table 的 overflow:hidden 包进边框里，在表与下方 Add 之间撑出一条空白 */
+      margin-bottom: 0;
 
       th, td {
         border: 1px solid #ebeef5;
