@@ -34,12 +34,11 @@
                  style="width: 100%"
                  placeholder="All status">
         <el-option label="All status" value="" />
-        <el-option label="PENDING" value="PENDING" />
-        <el-option label="GENERATING" value="GENERATING" />
-        <el-option label="SUCCESS" value="SUCCESS" />
-        <el-option label="MERGED" value="MERGED" />
-        <el-option label="PARTIAL_FAILED" value="PARTIAL_FAILED" />
-        <el-option label="FAILED" value="FAILED" />
+        <el-option label="Generating" value="GENERATING" />
+        <el-option label="Merging" value="MERGING" />
+        <el-option label="Success" value="SUCCESS" />
+        <el-option label="Partial Failed" value="PARTIAL_FAILED" />
+        <el-option label="Failed" value="FAILED" />
       </el-select>
 
       <el-divider style="margin: 12px 0" />
@@ -161,7 +160,7 @@
         <el-table-column prop="reportNo" label="Report No" width="200" />
         <el-table-column label="Overall Progress" min-width="280">
           <template #default="{ row }">
-            <el-progress :percentage="row.total ? Math.round(((row.success + row.failed) / row.total) * 100) : 0"
+            <el-progress :percentage="progressPercent(row)"
                          :status="progressStatus(row)" />
             <div class="progressText">
               {{ row.success }} success / {{ row.failed }} failed /
@@ -172,7 +171,9 @@
         </el-table-column>
         <el-table-column label="Overall Status" width="160">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
+            <el-tag :type="statusTagType(deriveOverallStatus(row))">
+              {{ displayStatus(deriveOverallStatus(row)) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="Actions" width="200">
@@ -276,8 +277,127 @@
     { deep: true }
   )
 
+  /* ---------------- Status helpers ---------------- */
+
+  function normalizeStatus(s) {
+    return String(s || '').trim().toUpperCase()
+  }
+
+  /**
+   * ★ UI 语义：CREATED 之后都算 Success（展示用）
+   *   SUCCESS    = 前端聚合态
+   *   CREATED    = 生成成功
+   *   INPROCCESS = 进行中（后端枚举拼写，UI 上也算成功）
+   *   IN_PROCESS = 兼容正确拼写
+   *   INPROGRESS = 兼容常见拼写
+   *   COMPLETED  = 已完成
+   *   RELEASED   = 已发布
+   *   MERGED     = 前端扩展：合并完成
+   */
+  const SUCCESS_STATUSES = new Set([
+    'SUCCESS',
+    'CREATED',
+    'INPROCCESS',
+    'IN_PROCESS',
+    'INPROGRESS',
+    'COMPLETED',
+    'RELEASED',
+    'MERGED'
+  ])
+
+  // ★ 失败态
+  const FAILED_STATUSES = new Set([
+    'FAILED',
+    'REJECTED',
+    'PARTIAL_FAILED',
+    'MERGE_FAILED'
+  ])
+
+  // ★ 未开始 / 进行中（UI 展示用）
+  const RUNNING_STATUSES = new Set([
+    'PENDING',
+    'GENERATING',
+    'MERGING'
+  ])
+
+  /**
+   * ★ 生命周期语义：真正不会再变的状态（用于停 SSE / 轮询）
+   *   注意：INPROCCESS 不是终态，后端还会推 COMPLETED / RELEASED
+   */
+  const TERMINAL_STATUSES = new Set([
+    'SUCCESS',
+    'CREATED',
+    'COMPLETED',
+    'RELEASED',
+    'MERGED',
+    'FAILED',
+    'REJECTED',
+    'PARTIAL_FAILED',
+    'MERGE_FAILED'
+  ])
+
+  function isSuccessStatus(s) { return SUCCESS_STATUSES.has(normalizeStatus(s)) }
+  function isFailedStatus(s) { return FAILED_STATUSES.has(normalizeStatus(s)) }
+  function isRunningStatus(s) { return RUNNING_STATUSES.has(normalizeStatus(s)) }
+  function isTerminalStatus(s) { return TERMINAL_STATUSES.has(normalizeStatus(s)) }
+
+  /**
+   * ★ 聚合整体状态：以 items 为准，t.status 仅兜底
+   *   全成功 → SUCCESS
+   *   全失败 → FAILED
+   *   混合   → PARTIAL_FAILED
+   *   有进行中/未知 → GENERATING 或 MERGING
+   */
+  function deriveOverallStatus(task) {
+    const items = task?.items || []
+
+    if (items.length === 0) {
+      return normalizeStatus(task?.status) || 'PENDING'
+    }
+
+    let success = 0
+    let failed = 0
+    let running = 0
+    let unknown = 0
+
+    for (const it of items) {
+      if (isSuccessStatus(it.status)) success++
+      else if (isFailedStatus(it.status)) failed++
+      else if (isRunningStatus(it.status)) running++
+      else unknown++
+    }
+
+    // ① 还有进行中 / 未知 → 整体进行中
+    if (running > 0 || unknown > 0) {
+      if (success > 0 && running > 0) return 'MERGING'
+      return 'GENERATING'
+    }
+
+    // ② 全部终态
+    if (failed === 0) return 'SUCCESS'
+    if (success === 0) return 'FAILED'
+    return 'PARTIAL_FAILED'
+  }
+
+  /**
+   * ★ 显示用：把 CREATED/INPROCCESS/COMPLETED/RELEASED/MERGED 统一显示为 SUCCESS
+   */
+  function displayStatus(status) {
+    const s = normalizeStatus(status)
+    if (SUCCESS_STATUSES.has(s) && s !== 'SUCCESS') return 'SUCCESS'
+    return s || 'UNKNOWN'
+  }
+
+  /**
+   * ★ 聚合状态分类（供 summary 使用，避免依赖 SUCCESS_STATUSES 的隐性耦合）
+   */
+  function classifyOverall(overall) {
+    if (overall === 'SUCCESS') return 'success'
+    if (overall === 'FAILED' || overall === 'PARTIAL_FAILED') return 'failed'
+    return 'generating'
+  }
+
   /* ---------------- 响应式引用辅助 ---------------- */
-  // ★ 从 taskList 里拿响应式代理引用；拿不到就返回传入的 task
   function getTaskRef(task) {
     if (!task) return null
     return taskList.value.find(t => t.checkListId === task.checkListId) || task
@@ -302,7 +422,6 @@
       task.status = 'GENERATING'
       taskList.value.unshift(task)
       expandedKeys.value = [checkListId]
-      // ★ 重拿代理引用
       task = taskList.value.find(t => t.checkListId === checkListId)
     }
 
@@ -366,7 +485,6 @@
       })
   }
 
-  // ★ 所有分支统一拿代理引用；字段名统一按后端的大驼峰
   function handleSseEvent(rawEvent, task, checkListId) {
     const lines = rawEvent.split('\n')
     let eventName = 'message'
@@ -381,13 +499,18 @@
     const data = safeParse(dataStr)
     if (!data) return
 
-    const t = getTaskRef(task)          // ★ 统一拿代理引用
+    const t = getTaskRef(task)
     if (!t) return
 
     if (eventName === 'progress') {
       applyProgressSnapshot(t, data)
     } else if (eventName === 'item-failed') {
-      const item = t.items.find(i => i.projectId === data.ProjectId || i.testItemId === data.ProjectId)
+      // ★ 多字段兼容匹配
+      const item = t.items.find(i =>
+        i.projectId === data.ProjectId ||
+        i.testItemId === data.ProjectId ||
+        i.datasheetId === data.DataSheetId
+      )
       if (item) {
         item.status = 'FAILED'
         item.errorMessage = data.ErrorMessage
@@ -461,9 +584,10 @@
         const data = res.data?.value
         if (!data) return
 
-        applyProgressSnapshot(task, data)   // 内部会 getTaskRef
+        applyProgressSnapshot(task, data)
 
-        if (['SUCCESS', 'MERGED', 'FAILED', 'PARTIAL_FAILED'].includes(data.Status)) {
+        // ★ 用生命周期终态判断，而非 UI success 判定
+        if (isTerminalStatus(data.Status)) {
           clearInterval(conn.pollTimer)
           conn.pollTimer = null
           activeConnections.delete(checkListId)
@@ -477,7 +601,6 @@
     conn.pollTimer = setInterval(poll, 2000)
   }
 
-  // ★ 统一用 getTaskRef + 大驼峰字段
   function applyProgressSnapshot(task, data) {
     const t = getTaskRef(task)
     if (!t) return
@@ -533,7 +656,11 @@
   const filteredTaskList = computed(() => {
     const kw = keyword.value.trim().toLowerCase()
     return taskList.value.filter(t => {
-      if (statusFilter.value && t.status !== statusFilter.value) return false
+      // ★ 筛选按聚合状态，而不是原始 t.status
+      if (statusFilter.value) {
+        const overall = deriveOverallStatus(t)
+        if (overall !== statusFilter.value) return false
+      }
       if (kw) {
         const hitTask =
           (t.reportNo || '').toLowerCase().includes(kw) ||
@@ -549,16 +676,12 @@
     })
   })
 
+  // ★ 走 classifyOverall，避免隐性耦合
   const summary = computed(() => {
     const s = { generating: 0, success: 0, failed: 0 }
     taskList.value.forEach(t => {
-      if (t.status === 'GENERATING' || t.status === 'MERGING' || t.status === 'PENDING') {
-        s.generating += 1
-      } else if (t.status === 'SUCCESS' || t.status === 'MERGED') {
-        s.success += 1
-      } else {
-        s.failed += 1
-      }
+      const kind = classifyOverall(deriveOverallStatus(t))
+      s[kind] += 1
     })
     return s
   })
@@ -570,27 +693,33 @@
   }
 
   function statusTagType(status) {
-    switch (status) {
-      case 'SUCCESS':
-      case 'MERGED':
-      case 'CREATED':
-        return 'success'
-      case 'FAILED':
-      case 'PARTIAL_FAILED':
-      case 'MERGE_FAILED':
-        return 'danger'
-      case 'GENERATING':
-      case 'MERGING':
-        return 'warning'
-      default:
-        return 'info'
-    }
+    if (isSuccessStatus(status)) return 'success'
+    if (isFailedStatus(status)) return 'danger'
+    if (isRunningStatus(status)) return 'warning'
+    return 'info'
   }
 
+  // ★ 按聚合状态判定进度条颜色
   function progressStatus(row) {
-    if (row.status === 'SUCCESS' || row.status === 'MERGED') return 'success'
-    if (row.status === 'FAILED' || row.status === 'PARTIAL_FAILED') return 'exception'
+    const s = deriveOverallStatus(row)
+    if (isSuccessStatus(s)) return 'success'
+    if (isFailedStatus(s)) return 'exception'
     return undefined
+  }
+
+  /**
+   * ★ 进度条百分比：按 items 聚合，不依赖 row.success
+   *   CREATED 之后都算 done（因为 INPROCCESS 也算 success）
+   */
+  function progressPercent(row) {
+    const items = row?.items || []
+    if (items.length === 0) return 0
+    let done = 0
+    for (const it of items) {
+      const s = normalizeStatus(it.status)
+      if (isSuccessStatus(s) || isFailedStatus(s)) done++
+    }
+    return Math.round((done / items.length) * 100)
   }
 
   /* ---------------- Task creation ---------------- */
@@ -662,7 +791,6 @@
         }
         task.generating -= 1
         item.updatedAt = new Date().toISOString()
-        recalcStatus(task)
         cursor += 1
         tick()
       }, delay)
@@ -685,7 +813,7 @@
       task.status = 'GENERATING'
       return
     }
-    if (task.failed === 0) task.status = 'SUCCESS'
+    if (task.failed === 0) task.status = 'CREATED'
     else if (task.success === 0) task.status = 'FAILED'
     else task.status = 'PARTIAL_FAILED'
   }
@@ -723,8 +851,9 @@
     ElMessage.info(`Open merged PDF: ${row.mergedPdfUrl} (mock)`)
   }
 
+  // ★ 走 helper，兼容 INPROCCESS 等成功态
   function failedCount(task) {
-    return (task.items || []).filter(i => i.status === 'FAILED').length
+    return (task.items || []).filter(i => isFailedStatus(i.status)).length
   }
 
   function hasFailedItems(task) {
@@ -732,28 +861,26 @@
   }
 
   async function retryAllFailed(task) {
-    const failedCount = (task.items || []).filter(i => i.status === 'FAILED').length
-    if (failedCount === 0) {
+    const count = failedCount(task)
+    if (count === 0) {
       ElMessage.warning('No failed items to retry')
       return
     }
 
     try {
       await ElMessageBox.confirm(
-        `Retry all ${failedCount} failed datasheets under this task?`,
+        `Retry all ${count} failed datasheets under this task?`,
         'Batch Retry Confirmation',
         { type: 'warning', confirmButtonText: 'Retry All', cancelButtonText: 'Cancel' }
       )
     } catch {
-      return // 用户取消
+      return
     }
 
     try {
       const res = await request.post(`/datasheet/retry-batch/${task.checkListId}`)
-
       if (res.data?.isSuccess) {
-        ElMessage.success(`Batch retry requested for ${failedCount} datasheets`)
-        // SSE 会推新状态，不用手动改
+        ElMessage.success(`Batch retry requested for ${count} datasheets`)
       } else {
         ElMessage.error(res.data?.error || 'Batch retry failed')
       }
@@ -764,7 +891,7 @@
   }
 
   async function retryItem(item) {
-    // Mock 模式：保持本地模拟
+    // Mock 模式
     if (dataSource.value === 'mock') {
       item.status = 'GENERATING'
       item.errorMessage = null
@@ -793,12 +920,11 @@
       return
     }
 
-    // Real 模式：调后端
+    // Real 模式
     try {
       const res = await request.post(`/datasheet/retry/${item.datasheetId}`)
       if (res.data?.isSuccess) {
         ElMessage.success(`Retry requested for ${item.testItemId || item.datasheetId}`)
-        // SSE 会推新状态，不用手动改
       } else {
         ElMessage.error(res.data?.error || 'Retry failed')
       }
@@ -808,15 +934,15 @@
     }
   }
 
+  // ★ 走 helper，避免硬编码漏掉 INPROCCESS/COMPLETED/RELEASED
   function recalcAggregates(task) {
-    task.success = task.items.filter(i => i.status === 'CREATED').length
-    task.failed = task.items.filter(i => i.status === 'FAILED').length
-    task.generating = task.items.filter(i => i.status === 'GENERATING').length
-    task.pending = task.items.filter(i => i.status === 'PENDING').length
+    task.success = task.items.filter(i => isSuccessStatus(i.status)).length
+    task.failed = task.items.filter(i => isFailedStatus(i.status)).length
+    task.generating = task.items.filter(i => normalizeStatus(i.status) === 'GENERATING').length
+    task.pending = task.items.filter(i => normalizeStatus(i.status) === 'PENDING').length
   }
 
   function clearAll() {
-    // ★ 先关闭所有 SSE 连接，再清列表
     activeConnections.forEach((_, id) => detachTaskStream(id))
     taskList.value = []
     expandedKeys.value = []

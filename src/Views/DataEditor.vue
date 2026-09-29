@@ -26,7 +26,7 @@
       <div class="summary-bar">
         <div class="summary-item">
           <span class="label">Total</span>
-          <span class="value">{{ taskList.length }}</span>
+          <span class="value">{{ summary.total }}</span>
         </div>
         <div class="summary-item">
           <span class="label">Pending</span>
@@ -62,7 +62,7 @@
         </el-select>
       </div>
 
-      <!-- ============ 扁平 datasheet 卡片列表（风格对齐 formula-item） ============ -->
+      <!-- ============ 扁平 datasheet 卡片列表 ============ -->
       <el-scrollbar class="task-scroll">
         <div v-if="flatDatasheetList.length > 0" class="datasheet-items">
           <div v-for="entry in flatDatasheetList"
@@ -105,7 +105,7 @@
 
     <!-- ============ 右侧 70%：工作区 ============ -->
     <div class="right-panel">
-      <!-- 顶部 10% 控制栏 -->
+      <!-- 顶部控制栏 -->
       <el-card class="control-bar"
                shadow="never"
                :body-style="{
@@ -138,7 +138,7 @@
         </el-button>
       </el-card>
 
-      <!-- 下部 90% 编辑器卡片 -->
+      <!-- 编辑器卡片 -->
       <el-card class="editor-card"
                shadow="never"
                :body-style="{
@@ -213,6 +213,13 @@
   import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
 
   /* ============================================================
+   *  调试
+   * ============================================================ */
+  const DEBUG = true
+  function log(...args) { if (DEBUG) console.log('[DataEditor]', ...args) }
+  function warn(...args) { if (DEBUG) console.warn('[DataEditor]', ...args) }
+
+  /* ============================================================
    *  一、状态
    * ============================================================ */
   const taskList = ref([])
@@ -222,64 +229,39 @@
   const loadingTasks = ref(false)
   const saving = ref(false)
 
-  // Attach 对话框
   const showAttachDialog = ref(false)
   const attachCheckListId = ref('')
 
-  // 右侧搜索框
   const searchText = ref('')
 
-  // 当前编辑器状态
   const activeDocumentTitle = ref('')
   const documentUrl = ref('')
   const currentDatasheetId = ref('')
 
   /* ============================================================
-   *  二、后端接口调用（路径不修改）
+   *  二、后端接口调用
    * ============================================================ */
-
-  /**
-   * GET /dataeditor/get/{checklistId}
-   */
   async function fetchDatasheetsByChecklist(checklistId) {
+    log('fetchDatasheetsByChecklist', checklistId)
     const res = await request.get(`/dataeditor/get/${checklistId}`)
     const payload = res?.data?.value ?? res?.data ?? res?.value ?? res
-
-    console.log(payload)
-
     if (Array.isArray(payload)) return payload
     if (payload && Array.isArray(payload.value)) return payload.value
     if (payload && Array.isArray(payload.data)) return payload.data
     return []
   }
 
-  /**
-   * 拼成 OnlyOffice 能访问的完整 URL
-   * 后端: GET /dataeditor/datasheet/download/{*url}
-   */
   function buildPreviewUrl(rawUrl) {
     if (!rawUrl) return ''
     if (/^https?:\/\//i.test(rawUrl)) return rawUrl
-
-    // \DocxModel\SaveDocx\xxx.docx
-    // → DocxModel/SaveDocx/xxx.docx
     const clean = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '')
-
-    // 逐段编码，保留 /
     const encoded = clean
       .split('/')
       .map(seg => encodeURIComponent(seg))
       .join('/')
-
     return `${API_BASE}/dataeditor/datasheet/download/${encoded}`
   }
 
-  /**
-   * DTO → task 结构
-   *
-   * ★ 状态不从后端拿：这里统一给固定占位 'Pending'。
-   *   后续要区分 Pending/Saved/Done 时，只改下面这一行。
-   */
   function mapDtosToTask(checklistId, dtos) {
     if (!dtos || !dtos.length) return null
 
@@ -292,8 +274,12 @@
       modelKey: dto.modelKey || '',
       rawUrl: dto.url || '',
       updatedAt: dto.updateTime || new Date().toISOString(),
+      version: dto.editorVersion ?? dto.updateTime ?? null,
       status: 'Pending'
     }))
+
+    log('mapDtosToTask', checklistId, 'items=', items.length,
+      'versions=', items.map(i => i.version))
 
     return {
       checkListId: checklistId,
@@ -305,9 +291,6 @@
     }
   }
 
-  /**
-   * 刷新所有已 attach 的任务
-   */
   async function refreshAll() {
     if (!taskList.value.length) {
       ElMessage.info('还没有已加载的任务')
@@ -354,7 +337,6 @@
       showAttachDialog.value = false
       ElMessage.success(`已加载 ${dtos.length} 个 Datasheet`)
 
-      // 自动打开第一个可用项
       const readyItem = task.items.find(i => i.rawUrl)
       if (readyItem) {
         openItem(task, readyItem)
@@ -389,10 +371,6 @@
     })
   })
 
-  /**
-   * 把 task → items 拍平成一个扁平列表，供左侧卡片渲染
-   * 每一项保留它所属的 task，供点击时使用
-   */
   const flatDatasheetList = computed(() => {
     const list = []
     filteredTaskList.value.forEach(task => {
@@ -400,19 +378,33 @@
         list.push({ task, item })
       })
     })
+    list.sort((a, b) => {
+      const ta = String(a.item.testItemId || '')
+      const tb = String(b.item.testItemId || '')
+      return ta.localeCompare(tb, undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      })
+    })
     return list
   })
 
-  // ★ 暂时只填 Pending，等状态规则确定后改
   const summary = computed(() => {
-    return {
-      pending: taskList.value.length,
-      saved: 0,
-      done: 0
-    }
+    let total = 0
+    let pending = 0
+    let saved = 0
+    let done = 0
+    taskList.value.forEach(t => {
+      (t.items || []).forEach(i => {
+        total++
+        if (i.status === 'Done') done++
+        else if (i.status === 'Saved') saved++
+        else pending++
+      })
+    })
+    return { total, pending, saved, done }
   })
 
-  // ★ 纯展示映射，不做业务判断
   function statusTagType(status) {
     switch (status) {
       case 'Done': return 'primary'
@@ -421,80 +413,84 @@
       default: return 'info'
     }
   }
-  function progressStatus() {
-    return undefined
-  }
-  function progressPercent() {
-    return 0
-  }
   function shortId(id) {
     return id ? String(id).slice(0, 8) : '—'
   }
 
   /* ============================================================
-   *  五、编辑器缓存机制（仅稳定 document.key）
+   *  五、编辑器缓存
    * ============================================================ */
   const editorCache = new Map()
-
-  function stableKeyFor(datasheetId, version = 0) {
-    const safeId = String(datasheetId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)
-    return `ds_${safeId}_v${version}`
+  if (typeof window !== 'undefined') {
+    window.__editorCache = editorCache
   }
 
-  function buildDocKey(datasheetId, updateTime) {
-  const safeId = String(datasheetId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)
-  // updateTime 是 ISO 字符串，转成数字时间戳
-  const ts = updateTime ? new Date(updateTime).getTime() : 0
-  return `ds_${safeId}_${ts}`
-}
+  function buildDocKey(datasheetId, version) {
+    const safeId = String(datasheetId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)
+    let v = '0'
+    if (version !== null && version !== undefined && version !== '') {
+      if (typeof version === 'number') {
+        v = String(version)
+      } else {
+        const ts = new Date(version).getTime()
+        v = Number.isFinite(ts) ? String(ts) : String(version)
+      }
+    }
+    return `ds_${safeId}_${v}`
+  }
 
-function getOrCreateCacheEntry(datasheetId, url, title, updateTime) {
-  const newKey = buildDocKey(datasheetId, updateTime)
+  function pickVersion(dto) {
+    if (!dto) return null
+    return dto.editorVersion ?? dto.updateTime ?? null
+  }
 
-  if (!editorCache.has(datasheetId)) {
-    editorCache.set(datasheetId, {
-      datasheetId,
-      documentUrl: url,
-      documentKey: newKey,
-      title,
-      updateTime: updateTime || null
-    })
-  } else {
+  function getOrCreateCacheEntry(datasheetId, url, title, version) {
+    if (!editorCache.has(datasheetId)) {
+      const key = buildDocKey(datasheetId, version)
+      editorCache.set(datasheetId, {
+        datasheetId,
+        documentUrl: url,
+        documentKey: key,
+        title,
+        version: version ?? null
+      })
+      log('[cache] created', datasheetId, 'key=', key, 'version=', version)
+      return editorCache.get(datasheetId)
+    }
+
     const entry = editorCache.get(datasheetId)
     entry.documentUrl = url
     entry.title = title
-    // ★ updateTime 变了 → 换 key
-    if (entry.updateTime !== updateTime) {
-      entry.updateTime = updateTime
-      entry.documentKey = newKey
+
+    if (version !== null && version !== undefined && entry.version !== version) {
+      const oldKey = entry.documentKey
+      entry.version = version
+      entry.documentKey = buildDocKey(datasheetId, version)
+      log('[cache] version changed', datasheetId, `${oldKey} → ${entry.documentKey}`)
     }
+    return entry
   }
-  return editorCache.get(datasheetId)
-}
 
   /* ============================================================
-   *  六、选中任务 / 打开文档
+   *  六、打开文档
    * ============================================================ */
+  function openItem(task, item) {
+    if (!task || !item) return
+    selectedTaskId.value = task.checkListId
 
-  // 打开某个指定 item
-function openItem(task, item) {
-  if (!task || !item) return
-  selectedTaskId.value = task.checkListId
+    if (!item.rawUrl) {
+      ElMessage.warning('该 Datasheet 暂无文件')
+      return
+    }
 
-  if (!item.rawUrl) {
-    ElMessage.warning('该 Datasheet 暂无文件')
-    return
+    openDocument(
+      item.datasheetId,
+      buildPreviewUrl(item.rawUrl),
+      `${item.testItemId || item.datasheetId}.docx`,
+      item.version
+    )
   }
 
-  openDocument(
-    item.datasheetId,
-    buildPreviewUrl(item.rawUrl),
-    `${item.testItemId || item.datasheetId}.docx`,
-    item.updatedAt        // ★ 传后端返回的 updateTime
-  )
-}
-
-  // 打开某 task 的第一个可用 item（Select 按钮无关键词时使用）
   function handleTaskClick(task) {
     if (!task) return
     selectedTaskId.value = task.checkListId
@@ -509,16 +505,35 @@ function openItem(task, item) {
     }
   }
 
-function openDocument(datasheetId, url, title, updateTime) {
-  const entry = getOrCreateCacheEntry(datasheetId, url, title, updateTime)
-  currentDatasheetId.value = datasheetId
-  activeDocumentTitle.value = entry.title
-  documentUrl.value = entry.documentUrl
+  function openDocument(datasheetId, url, title, version) {
+    saveSession++
+    log('[openDocument]', datasheetId, 'version=', version, 'saveSession=', saveSession)
 
-  nextTick(() => {
-    initWordPreview(entry.documentKey)
-  })
-}
+    const entry = getOrCreateCacheEntry(datasheetId, url, title, version)
+    const sameDoc = currentDatasheetId.value === datasheetId
+
+    currentDatasheetId.value = datasheetId
+    activeDocumentTitle.value = entry.title
+    documentUrl.value = entry.documentUrl
+
+    log('[openDocument] sameDoc=', sameDoc, 'key=', entry.documentKey)
+
+    // 同一文档且编辑器已就绪 → 用 refreshFile 切版本
+    if (sameDoc && wordEditor && editorReady) {
+      log('[openDocument] sameDoc → refreshFile', entry.documentKey)
+      try {
+        wordEditor.refreshFile({ key: entry.documentKey })
+      } catch (err) {
+        warn('[openDocument] refreshFile failed', err)
+      }
+      return
+    }
+
+    // 换文档 → 销毁 + 重建
+    nextTick(() => {
+      initWordPreview(entry)
+    })
+  }
 
   /* ============================================================
    *  七、Select 按钮
@@ -574,117 +589,189 @@ function openDocument(datasheetId, url, title, updateTime) {
   }
 
   /* ============================================================
-   *  八、保存到后端（forcesave）
+   *  八、保存到后端
    * ============================================================ */
-async function saveToBackend() {
-  if (!currentDatasheetId.value) {
-    ElMessage.warning('没有打开的文档')
-    return
+  let saveSession = 0
+
+  function triggerEditorSave() {
+    if (!wordEditor) return false
+    if (typeof wordEditor.requestSave === 'function') {
+      log('[save] requestSave()')
+      wordEditor.requestSave()
+      return true
+    }
+    if (typeof wordEditor.serviceCommand === 'function') {
+      log('[save] serviceCommand(forcesave)')
+      wordEditor.serviceCommand('forcesave')
+      return true
+    }
+    if (typeof wordEditor.Save === 'function') {
+      log('[save] Save()')
+      wordEditor.Save()
+      return true
+    }
+    return false
   }
-  const entry = editorCache.get(currentDatasheetId.value)
-  if (!entry) return
 
-  if (!wordEditor || typeof wordEditor.serviceCommand !== 'function') {
-    ElMessage.warning('当前 Document Server 不支持主动保存')
-    return
-  }
+  async function saveToBackend() {
+    log('[save] === start ===')
+    if (!currentDatasheetId.value) {
+      ElMessage.warning('没有打开的文档')
+      return
+    }
+    const entry = editorCache.get(currentDatasheetId.value)
+    if (!entry) return
+    if (!wordEditor) {
+      ElMessage.warning('编辑器未初始化')
+      return
+    }
+    if (!triggerEditorSave()) {
+      ElMessage.warning('当前 Document Server 不支持主动保存')
+      return
+    }
 
-  saving.value = true
-  try {
-    // 记录当前 updateTime 作为"保存前的版本"
-    const beforeUpdateTime = new Date(entry.updateTime || 0).getTime()
+    const mySession = ++saveSession
+    const targetDatasheetId = currentDatasheetId.value
+    const targetTaskId = selectedTaskId.value
+    const beforeVersion = entry.version
 
-    // ① 只调 forcesave，其他什么都不做
-    wordEditor.serviceCommand('forcesave')
+    log('[save] mySession =', mySession, 'beforeVersion =', beforeVersion)
+
+    saving.value = true
     ElMessage.info('正在保存，请稍候...')
 
-    // ② 轮询后端，等 UpdateTime 变化（说明后端真的收到了保存并写盘）
-    const startTs = Date.now()
-    const maxWait = 30000
-    let newUpdateTime = null
+    try {
+      const startTs = Date.now()
+      const maxWait = 30000
+      let latestDto = null
+      let pollCount = 0
 
-    while (Date.now() - startTs < maxWait) {
-      await new Promise(r => setTimeout(r, 1000))
+      // ★ 第 1 步：等几秒，让 DS 有机会把文件写入自己的缓存
+      await new Promise(r => setTimeout(r, 2000))
+
+      // ★ 第 2 步：手动触发后端 callback，模拟 DS 行为
+      //   url 用后端自己的下载接口（保证后端能下载到文件）
+      const callbackUrl = `${API_BASE}/dataeditor/onlyoffice/callback?datasheetId=${encodeURIComponent(targetDatasheetId)}`
+      const fileUrl = entry.documentUrl
+
+      log('[save] manually trigger callback:', callbackUrl)
+      log('[save] callback fileUrl:', fileUrl)
+
       try {
-        const res = await request.get(`/dataeditor/get/${selectedTaskId.value}`)
-        const dtos = res?.data?.value ?? res?.data ?? []
-        const dto = dtos.find(d => d.id === currentDatasheetId.value)
-        if (dto?.updateTime) {
-          const t = new Date(dto.updateTime).getTime()
-          if (t > beforeUpdateTime) {
-            newUpdateTime = dto.updateTime
-            break
+        const cbRes = await request.post(
+          `/dataeditor/onlyoffice/callback?datasheetId=${encodeURIComponent(targetDatasheetId)}`,
+          {
+            status: 6,
+            url: fileUrl
           }
+        )
+        log('[save] callback response:', cbRes)
+      } catch (err) {
+        warn('[save] callback trigger failed:', err)
+        ElMessage.error('触发回调失败')
+        return
+      }
+
+      // ★ 第 3 步：轮询后端，等 editorVersion 变化
+      while (Date.now() - startTs < maxWait) {
+        if (mySession !== saveSession) {
+          log('[save] session superseded, abort')
+          return
         }
-      } catch { /* ignore */ }
-    }
+        await new Promise(r => setTimeout(r, 1000))
+        pollCount++
 
-    // ③ 后端确认保存完了，这时才升级 key + 重建编辑器
-    if (newUpdateTime) {
-      entry.updateTime = newUpdateTime
-      entry.documentKey = buildDocKey(currentDatasheetId.value, newUpdateTime)
+        try {
+          const res = await request.get(`/dataeditor/get/${targetTaskId}`)
+          const dtos = res?.data?.value ?? res?.data ?? []
+          const dto = dtos.find(d => d.id === targetDatasheetId)
+          if (dto) {
+            const v = pickVersion(dto)
+            log(`[save] poll#${pollCount} editorVersion =`, v, ', before =', beforeVersion)
+            if (v !== null && v !== undefined && v !== beforeVersion) {
+              latestDto = dto
+              log('[save] detected new version =', v)
+              break
+            }
+          }
+        } catch (err) {
+          warn('[save] poll error', err)
+        }
+      }
 
-      nextTick(() => {
-        initWordPreview(entry.documentKey)
-      })
+      if (!latestDto) {
+        warn('[save] timeout, no new version')
+        ElMessage.warning('保存确认超时，请稍后刷新')
+        return
+      }
+
+      const newVersion = pickVersion(latestDto)
+      const newRawUrl = latestDto.url || ''
+
+      log('[save] updating entry:', beforeVersion, '→', newVersion)
+
+      entry.version = newVersion
+      entry.documentKey = buildDocKey(targetDatasheetId, newVersion)
+      if (newRawUrl) entry.documentUrl = buildPreviewUrl(newRawUrl)
+
+      const task = taskList.value.find(t => t.checkListId === targetTaskId)
+      if (task) {
+        const item = task.items.find(i => i.datasheetId === targetDatasheetId)
+        if (item) {
+          item.updatedAt = latestDto.updateTime || item.updatedAt
+          if (newRawUrl) item.rawUrl = newRawUrl
+          if (newVersion !== null) item.version = newVersion
+        }
+      }
+
+      log('[save] entry key now =', entry.documentKey)
       ElMessage.success('已保存到后端')
-    } else {
-      ElMessage.warning('保存确认超时，请稍后刷新')
+    } catch (e) {
+      console.error('[save] exception', e)
+      ElMessage.error('保存失败')
+    } finally {
+      log('[save] finally, saving = false')
+      saving.value = false
     }
-  } catch (e) {
-    console.error('save failed', e)
-    ElMessage.error('保存失败')
-  } finally {
-    saving.value = false
   }
-}
+
   /* ============================================================
-   *  九、OnlyOffice 初始化
+   *  九、OnlyOffice
    * ============================================================ */
   let wordEditor = null
+  let editorReady = false
 
-  async function initWordPreview(explicitKey) {
-    if (!documentUrl.value) {
-      if (wordEditor) {
-try {
-  console.log('=== creating editor ===');
-  console.log('DocsAPI:', window.DocsAPI);
-  console.log('container:', container);
-  wordEditor = new DocsAPI.DocEditor('onlyoffice-word-preview', config);
-  window.__editor = wordEditor;
-  console.log('wordEditor:', wordEditor);
-  console.log('serviceCommand type:', typeof wordEditor?.serviceCommand);
-} catch (e) {
-  console.error('初始化 OnlyOffice 失败:', e);
-}
-        wordEditor = null
-      }
+  async function initWordPreview(entry) {
+    log('[init] start for', entry?.datasheetId, 'key =', entry?.documentKey)
+
+    if (!entry || !entry.documentUrl) {
+      destroyEditor()
+      return
+    }
+    if (entry.datasheetId !== currentDatasheetId.value) {
+      log('[init] skip, not current datasheet')
       return
     }
 
-    if (wordEditor) {
-      try { wordEditor.destroyEditor() } catch (e) { }
-      wordEditor = null
-      await new Promise(r => setTimeout(r, 300))
-    }
-
+    destroyEditor()
+    await new Promise(r => setTimeout(r, 200))
     await nextTick()
+
     const container = document.getElementById('onlyoffice-word-preview')
     if (!container) {
-      console.warn('OnlyOffice 容器不存在')
+      warn('[init] container not found')
       return
     }
 
-    const entry = editorCache.get(currentDatasheetId.value)
-    const docKey = explicitKey || entry?.documentKey || `fallback_${Date.now()}`
+    log('[init] creating DocsAPI.DocEditor key =', entry.documentKey)
 
     const config = {
       style: { height: '100%', width: '100%' },
       document: {
-        title: activeDocumentTitle.value || '预览文档.docx',
-        url: documentUrl.value,
+        title: entry.title || '预览文档.docx',
+        url: entry.documentUrl,
         fileType: 'docx',
-        key: docKey,
+        key: entry.documentKey,
         permissions: { edit: true, download: true }
       },
       documentType: 'word',
@@ -692,11 +779,10 @@ try {
         mode: 'edit',
         lang: 'en',
         callbackUrl: `${API_BASE}/dataeditor/onlyoffice/callback?datasheetId=${encodeURIComponent(
-          currentDatasheetId.value
+          entry.datasheetId
         )}`,
         customization: {
           uiTheme: 'theme-dark',
-          chat: false,
           comments: false,
           feedback: false,
           forcesave: true,
@@ -705,20 +791,51 @@ try {
       },
       events: {
         onDocumentReady: () => {
-          console.log('Word document is ready, key =', docKey)
+          editorReady = true
+          log('[ready] key =', entry.documentKey)
+        },
+        onRequestRefreshFile: () => {
+          if (!editorReady) {
+            log('[onRequestRefreshFile] editor not ready, ignore')
+            return
+          }
+          const e = editorCache.get(currentDatasheetId.value)
+          if (!e) {
+            warn('[onRequestRefreshFile] entry not found')
+            return
+          }
+          log('[onRequestRefreshFile] → refreshFile', e.documentKey)
+          try {
+            wordEditor.refreshFile({ key: e.documentKey })
+          } catch (err) {
+            warn('[onRequestRefreshFile] refreshFile failed', err)
+          }
         },
         onRequestSave: () => {
-          console.log('OnlyOffice 请求保存')
+          log('[onRequestSave] fired')
         },
-        onError: event => console.error('Word viewer error:', event)
+        onError: event => console.error('[onError]', event)
       }
     }
 
     try {
       wordEditor = new DocsAPI.DocEditor('onlyoffice-word-preview', config)
+      window.__editor = wordEditor
     } catch (e) {
-      console.error('初始化 OnlyOffice 失败:', e)
+      console.error('[init] failed', e)
     }
+  }
+
+  function destroyEditor() {
+    if (wordEditor) {
+      log('[destroy] destroyEditor')
+      try { wordEditor.destroyEditor() } catch (e) { }
+      wordEditor = null
+      window.__editor = null
+    }
+    editorReady = false
+    const container = document.getElementById('onlyoffice-word-preview')
+    if (container) container.innerHTML = ''
   }
 
   /* ============================================================
@@ -728,16 +845,14 @@ try {
     try {
       await loadOnlyOfficeScript()
       await nextTick()
+      log('[mounted] OnlyOffice script loaded')
     } catch (e) {
       console.error('OnlyOffice 脚本加载失败:', e)
     }
   })
 
   onBeforeUnmount(() => {
-    if (wordEditor) {
-      try { wordEditor.destroyEditor() } catch (e) { }
-      wordEditor = null
-    }
+    destroyEditor()
   })
 </script>
 

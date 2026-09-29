@@ -8,7 +8,7 @@
       
       <div class="cardBody">
         <el-table 
-          :data="displayItems" 
+          :data="groupedByParameter" 
           border 
           style="width: 100%"
           class="checkListTable"
@@ -17,10 +17,15 @@
           
           <el-table-column label="Test Item" width="220">
             <template #default="scope">
-              <span class="itemName">{{ scope.row.testItemName }}</span>
-              <span v-if="scope.row.testItemName !== scope.row.testItemId" class="itemId">
-                ({{ scope.row.testItemId }})
-              </span>
+              <!-- ★ 多个测点合并展示 -->
+              <div class="itemNameList">
+                <div v-for="(name, i) in scope.row.testItemNames" :key="i" class="itemNameRow">
+                  <span class="itemName">{{ name }}</span>
+                  <span v-if="name !== scope.row.testItemIds[i]" class="itemId">
+                    ({{ scope.row.testItemIds[i] }})
+                  </span>
+                </div>
+              </div>
             </template>
           </el-table-column>
           
@@ -53,9 +58,9 @@
               <span v-if="scope.row.parameters === '-' || !scope.row.parameters || scope.row.parameters.length === 0"
                     class="parameterDash">-</span>
 
-              <!-- 2. 结构化参数 -->
+              <!-- 2. 结构化参数（★ 用 mergeSameParamGroups 合并相同内容的测点） -->
               <div v-else class="parameterBlock">
-                <div v-for="(paramGroup, gIdx) in scope.row.parameters"
+                <div v-for="(paramGroup, gIdx) in mergeSameParamGroups(scope.row.parameters)"
                      :key="gIdx"
                      class="paramGroup">
                   <span class="paramGroupLabel">{{ paramGroup.group }}</span>
@@ -267,7 +272,38 @@ function parseParameterLegacy(paramStr) {
   return groups
 }
 
-// 计算显示数据：转换 ID 为名称
+/**
+ * ★ 新增：合并同一 item 下内容相同的测点参数组
+ * 例如 B 和 D 的 entries 完全一致 → 合并为 { group: "B/D", entries: [...] }
+ */
+function mergeSameParamGroups(parameters) {
+  if (!Array.isArray(parameters) || parameters.length === 0) return parameters
+
+  const keyOf = (group) => {
+    if (!group || !group.entries) return '__EMPTY__'
+    const normalized = group.entries
+      .map(e => ({ key: e.key, value: e.value }))
+      .sort((a, b) => String(a.key).localeCompare(String(b.key)))
+    return JSON.stringify(normalized)
+  }
+
+  const merged = new Map()
+
+  for (const g of parameters) {
+    const k = keyOf(g)
+    if (!merged.has(k)) {
+      merged.set(k, { names: [], entries: g.entries || [] })
+    }
+    if (g.group) merged.get(k).names.push(g.group)
+  }
+
+  return [...merged.values()].map(m => ({
+    group: m.names.join('/'),
+    entries: m.entries
+  }))
+}
+
+// 计算显示数据：转换 ID 为名称（逐行）
 const displayItems = computed(() => {
   if (!checkListData.value?.items) return []
 
@@ -303,6 +339,119 @@ const displayItems = computed(() => {
   })
 })
 
+/* ============================================================
+ *  按 Parameter 分组合并展示
+ * ============================================================ */
+
+/**
+ * 生成参数分组 key（稳定、可比较）
+ * - 结构化参数：对 group / entries 排序后 JSON 化
+ * - 空参数：统一 key（全部 '-' 会合并成一组）
+ */
+function parameterKeyOf(item) {
+  const p = item.parameters
+
+  if (!p || p === '-' || (Array.isArray(p) && p.length === 0)) {
+    return '__NO_PARAM__'
+  }
+
+  if (Array.isArray(p)) {
+    const normalized = p.map(g => ({
+      group: g.group || '',
+      entries: (g.entries || [])
+        .map(e => ({ key: e.key, value: e.value }))
+        .sort((a, b) => String(a.key).localeCompare(String(b.key)))
+    }))
+    return JSON.stringify(normalized)
+  }
+
+  return String(p)
+}
+
+/** 合并多行的 standards，按 id 去重 */
+function mergeStandards(items) {
+  const seen = new Set()
+  const result = []
+  for (const it of items) {
+    for (const s of it.standardsDisplay || []) {
+      if (!seen.has(s.id)) {
+        seen.add(s.id)
+        result.push(s)
+      }
+    }
+  }
+  return result
+}
+
+/** 合并多行的 samples，去重 */
+function mergeSamples(items) {
+  const seen = new Set()
+  const result = []
+  for (const it of items) {
+    for (const s of it.samples || []) {
+      if (!seen.has(s)) {
+        seen.add(s)
+        result.push(s)
+      }
+    }
+  }
+  return result
+}
+
+/** 多个不同值合成一个展示串，去重 */
+function mergeDistinct(values) {
+  const filtered = [...new Set((values || []).filter(v => v && v !== '-'))]
+  return filtered.length ? filtered.join('; ') : '-'
+}
+
+const groupedByParameter = computed(() => {
+  if (!checkListData.value?.items) return []
+
+  // 1) 先做 id → name 映射
+  const baseItems = [...checkListData.value.items]
+    .sort((a, b) => (Number(a.testGroup) || 0) - (Number(b.testGroup) || 0))
+    .map((item) => {
+      const info = props.testItemMap[item.testItemId]
+      const name = info?.nameEn || info?.nameChn || item.testItemId
+      const standardsDisplay = (item.standards || []).map(stdId => ({
+        id: stdId,
+        code: props.standardIdToCodeMap[stdId] || stdId
+      }))
+      return {
+        ...item,
+        testItemName: name,
+        standardsDisplay
+      }
+    })
+
+  // 2) 按 parameter key 分组（按整个 item 的 parameters 分组，保持原样）
+  const groups = new Map()
+  for (const item of baseItems) {
+    const key = parameterKeyOf(item)
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        parameters: item.parameters,
+        items: []
+      })
+    }
+    groups.get(key).items.push(item)
+  }
+
+  // 3) 转成表格可渲染的数组
+  return [...groups.values()].map((g, idx) => ({
+    index: idx + 1,
+    parameters: g.parameters,
+    testItemNames: g.items.map(i => i.testItemName),
+    testItemIds: g.items.map(i => i.testItemId),
+    standardsDisplay: mergeStandards(g.items),
+    samples: mergeSamples(g.items),
+    testGroup: g.items[0].testGroup,
+    requirement: mergeDistinct(g.items.map(i => i.requirement)),
+    cuttingMethod: mergeDistinct(g.items.map(i => i.cuttingMethod))
+  }))
+})
+
 /* 按钮处理 --------------------------------------------------------------------------------------*/
 
 // 1. Generate 按钮：仅负责生成并将记录推入历史
@@ -333,7 +482,6 @@ async function handleGenerate() {
       dateTime: new Date().toISOString(),
       items: checkListData.value.items.map(item => {
         const testItemInfo = props.testItemMap[item.testItemId]
-        // 英文名 + 中文名，格式：Colour Fastness to Washing(皂洗色牢度)
         const enName = testItemInfo?.nameEn || ''
         const chnName = testItemInfo?.nameChn || ''
         let testItemName = ''
@@ -356,14 +504,17 @@ async function handleGenerate() {
         if (item.parameters && Array.isArray(item.parameters) && item.parameters.length > 0) {
           const lines = []
 
-          for (const group of item.parameters) {
+          // ★ 用合并后的 groups
+          const mergedGroups = mergeSameParamGroups(item.parameters)
+
+          for (const group of mergedGroups) {
             if (group.group && group.entries && group.entries.length > 0) {
               const validEntries = group.entries.filter(
                 e => e.key && e.value !== undefined && e.value !== null && e.value !== ''
               )
 
               if (validEntries.length > 0) {
-                lines.push(`${group.group}:`)
+                lines.push(`[${group.group}]:`)        // ★ 加上方括号
                 for (const entry of validEntries) {
                   lines.push(`${entry.key}: ${entry.value}`)
                 }
@@ -490,36 +641,28 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-/* 防止 URL 超出表格 */
-.urlLink {
-  word-break: break-all;
-  white-space: normal;
-}
-</style>
-
-
-
-
 <style scoped lang="scss">
 .step3Container {
   padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* 圆角大框样式 - 参考 Step1 的 border-card 风格 */
+/* 圆角大框样式 */
 .checkListCard {
   border: 1px solid var(--el-border-color);
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   background: var(--el-bg-color);
   overflow: hidden;
+  margin-bottom: 16px;
 }
 
 .cardHeader {
   padding: 16px 20px;
   background: var(--el-fill-color-light);
   border-bottom: 1px solid var(--el-border-color);
-  
+
   h4 {
     margin: 0;
     font-size: 16px;
@@ -532,7 +675,7 @@ onUnmounted(() => {
   padding: 20px;
 }
 
-/* 表格样式优化 */
+/* 表格样式 */
 .checkListTable {
   :deep(th) {
     background: var(--el-fill-color-light);
@@ -540,6 +683,7 @@ onUnmounted(() => {
   }
 }
 
+/* ===== Test Item 列 ===== */
 .itemName {
   font-weight: 500;
   color: var(--el-text-color-primary);
@@ -548,8 +692,21 @@ onUnmounted(() => {
 .itemId {
   color: var(--el-text-color-secondary);
   font-size: 12px;
+  margin-left: 4px;
 }
 
+/* 合并展示时，同一行多个测点竖排 */
+.itemNameList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemNameRow {
+  line-height: 1.5;
+}
+
+/* ===== Standards 列 ===== */
 .standardsList {
   display: flex;
   flex-wrap: wrap;
@@ -571,10 +728,91 @@ onUnmounted(() => {
   margin-left: 2px;
 }
 
+/* ===== Parameter 列 ===== */
+.parameterBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.paramGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.paramGroupLabel {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--el-color-primary);
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.paramGroupBracket {
+  color: var(--el-text-color-secondary);
+  font-weight: 300;
+  font-size: 14px;
+  padding-top: 1px;
+}
+
+.paramItems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  padding: 0 4px;
+}
+
+.paramItem {
+  font-size: 13px;
+  font-family: 'Courier New', Consolas, monospace;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--el-bg-color);
+  line-height: 1.6;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--el-fill-color);
+  }
+}
+
+.paramKey {
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+.paramColon {
+  color: var(--el-text-color-secondary);
+  margin: 0 2px;
+}
+
+.paramValue {
+  color: var(--el-text-color-primary);
+}
+
+.parameterPlain {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+.parameterDash {
+  color: #909399;
+  font-size: 14px;
+}
+
+/* ===== 空状态 ===== */
 .emptyState {
   margin: 40px 0;
 }
 
+/* ===== 底部按钮 ===== */
 .actionButtons {
   display: flex;
   gap: 16px;
@@ -584,81 +822,16 @@ onUnmounted(() => {
   border-top: 1px solid var(--el-border-color);
 }
 
-  .parameterBlock {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 2px 0;
-  }
+/* 兼容模板里用到的 btnLeft / btnRight 结构 */
+.btnLeft,
+.btnRight {
+  display: flex;
+  gap: 10px;
+}
 
-  .paramGroup {
-    display: flex;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 6px 10px;
-    background: var(--el-fill-color-lighter);
-    border-radius: 6px;
-    border-left: 3px solid var(--el-color-primary);
-  }
-
-  .paramGroupLabel {
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--el-color-primary);
-    white-space: nowrap;
-    padding-top: 1px;
-  }
-
-  .paramGroupBracket {
-    color: var(--el-text-color-secondary);
-    font-weight: 300;
-    font-size: 14px;
-    padding-top: 1px;
-  }
-
-  .paramItems {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-    padding: 0 4px;
-  }
-
-  .paramItem {
-    font-size: 13px;
-    font-family: 'Courier New', Consolas, monospace;
-    padding: 1px 6px;
-    border-radius: 3px;
-    background: var(--el-bg-color);
-    line-height: 1.6;
-    transition: background 0.2s;
-
-    &:hover {
-      background: var(--el-fill-color);
-    }
-  }
-
-  .paramKey {
-    color: #e6a23c;
-    font-weight: 500;
-  }
-
-  .paramColon {
-    color: var(--el-text-color-secondary);
-    margin: 0 2px;
-  }
-
-  .paramValue {
-    color: var(--el-text-color-primary);
-  }
-
-  .parameterPlain {
-    color: var(--el-text-color-regular);
-    font-size: 13px;
-  }
-
-  .parameterDash {
-    color: #909399;
-    font-size: 14px;
-  }
+/* ===== 下载链接 ===== */
+.urlLink {
+  word-break: break-all;
+  white-space: normal;
+}
 </style>
