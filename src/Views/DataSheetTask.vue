@@ -96,6 +96,14 @@
                   Datasheets under this Task ({{ row.items.length }})
                 </span>
                 <div>
+                  <!-- ★ 批量重试：有失败项时显示 -->
+                  <el-button v-if="dataSource === 'real' && hasFailedItems(row)"
+                             size="small"
+                             type="warning"
+                             @click="retryAllFailed(row)"
+                             style="margin-right: 8px">
+                    Retry All Failed ({{ failedCount(row) }})
+                  </el-button>
                   <el-tag v-if="row.mergedPdfUrl" type="success" style="margin-right: 8px">
                     Merged PDF Ready
                   </el-tag>
@@ -167,11 +175,20 @@
             <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Actions" width="120">
+        <el-table-column label="Actions" width="200">
           <template #default="{ row }">
             <el-button size="small" @click="toggleExpand(row)">
               {{ expandedKeys.includes(row.checkListId) ? 'Collapse' : 'Expand' }}
             </el-button>
+
+            <!-- ★ 批量重试 -->
+            <el-button v-if="dataSource === 'real' && hasFailedItems(row)"
+                       size="small"
+                       type="warning"
+                       @click="retryAllFailed(row)">
+              Retry All ({{ failedCount(row) }})
+            </el-button>
+
           </template>
         </el-table-column>
       </el-table>
@@ -181,7 +198,7 @@
 
 <script setup>
   import { ref, computed, watch, onBeforeUnmount } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import request from '@/utils/request'
   import { API_BASE } from '@/utils/config.js'
 
@@ -706,31 +723,89 @@
     ElMessage.info(`Open merged PDF: ${row.mergedPdfUrl} (mock)`)
   }
 
-  function retryItem(item) {
-    item.status = 'GENERATING'
-    item.errorMessage = null
-    item.retryCount += 1
-    item.updatedAt = new Date().toISOString()
+  function failedCount(task) {
+    return (task.items || []).filter(i => i.status === 'FAILED').length
+  }
 
-    const task = taskList.value.find(t => t.items.includes(item))
-    if (task) recalcAggregates(task)
+  function hasFailedItems(task) {
+    return failedCount(task) > 0
+  }
 
-    setTimeout(() => {
-      if (Math.random() < 0.8) {
-        item.status = 'CREATED'
-        item.fileUrl = `/mock/files/${item.datasheetId}.docx`
-        ElMessage.success(`${item.testItemId || item.projectId} retry succeeded`)
+  async function retryAllFailed(task) {
+    const failedCount = (task.items || []).filter(i => i.status === 'FAILED').length
+    if (failedCount === 0) {
+      ElMessage.warning('No failed items to retry')
+      return
+    }
+
+    try {
+      await ElMessageBox.confirm(
+        `Retry all ${failedCount} failed datasheets under this task?`,
+        'Batch Retry Confirmation',
+        { type: 'warning', confirmButtonText: 'Retry All', cancelButtonText: 'Cancel' }
+      )
+    } catch {
+      return // 用户取消
+    }
+
+    try {
+      const res = await request.post(`/datasheet/retry-batch/${task.checkListId}`)
+
+      if (res.data?.isSuccess) {
+        ElMessage.success(`Batch retry requested for ${failedCount} datasheets`)
+        // SSE 会推新状态，不用手动改
       } else {
-        item.status = 'FAILED'
-        item.errorMessage = pickRandomError()
-        ElMessage.error(`${item.testItemId || item.projectId} retry failed again`)
+        ElMessage.error(res.data?.error || 'Batch retry failed')
       }
+    } catch (e) {
+      console.error('Batch retry error:', e)
+      ElMessage.error(e.response?.data?.error || 'Batch retry failed')
+    }
+  }
+
+  async function retryItem(item) {
+    // Mock 模式：保持本地模拟
+    if (dataSource.value === 'mock') {
+      item.status = 'GENERATING'
+      item.errorMessage = null
+      item.retryCount += 1
       item.updatedAt = new Date().toISOString()
-      if (task) {
-        recalcAggregates(task)
-        recalcStatus(task)
+
+      const task = taskList.value.find(t => t.items.includes(item))
+      if (task) recalcAggregates(task)
+
+      setTimeout(() => {
+        if (Math.random() < 0.8) {
+          item.status = 'CREATED'
+          item.fileUrl = `/mock/files/${item.datasheetId}.docx`
+          ElMessage.success(`${item.testItemId || item.projectId} retry succeeded`)
+        } else {
+          item.status = 'FAILED'
+          item.errorMessage = pickRandomError()
+          ElMessage.error(`${item.testItemId || item.projectId} retry failed again`)
+        }
+        item.updatedAt = new Date().toISOString()
+        if (task) {
+          recalcAggregates(task)
+          recalcStatus(task)
+        }
+      }, 600)
+      return
+    }
+
+    // Real 模式：调后端
+    try {
+      const res = await request.post(`/datasheet/retry/${item.datasheetId}`)
+      if (res.data?.isSuccess) {
+        ElMessage.success(`Retry requested for ${item.testItemId || item.datasheetId}`)
+        // SSE 会推新状态，不用手动改
+      } else {
+        ElMessage.error(res.data?.error || 'Retry failed')
       }
-    }, 600)
+    } catch (e) {
+      console.error('Retry error:', e)
+      ElMessage.error(e.response?.data?.error || 'Retry failed')
+    }
   }
 
   function recalcAggregates(task) {
@@ -871,126 +946,3 @@
     color: #909399;
   }
 </style>
-<!--<style scoped>
-  /* 整体：flex 两栏，占满整页 */
-  .datasheetDemo {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    width: 100%;
-    min-height: 100vh;
-    box-sizing: border-box;
-    padding: 16px;
-    background: #f5f7fa;
-  }
-
-  /* 左侧栏：sticky，跟随滚动但不脱离布局 */
-  .sidePanel {
-    position: sticky;
-    top: 16px;
-    flex: 0 0 180px; /* 固定宽 180px，不伸不缩 */
-    width: 180px;
-    padding: 16px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    box-sizing: border-box;
-  }
-
-  /* 右侧主区：占满剩余宽度 */
-  .mainContent {
-    flex: 1 1 auto;
-    min-width: 0; /* 防止内容撑破 flex */
-    background: #fff;
-    border-radius: 8px;
-    padding: 16px;
-    box-sizing: border-box;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  }
-
-  /* 顶部标题行：现在放在右侧主区顶部更好，或者单独一行 */
-  .headerRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-    .headerRow h3 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #303133;
-    }
-
-  .headerActions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .sidePanelTitle {
-    font-size: 13px;
-    font-weight: 600;
-    color: #303133;
-    margin-bottom: 8px;
-  }
-
-  .summaryItem {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #606266;
-    margin-bottom: 6px;
-  }
-
-  .summaryValue {
-    font-weight: 600;
-    color: #303133;
-  }
-
-    .summaryValue.success {
-      color: #67c23a;
-    }
-
-    .summaryValue.danger {
-      color: #f56c6c;
-    }
-
-  .progressText {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
-  }
-
-  .subTableWrapper {
-    padding: 12px 20px;
-    background: #fafafa;
-  }
-
-  .subHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #303133;
-    font-size: 13px;
-  }
-
-  .errorText {
-    color: #f56c6c;
-    font-size: 12px;
-  }
-
-  .attachBar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .hintText {
-    font-size: 12px;
-    color: #909399;
-  }
-</style>-->
