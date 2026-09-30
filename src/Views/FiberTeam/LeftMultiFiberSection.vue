@@ -28,7 +28,7 @@
           </div>
 
           <!-- 拆分表格区域 -->
-          <div class="oneSampleComposition">
+          <div class="oneSampleComposition split-card">
             <!-- 标题行 -->
             <div class="section-header-row">
               <span class="section-title">Split</span>
@@ -287,13 +287,10 @@
 
         <div class="extra-inputs-container">
           <div class="row">
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-12">
               <el-button @click="handleSaveDraft" type="success">Save a Draft</el-button>
               <el-button @click="handleBuildAnalysis" type="primary">Build Analysis</el-button>
               <el-button @click="handleRefresh" type="primary">Refresh</el-button>
-            </div>
-            <div class="form-group col-xl-6">
-              <el-input v-model="searchReportNo" placeholder="Search Report No." />
             </div>
             </div>
           </div>
@@ -314,13 +311,16 @@
   // 与 fiber_database 的拼写不一致 —— 存进库的就是小写名，报告上照原样印出）。
   // 候选真正的内容在 Domain 的 FiberOptions，经 /FiberAnalysis/fiber-options 下发。
 
-  // cellulosic fibre 子行默认 4 行空模板
+  // cellulosic fibre 子行默认 4 行空模板。
+  // percentage 用空串而非 0：输入框上的 placeholder="%" 只在空值时显示，
+  // 填 0 会让框里一直有个 0、那个 % 永远不露面（两者是同一个提交加进来的，从落地起就互相抵消）。
+  // 提交侧两者等价 —— FiberWorkSheet 的 filter 是 `s.percentage > 0`，'' 与 0 都不成立。
   function newCellulosicDefaults() {
     return [
-      { fiberName: '', percentage: 0 },
-      { fiberName: '', percentage: 0 },
-      { fiberName: '', percentage: 0 },
-      { fiberName: '', percentage: 0 }
+      { fiberName: '', percentage: '' },
+      { fiberName: '', percentage: '' },
+      { fiberName: '', percentage: '' },
+      { fiberName: '', percentage: '' }
     ];
   }
   // 惰性初始化 row 上的 cellulosicSubFibers（写入 row 保证双向绑定）
@@ -410,7 +410,6 @@
 
   function handleRefresh() {
     // 重置所有数据
-    searchReportNo.value = ''
     Object.keys(extraInputs).forEach(k => {
       if (Array.isArray(extraInputs[k])) extraInputs[k] = []
       else extraInputs[k] = ''
@@ -471,8 +470,6 @@
   })
 
   // 初始化独立的额外输入框数据
-  const searchReportNo = ref('');
-
   // ⚠️ 键名是位置式的，input2~input5 已随模板删行下线，**空号保留不补位**
   const extraInputs = reactive({
     input1: '',
@@ -671,6 +668,13 @@
     position: relative;
   }
 
+  /* Split 卡片加淡底色，与 Dissolved 卡片区分 ——
+     两者共用 .oneSampleComposition，所以只能加在 Split 那一个的附加类上，
+     改基类会把所有 Dissolved 一起染。色取 Split 标题 #3364d5 的淡色调。 */
+  .oneSampleComposition.split-card {
+    background-color: #eef2fc;
+  }
+
   // 追加行按钮：紧贴数据表下方（卡片是 gap:0 的纵向 flex，表自身 margin 也是 0）
   .add-row-btn {
     width: 100%;
@@ -691,6 +695,11 @@
     font-size: 14px;
     font-weight: 300;
     color: #3364d5;
+    /* style.css:1796 的全局 .section-title 带 margin-bottom:50px（营销模板残留），
+       而 .section-header-row 是 flex 行 —— 子元素的 margin 计进行的交叉尺寸，
+       整行被撑高 50px，标题与表格之间就多出一条空行。
+       本组件原先只覆盖字体与颜色、没声明 margin，所以那 50px 一直在生效。 */
+    margin-bottom: 0;
   }
 
   .remove-section-btn {

@@ -145,13 +145,10 @@
 
         <div class="extra-inputs-container">
           <div class="row">
-            <div class="form-group col-xl-6">
+            <div class="form-group col-xl-12">
               <el-button @click="handleSaveDraft" type="success">Save a Draft</el-button>
               <el-button @click="handleBuildAnalysis" type="primary">Build Analysis</el-button>
               <el-button @click="handleRefresh" type="primary">Refresh</el-button>
-            </div>
-            <div class="form-group col-xl-6">
-              <el-input v-model="searchReportNo" placeholder="Search Report No." />
             </div>
           </div>
         </div>
@@ -213,7 +210,6 @@
     localSections.value.forEach(sec => {
       sec.rows.forEach(row => { row.location = ''; row.composition = '' })
     })
-    searchReportNo.value = ''
   }
 
   const isNoticeOpen = ref(true)
@@ -229,8 +225,6 @@
   }])
 
   // 初始化独立的额外输入框数据
-  const searchReportNo = ref('');
-
   // ⚠️ 键名是位置式的，input2~input5 已随模板删行下线，**空号保留不补位**
   const extraInputs = reactive({
     input1: '',
@@ -406,6 +400,11 @@
     font-size: 16px;
     font-weight: 300;
     color: #3364d5;
+    /* style.css:1796 的全局 .section-title 带 margin-bottom:50px（营销模板残留），
+       而 .section-header-row 是 flex 行 —— 子元素的 margin 计进行的交叉尺寸，
+       整行被撑高 50px，标题与表格之间就多出一条空行。
+       本组件原先只覆盖字体与颜色、没声明 margin，所以那 50px 一直在生效。 */
+    margin-bottom: 0;
   }
 
   .remove-section-btn {
