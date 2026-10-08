@@ -94,7 +94,10 @@
     <div class="actionButtons">
       <div class="btnLeft">
         <el-button type="primary" @click="handleGenerate" :loading="loading">
-          {{ $t('generate') || 'Generate' }}
+          {{ $t('generate-checklist') || 'Generate' }}
+        </el-button>
+        <el-button type="success" @click="onGenerate" :loading="loading">
+          {{ $t('generate-dataSheet') || 'GenerateDatasheet' }}
         </el-button>
       </div>
       <div class="btnRight">
@@ -145,6 +148,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request.js'
+import { useDatasheetStore } from '@/stores/datasheetStore'
 import { BACKEND_BASE } from '@/utils/config.js'
 import { onStatus, printWord, printPdf } from '@/utils/printBridge'
 
@@ -158,6 +162,7 @@ const props = defineProps({
 const loading = ref(false)
 const printLoading = ref(false)
 const checkListData = ref(null)
+  const store = useDatasheetStore()
 
 // 生成历史相关状态
 const showHistoryDrawer = ref(false)
@@ -619,6 +624,25 @@ function handleReBuild() {
 function setCheckListData(data) {
   checkListData.value = normalizeCheckListData(data)
 }
+  //4. GenerateDataSheet 按钮
+  async function onGenerate() {
+    const checkListId = checkListData.value?.checklistId
+    const reportNo = props.step1Ref?.reportNo || ''
+
+    if (!checkListId) {
+      ElMessage.warning('No checklist to generate')
+      return
+    }
+
+    const res = await store.startGenerate({
+      checkListId,
+      reportNo
+    })
+
+    if (res) {
+      ElMessage.success('The task was attached.')
+    }
+  }
 
 defineExpose({
   setCheckListData,
@@ -813,14 +837,14 @@ onUnmounted(() => {
 }
 
 /* ===== 底部按钮 ===== */
-.actionButtons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--el-border-color);
-}
+  .actionButtons {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--el-border-color);
+  }
 
 /* 兼容模板里用到的 btnLeft / btnRight 结构 */
 .btnLeft,
@@ -828,6 +852,19 @@ onUnmounted(() => {
   display: flex;
   gap: 10px;
 }
+
+  @media (max-width: 900px) {
+    .actionButtons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btnLeft,
+    .btnRight {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
 
 /* ===== 下载链接 ===== */
 .urlLink {

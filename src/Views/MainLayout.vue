@@ -142,24 +142,24 @@
             <el-menu-item index="/main/Review">
               <span>Review</span>
             </el-menu-item>
+            <el-menu-item index="/main/LabSchedule">
+              <span>Lab Schedule</span>
+            </el-menu-item>
             <el-menu-item index="/main/DataSheetTask">
               <span>DataSheet Task</span>
             </el-menu-item>
             <el-menu-item index="/main/DataEditor">
               <span>Data Editor</span>
             </el-menu-item>
-            <el-menu-item index="/main/ExcelTry">
-              <span>Work Sheet Edit</span>
-            </el-menu-item>
+            <!--<el-menu-item index="/main/ExcelTry">
+    <span>Work Sheet Edit</span>
+  </el-menu-item>-->
             <el-menu-item index="/main/BuyerManual">
               <span>Buyer Manual</span>
             </el-menu-item>
-            <el-menu-item index="/main/OrderOverview">
-              <span>Reporting List</span>
-            </el-menu-item>
-            <el-menu-item index="/main/WashLabel">
-              <span>Wash Label</span>
-            </el-menu-item>
+            <!--<el-menu-item index="/main/WashLabel">
+    <span>Wash Label</span>
+  </el-menu-item>-->
             <el-menu-item index="/main/FiberWorkSheet">
               <span>Fiber Analysis</span>
             </el-menu-item>

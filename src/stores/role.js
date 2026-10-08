@@ -39,6 +39,7 @@ import LogicValidation from "@/Views/Config/LogicValidation.vue";
 import TemplateManagement from "@/Views/Config/TemplateManagement.vue";
 import DataSheetTask from "@/Views/DataSheetTask.vue";
 import DataEditor from "@/Views/DataEditor.vue";
+import LabSchedule from "@/Views/LabSchedule.vue";
 
 const useRoleStore = defineStore('role', {
   state: () => ({
@@ -77,6 +78,7 @@ const useRoleStore = defineStore('role', {
         { path: 'DataSheetTask', name: 'DataSheetTask', component: DataSheetTask, meta: { title: 'DataSheetTask' } },
         { path: 'YarnCount', name: 'YarnCount', component: YarnCount, meta: { title: 'Yarn Count' } },
         { path: 'DataEditor', name: 'DataEditor', component: DataEditor, meta: { title: 'DataEditor' } },
+        { path: 'LabSchedule', name: 'LabSchedule', component: LabSchedule, meta: { title: 'LabSchedule' } },
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
       { path: 'StandardFamily', name: 'StandardFamily', component: StandardFamily, meta: { title: 'Standard Family' } },

@@ -241,13 +241,13 @@
       </div>
 
       <!-- OnlyOffice Editor Container -->
-      <div class="editor-container" id="onlyoffice-editor">
+      <!-- ★ 固定 id 容器，OnlyOffice 会往里面注入 iframe -->
+      <div class="editor-container" id="onlyoffice-template-editor">
         <div v-if="!editorLoaded" class="editor-placeholder">
           <el-icon :size="64"><Document /></el-icon>
           <span>Select a template or enter Template ID to load</span>
           <span class="hint">Supports Excel / Word document online editing</span>
         </div>
-        <div v-else ref="editorRef" class="editor-iframe-wrapper"></div>
       </div>
     </div>
 
@@ -485,9 +485,10 @@
 </template>
 
 <script setup>
-  import { ref, computed, inject, reactive, onMounted, nextTick } from 'vue'
+  import { ref, computed, inject, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { API_BASE } from '@/utils/config.js'
+  import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
   import {
     Plus, Refresh, Search, Files, Document, EditPen,
     Download, Check, RefreshRight, List, UploadFilled, Close
@@ -510,7 +511,13 @@
   const editorLoaded = ref(false)
   const currentTemplateId = ref('')
   const currentTemplateInfo = ref(null)
-  const editorRef = ref(null)
+
+  /* ★ 编辑器实例与缓存 */
+  let wordEditor = null
+  let editorReady = false
+  const editorCache = new Map()   // templateId -> { documentUrl, documentKey, fileType, documentType, title, version }
+
+  const EDITOR_CONTAINER_ID = 'onlyoffice-template-editor'
 
   // ==================== Dialog State ====================
   const dialogVisible = ref(false)
@@ -536,15 +543,12 @@
   })
 
   // ==================== Template Meta State ====================
-  // TemplateIndex：动态 key-value 列表
   const templateIndexList = ref([
     { key: '', value: '' }
   ])
 
-  // TestConditionTextTemplateDtos：动态列表，每项含索引列表 + 文本
   const conditionTextList = ref([])
 
-  // TemplateSturctureDto：固定字段
   const structure = reactive({
     testConditionCount: 0,
     testMethodCount: 0,
@@ -558,7 +562,6 @@
   const historyList = ref([])
 
   // ==================== Computed ====================
-  // 只有 PHY / WET 才显示 Test Type
   const showTestType = computed(() =>
     ['PHY', 'WET'].includes((formData.categroyType || '').toUpperCase())
   )
@@ -578,7 +581,6 @@
       list = list.filter(item => item.site === filterSite.value)
     }
 
-    // 按 Category Type 筛（PHY / WET / FLAM / FIBER）
     if (filterCategory.value) {
       const target = filterCategory.value.toUpperCase()
       list = list.filter(item =>
@@ -598,6 +600,81 @@
     const end = start + pageSize.value
     return filteredTemplates.value.slice(start, end)
   })
+
+  // ==================== OnlyOffice 工具函数 ====================
+
+  /** 生成文档 key（OnlyOffice 要求唯一，同 key 复用 DS 缓存） */
+  function buildDocKey(templateId, version) {
+    const safeId = String(templateId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)
+    let v = '0'
+    if (version !== null && version !== undefined && version !== '') {
+      if (typeof version === 'number') {
+        v = String(version)
+      } else {
+        const ts = new Date(version).getTime()
+        v = Number.isFinite(ts) ? String(ts) : String(version)
+      }
+    }
+    return `tpl_${safeId}_${v}`
+  }
+
+  /** 拼出可直接给 OnlyOffice 下载的 URL */
+  function buildEditorFileUrl(template) {
+    if (!template) return ''
+    if (template.downloadUrl) return template.downloadUrl
+    const raw = template.templateUrl || ''
+    if (!raw) return ''
+    if (/^https?:\/\//i.test(raw)) return raw
+    const clean = raw.replace(/\\/g, '/').replace(/^\/+/, '')
+    const encoded = clean.split('/').map(seg => encodeURIComponent(seg)).join('/')
+    return `${API_BASE}/Template/download/${encoded}`
+  }
+
+  /** 根据 fileType 决定 documentType / fileType */
+  function resolveDocType(fileType) {
+    const ft = String(fileType || '').toLowerCase().replace(/^\./, '')
+    if (ft === 'xlsx' || ft === 'xls' || ft === 'csv') {
+      return { documentType: 'cell', fileType: ft === 'xls' ? 'xls' : 'xlsx' }
+    }
+    if (ft === 'docx' || ft === 'doc') {
+      return { documentType: 'word', fileType: ft }
+    }
+    return { documentType: 'word', fileType: 'docx' }
+  }
+
+  /** 取/建缓存 */
+  function getOrCreateCacheEntry(template) {
+    const id = template.id
+    const fileUrl = buildEditorFileUrl(template)
+    const version = template.version ?? template.updatedAt ?? null
+    const { documentType, fileType } = resolveDocType(template.fileType)
+
+    if (!editorCache.has(id)) {
+      const key = buildDocKey(id, version)
+      editorCache.set(id, {
+        templateId: id,
+        documentUrl: fileUrl,
+        documentKey: key,
+        title: template.name || `${id}.${fileType}`,
+        fileType,
+        documentType,
+        version
+      })
+      return editorCache.get(id)
+    }
+
+    const entry = editorCache.get(id)
+    entry.documentUrl = fileUrl
+    entry.title = template.name || entry.title
+    entry.fileType = fileType
+    entry.documentType = documentType
+
+    if (version !== null && version !== undefined && entry.version !== version) {
+      entry.version = version
+      entry.documentKey = buildDocKey(id, version)
+    }
+    return entry
+  }
 
   // ==================== Methods ====================
 
@@ -631,8 +708,8 @@
   // --- File Upload ---
   function handleFileChange(file) {
     const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',      // .xlsx
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ]
 
     if (!validTypes.includes(file.raw.type)) {
@@ -690,41 +767,126 @@
   }
 
   async function loadTemplateContent(template) {
-    editorLoaded.value = true
-    await nextTick()
-    initOnlyOffice(template)
-  }
+    if (!template) return
 
-  // --- OnlyOffice Editor ---
-  function initOnlyOffice(template) {
-    const editorConfig = {
-      document: {
-        fileType: template.fileType || 'docx',
-        key: template.id,
-        title: template.name,
-        url: template.templateUrl
-      },
-      editorConfig: {
-        mode: 'edit',
-        lang: 'en-US'
+    const entry = getOrCreateCacheEntry(template)
+
+    editorLoaded.value = true
+    currentTemplateInfo.value = template
+
+    await nextTick()
+
+    const isSame =
+      wordEditor &&
+      editorReady &&
+      currentTemplateInfo.value &&
+      currentTemplateInfo.value.id === template.id &&
+      wordEditor.__templateId === template.id
+
+    if (isSame) {
+      try {
+        wordEditor.refreshFile({ key: entry.documentKey })
+        return
+      } catch (e) {
+        console.warn('[template editor] refreshFile failed', e)
       }
     }
 
-    console.log('Initializing OnlyOffice Editor:', editorConfig)
+    initOnlyOffice(entry)
+  }
+
+  // --- OnlyOffice Editor ---
+  function initOnlyOffice(entry) {
+    destroyEditor()
+
+    nextTick(() => {
+      const container = document.getElementById(EDITOR_CONTAINER_ID)
+      if (!container) {
+        console.warn('[template editor] container not found')
+        return
+      }
+
+      const config = {
+        style: { height: '100%', width: '100%' },
+        document: {
+          title: entry.title,
+          url: entry.documentUrl,
+          fileType: entry.fileType,
+          key: entry.documentKey,
+          permissions: { edit: true, download: true }
+        },
+        documentType: entry.documentType,
+        editorConfig: {
+          mode: 'edit',
+          lang: 'en',
+          callbackUrl: `${API_BASE}/template/onlyoffice/callback?templateId=${encodeURIComponent(
+            entry.templateId
+          )}`,
+          customization: {
+            uiTheme: 'theme-dark',
+            comments: false,
+            feedback: true,
+            forcesave: true,
+            autosave: true
+          }
+        },
+        events: {
+          onDocumentReady: () => {
+            editorReady = true
+            console.log('[template editor] ready, key =', entry.documentKey)
+          },
+          onRequestSave: () => {
+            console.log('[template editor] onRequestSave')
+          },
+          onError: (event) => console.error('[template editor] onError', event)
+        }
+      }
+
+      try {
+        wordEditor = new DocsAPI.DocEditor(EDITOR_CONTAINER_ID, config)
+        wordEditor.__templateId = entry.templateId
+        window.__templateEditor = wordEditor
+        console.log('[template editor] created, key =', entry.documentKey)
+      } catch (e) {
+        console.error('[template editor] create failed', e)
+      }
+    })
+  }
+
+  function destroyEditor() {
+    if (wordEditor) {
+      try { wordEditor.destroyEditor() } catch (e) { /* ignore */ }
+      wordEditor = null
+      window.__templateEditor = null
+    }
+    editorReady = false
+    const container = document.getElementById(EDITOR_CONTAINER_ID)
+    if (container) container.innerHTML = ''
   }
 
   function switchEditorMode(mode) {
     editorMode.value = mode
     ElMessage.info(`Switched to ${mode === 'excel' ? 'Excel' : 'Word'} Editor`)
 
-    if (currentTemplateInfo.value) {
-      loadTemplateContent(currentTemplateInfo.value)
-    }
+    if (!currentTemplateInfo.value) return
+
+    const entry = getOrCreateCacheEntry(currentTemplateInfo.value)
+    initOnlyOffice(entry)
   }
 
   async function saveTemplate() {
+    if (!currentTemplateInfo.value) {
+      ElMessage.warning('No template loaded')
+      return
+    }
     try {
-      ElMessage.success('Template saved successfully')
+      if (wordEditor && typeof wordEditor.requestSave === 'function') {
+        wordEditor.requestSave()
+      } else if (wordEditor && typeof wordEditor.serviceCommand === 'function') {
+        wordEditor.serviceCommand('forcesave')
+      }
+
+      ElMessage.success('Save request sent')
 
       historyList.value.unshift({
         time: new Date().toLocaleString(),
@@ -737,6 +899,7 @@
   }
 
   function resetEditor() {
+    destroyEditor()
     editorLoaded.value = false
     currentTemplateInfo.value = null
     currentTemplateId.value = ''
@@ -755,7 +918,6 @@
     isEdit.value = true
     dialogTitle.value = 'Edit Template'
 
-    // 从 category 反推：Common_XXX 或 {Buyer}_XXX
     const category = row.category || ''
     const parts = category.split('_')
     let categoryMode = ''
@@ -789,7 +951,6 @@
       buyerName
     })
 
-    // ★ 回填元数据
     templateIndexList.value = row.templateIndex
       ? Object.entries(row.templateIndex).map(([key, value]) => ({ key, value: String(value) }))
       : [{ key: '', value: '' }]
@@ -829,7 +990,6 @@
       buyerName: ''
     })
 
-    // ★ 重置元数据
     templateIndexList.value = [{ key: '', value: '' }]
     conditionTextList.value = []
     Object.assign(structure, {
@@ -842,7 +1002,6 @@
   }
 
   async function submitForm() {
-    // Validation
     if (!formData.name || !formData.site || !formData.categoryMode || !formData.categroyType) {
       ElMessage.warning('Please fill in all required fields')
       return
@@ -853,13 +1012,11 @@
       return
     }
 
-    // 只有 PHY / WET 才要求 TestType
     if (showTestType.value && !formData.testType) {
       ElMessage.warning('Please select Test Type')
       return
     }
 
-    // Template Index 至少一条有效
     const hasValidIndex = templateIndexList.value.some(i => i.key && i.value)
     if (!hasValidIndex) {
       ElMessage.warning('Please provide at least one valid Template Index')
@@ -874,7 +1031,6 @@
     submitting.value = true
 
     try {
-      // 构建 Category 值
       let categoryValue = ''
       if (formData.categoryMode === 'common') {
         categoryValue = `Common_${formData.categroyType}`
@@ -894,16 +1050,12 @@
         submitData.append('TemplateFile', formData.uploadFile.raw)
       }
 
-      // ==================== 元数据序列化 ====================
-
-      // 1. TemplateIndex → JSON 字符串
       const templateIndexDict = {}
       templateIndexList.value.forEach(i => {
         if (i.key && i.value) templateIndexDict[i.key] = i.value
       })
       submitData.append('TemplateIndexJson', JSON.stringify(templateIndexDict))
 
-      // 2. TestConditionTextTemplateDtos → JSON 字符串
       const conditionTextDtos = conditionTextList.value.map(item => {
         const idx = {}
         item.indexList.forEach(kv => {
@@ -916,7 +1068,6 @@
       })
       submitData.append('TestConditionTextTemplateDtosJson', JSON.stringify(conditionTextDtos))
 
-      // 3. TemplateSturctureDto → JSON 字符串
       submitData.append('TemplateSturctureDtoJson', JSON.stringify({
         TestConditionCount: structure.testConditionCount,
         TestMethodCount: structure.testMethodCount,
@@ -929,7 +1080,6 @@
       console.log('conditionTextList', conditionTextList.value)
       console.log('structure', structure)
 
-      // 用 request，不硬编码地址，自动带 accessToken
       const response = await request.post(
         '/Template/add', submitData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -961,7 +1111,7 @@
         { type: 'warning', confirmButtonText: 'Publish', cancelButtonText: 'Cancel' }
       )
     } catch {
-      return // 用户取消
+      return
     }
 
     try {
@@ -976,12 +1126,10 @@
       }
     } catch (error) {
       console.error('Publish error:', error)
-      // 后端 400 时，response.data 里有 error 消息
       const msg = error.response?.data?.error || error.message || 'Publish failed'
       ElMessage.error(msg)
     }
   }
-
 
   async function deleteTemplate(row) {
     try {
@@ -1024,7 +1172,6 @@
 
         if (Array.isArray(templates)) {
           templateList.value = templates.map(item => {
-            // ★ 每项自己算 templateUrl / downloadUrl
             const templateUrl = item.templateUrl || ''
             const downloadUrl = templateUrl
               ? `${API_BASE}/Template/download/${templateUrl.replace(/^\/+/, '')}`
@@ -1034,18 +1181,16 @@
               id: item.templateId || item.id || '',
               name: item.templateName || item.name || 'Unknown',
               site: item.site || '',
-              // 保留完整 businessCategory，编辑时才能反推
               category: item.businessCategory || item.category || 'Unknown',
               testType: item.testType || '',
               version: item.version || 1,
               fileType: item.fileType
                 ? item.fileType.toLowerCase().replace(/^\./, '')
                 : '',
-              templateUrl,          // ★ 简写
-              downloadUrl,          // ★ 简写
+              templateUrl,
+              downloadUrl,
               updatedAt: item.updateAt || item.updatedAt || new Date().toISOString(),
               remark: item.remark || '',
-              // 元数据（如果后端返回）
               status: item.status || 'Draft',
               templateIndex: item.templateIndex || null,
               testConditionTextTemplates: item.testConditionTextTemplates || [],
@@ -1081,7 +1226,17 @@
 
   // ==================== Lifecycle ====================
   onMounted(async () => {
+    try {
+      await loadOnlyOfficeScript()
+      console.log('[template editor] OnlyOffice script loaded')
+    } catch (e) {
+      console.error('OnlyOffice 脚本加载失败:', e)
+    }
     await refreshList()
+  })
+
+  onBeforeUnmount(() => {
+    destroyEditor()
   })
 </script>
 
@@ -1090,7 +1245,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  height: 150%;
+  height: 175%;
   padding: 10px;
 }
 
@@ -1163,7 +1318,7 @@
   flex-direction: column;
   gap: 12px;
   background: #fff;
-  min-height: 400px;
+  min-height: 600px;
   flex: 1.2;
 }
 
@@ -1209,7 +1364,7 @@
   border: 1px solid #e4e7ed;
   border-radius: 6px;
   overflow: hidden;
-  min-height: 300px;
+  min-height: 700px;
   background: #fafafa;
   position: relative;
 }
@@ -1302,17 +1457,17 @@
   }
 }
 
-  // ==================== Actions 按钮样式 ====================
-  .action-buttons {
-    display: flex;
-    gap: 4px;
-    flex-wrap: nowrap; // 强制不换行
-    white-space: nowrap;
+// ==================== Actions 按钮样式 ====================
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 
-    .el-button {
-      padding: 5px 8px; // 稍微紧凑一点
-      font-size: 12px;
-      min-width: 52px; // 保证按钮宽度一致
-    }
+  .el-button {
+    padding: 5px 8px;
+    font-size: 12px;
+    min-width: 52px;
   }
+}
 </style>
