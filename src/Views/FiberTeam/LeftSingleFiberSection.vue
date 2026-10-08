@@ -145,10 +145,13 @@
 
         <div class="extra-inputs-container">
           <div class="row">
-            <div class="form-group col-xl-12">
+            <!-- 这一行是 flex：前三个是"对这一份报告的操作"，历史报告是"翻别的报告"，
+                 靠 margin-left:auto 把它顶到最右侧，与左边三个分开。 -->
+            <div class="form-group col-xl-12" style="display: flex; align-items: center;">
               <el-button @click="handleSaveDraft" type="success">Save a Draft</el-button>
               <el-button @click="handleBuildAnalysis" type="primary">Build Analysis</el-button>
               <el-button @click="handleRefresh" type="primary">Refresh</el-button>
+              <el-button @click="historyVisible = true" type="warning" style="margin-left: auto; min-width: 110px;">历史报告</el-button>
             </div>
           </div>
         </div>
@@ -157,11 +160,38 @@
 
       </div>
     </transition>
+
+    <!-- 历史报告列表：后端扫 SaveDocx 根目录 + 全部 FiberAnalysis{yyyyMM} 子目录，
+         只认 *_FiberAnalysis.docx（挡别的模块的报告）。列表只有 报告号/时间/大小 ——
+         文件名里没有样品名，纤维也没有对应的 docx 读取器，所以不做回填。 -->
+    <el-dialog v-model="historyVisible" title="历史报告文件" width="820px">
+      <el-form size="small" @submit.prevent>
+        <el-form-item label-width="0">
+          <el-input v-model="historyKeyword" clearable placeholder="按报告号筛选" size="default" style="width:280px"/>
+        </el-form-item>
+      </el-form>
+      <el-table v-loading="historyLoading" class="removeTableGaps" :data="filteredHistory" border stripe size="small" style="width:100%;">
+        <el-table-column prop="reportNumber" label="报告号" min-width="200" show-overflow-tooltip/>
+        <el-table-column label="生成时间" width="180">
+          <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="大小" width="100">
+          <template #default="{ row }">{{ (row.sizeBytes / 1024).toFixed(1) }} KB</template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="150">
+          <template #default="{ row }">
+            <el-button size="small" type="primary" @click="downloadHistoryFile(row.fileName)">下载</el-button>
+            <el-button size="small" type="danger" @click="deleteHistoryFile(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </section>
 </template>
 
 <script setup>
   import { ref, reactive, watch, computed, inject, onMounted } from 'vue'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
   import { handleGridKeydown } from '@/utils/tableKeyboardNav.js'
   import { createStartsWithFilter } from '@/utils/selectFilter.js'
@@ -293,6 +323,82 @@
   //删除行
   function removeRow(sectionIndex, rowIndex) {
     localSections.value[sectionIndex].rows.splice(rowIndex, 1);
+  }
+
+  /* ============ 历史报告 ============ */
+  // 报告以 docx 存服务器 SaveDocx/FiberAnalysis{yyyyMM}/，生成完只回一个文件名，
+  // 页面一刷新那份报告就找不回来了（库里 fiber_analysis 存的是录入数据，不是报告产物）。
+  // 这个弹窗扫目录把历史报告列出来，可下载、可删除。
+  const historyVisible = ref(false)
+  const historyKeyword = ref('')
+  const historyList = ref([])
+  const historyLoading = ref(false)
+
+  // 一次拉全量，筛选在本地做（按报告号子串，改动输入即出结果，不再打后端）
+  async function loadHistory() {
+    historyLoading.value = true
+    try {
+      const res = await request.get('/FiberAnalysis/reports')
+      historyList.value = res.data?.isSuccess ? res.data.value : []
+    } catch (e) {
+      ElMessage.error('查询失败: ' + e.message)
+    } finally {
+      historyLoading.value = false
+    }
+  }
+
+  watch(historyVisible, v => { if (v) loadHistory() })
+
+  const filteredHistory = computed(() => {
+    const keyword = historyKeyword.value.trim().toLowerCase()
+    if (!keyword) return historyList.value
+    return historyList.value.filter(r => (r.reportNumber || '').toLowerCase().includes(keyword))
+  })
+
+  // 下载必须走 axios：请求拦截器要带 accessToken，裸 <a href> 或页面里那个给 OnlyOffice
+  // 预览用的 API_BASE 绝对地址都拿不到 token，会静默失败。
+  function downloadHistoryFile(fileName) {
+    const backendOrigin = new URL(request.defaults.baseURL).origin
+    request.get(`${backendOrigin}/api/FiberAnalysis/reports/${encodeURIComponent(fileName)}`, { responseType: 'blob' })
+      .then(resp => {
+        const url = URL.createObjectURL(new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      })
+      .catch(e => ElMessage.error('下载失败: ' + e.message))
+  }
+
+  // 删除报告：物理删除不可恢复 → 先二次确认。
+  // **只删这份 docx，不动库里 fiber_analysis 的录入行**（与干燥速率一致）。
+  async function deleteHistoryFile(row) {
+    try {
+      await ElMessageBox.confirm(
+        `确定删除报告「${row.reportNumber}」吗? 删除后不可恢复。`,
+        '删除确认', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+    } catch { return }   // 取消/关闭 → 什么都不做
+
+    try {
+      const res = await request.delete(`/FiberAnalysis/reports/${encodeURIComponent(row.fileName)}`)
+      if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '删除失败'); return }
+      ElMessage.success('已删除')
+      loadHistory()
+    } catch (e) {
+      ElMessage.error('网络错误: ' + e.message)
+    }
+  }
+
+  /** 后端给的是 ISO 时间串，按本地时区显示到秒 */
+  function ts(s) {
+    if (!s) return '-'
+    const d = new Date(s)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} `
+      + `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
   }
 </script>
 
