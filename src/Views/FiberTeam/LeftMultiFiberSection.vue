@@ -672,7 +672,7 @@
      两者共用 .oneSampleComposition，所以只能加在 Split 那一个的附加类上，
      改基类会把所有 Dissolved 一起染。色取 Split 标题 #3364d5 的淡色调。 */
   .oneSampleComposition.split-card {
-    background-color: #eef2fc;
+    background-color: #61b5e6;
   }
 
   // 追加行按钮：紧贴数据表下方（卡片是 gap:0 的纵向 flex，表自身 margin 也是 0）
