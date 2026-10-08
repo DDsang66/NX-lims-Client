@@ -171,7 +171,7 @@
 
         <el-table-column label="Operations" width="120" fixed="right">
           <template #default="scope">
-            <el-button link type="primary" @click="openEdit(scope.row)">Edit</el-button>
+            <el-button link type="primary" @click="openEdit(scope.row)">opreation</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -192,7 +192,7 @@
     <!-- 编辑框 -->
     <el-dialog top="5vh"
                v-model="editDialogOpen"
-               title="Edit"
+               title="Opreation"
                width="800px"
                :before-close="editBeforeClose">
       <el-form>
@@ -504,23 +504,21 @@ function getFileName(path) {
  * 与 datasheet-editor 的 buildPreviewUrl 对齐
  * 只把接口路径从 /dataeditor 换成 /labschedule
  */
-function buildPreviewUrl(rawUrl) {
-  if (!rawUrl) return ''
-  // 已是 http(s) URL，直接用
-  if (/^https?:\/\//i.test(rawUrl)) return rawUrl
+  function buildPreviewUrl(rawUrl) {
+    if (!rawUrl) return ''
+    if (/^https?:\/\//i.test(rawUrl)) return rawUrl
 
-  // 统一斜杠 + 去前导斜杠
-  const clean = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '')
+    const clean = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '')
+    const [path, query] = clean.split('?')
 
-  // 按段编码，保留 /
-  const encoded = clean
-    .split('/')
-    .map(seg => encodeURIComponent(seg))
-    .join('/')
+    const encodedPath = path
+      .split('/')
+      .map(seg => encodeURIComponent(seg))
+      .join('/')
 
-  // ★ LabSchedule 的下载接口
-  return `${API_BASE}/dataeditor/datasheet/download/${encoded}`
-}
+    const full = `${API_BASE}/dataeditor/datasheet/download/${encodedPath}`
+    return query ? `${full}?${query}` : full
+  }
 
 function openDatasheet(row) {
   if (!row?.url) return
