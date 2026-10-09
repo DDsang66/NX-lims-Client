@@ -16,13 +16,12 @@
       @wheel.prevent="handleWheel"
     >
       <div
-        v-for="(tab, idx) in tabsStore.openedTabs"
+        v-for="(tab, idx) in tabsStore.labeledTabs"
         :key="tab.fullPath"
         :ref="el => setTabRef(tab.fullPath, el)"
         :class="tabClasses(tab, idx)"
         :draggable="tab.closable !== false"
         @click="handleTabClick(tab)"
-        @contextmenu.prevent="openContextMenu($event, tab)"
         @dragstart="onDragStart($event, idx)"
         @dragenter="onDragEnter($event, idx)"
         @dragover="onDragOver($event, tab, idx)"
@@ -30,7 +29,7 @@
         @drop="onDrop($event)"
         @dragend="onDragEnd"
       >
-        <span class="tab-title">{{ tab.title }}</span>
+        <span class="tab-title">{{ tab.displayTitle }}</span>
         <span
           v-if="tab.closable !== false"
           class="tab-close"
@@ -97,6 +96,7 @@ const canScrollRight = ref(false)
 
 function setTabRef(path, el) {
   if (el) tabRefs[path] = el
+  else delete tabRefs[path]
 }
 
 // ==================== 拖拽状态 ====================

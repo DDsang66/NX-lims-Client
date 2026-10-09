@@ -7,7 +7,7 @@
 
       <div class="preview-content">
         <!-- OnlyOffice Word 查看器容器 -->
-        <div v-if="documentUrl" id="onlyoffice-word-preview" class="onlyoffice-container"></div>
+        <div v-if="documentUrl" :id="containerId" class="onlyoffice-container"></div>
 
         <!-- 无文档时的提示 -->
         <div v-else class="no-document">
@@ -19,10 +19,14 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch, onBeforeUnmount, onMounted, nextTick } from 'vue'
+  import { computed, ref, watch, onBeforeUnmount, onMounted, nextTick, useId } from 'vue'
   import { Document, Menu } from '@element-plus/icons-vue'
   import { API_BASE } from '@/utils/config.js'
   import loadOnlyOfficeScript from '@/utils/loadOnlyOffice.js'
+
+  // 容器 id 按组件实例唯一。FiberWorkSheet 可以同页多开，
+  // 写死 id 时后台实例的异步续跑会按 id 查到**前台**容器、把别人的编辑器拆掉。
+  const containerId = useId()
 
 
   const props = defineProps({
@@ -107,7 +111,7 @@
       }
     }
 
-    wordEditor.value = new DocsAPI.DocEditor('onlyoffice-word-preview', config)
+    wordEditor.value = new DocsAPI.DocEditor(containerId, config)
   }
 
   // 监听 documentUrl 变化，自动加载

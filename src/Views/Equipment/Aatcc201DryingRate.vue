@@ -288,7 +288,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, inject, onBeforeUnmount, onMounted, onActivated, onDeactivated, watch } from 'vue'
+import { ref, reactive, computed, inject, onBeforeUnmount, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, SwitchButton, Link, Document, Setting, VideoPlay, Files, Download, Monitor, TrendCharts, Tickets, Tools } from '@element-plus/icons-vue'
 
@@ -1054,12 +1054,6 @@ function pauseAll() {
   stopSimTelemetry()
   stopTelemetryWatchdog()
 }
-async function resumeAll() {
-  startTelemetryWatchdog()
-  if (connected.value) await startLoop()
-  // keepSeq=true: 恢复时不重置仿真序号, 否则测试中曲线从 0 重头(与已采数据错乱)
-  if (simMode.value) startSimTelemetry(true)
-}
 
 // 挂载即载入校准参数(照原软件 MainForm 启动读 201config): 卡片摘要 + 实时偏置叠加立即生效;
 // 看门狗每 1s 巡检一次——收到遥测帧的最近 3s 内才让"设备主动推送遥测"绿字成立
@@ -1070,9 +1064,7 @@ onBeforeUnmount(() => {
   _close(portObj.value).catch(() => { })
   portObj.value = null
 })
-// keep-alive: 切走时暂停串口/仿真, 切回时恢复
-onDeactivated(() => pauseAll())
-onActivated(() => resumeAll())
+// 不做 keep-alive 切走暂停: 后台实例继续读串口/仿真/计时, 只有关标签(onBeforeUnmount)才停
 </script>
 
 <style scoped>

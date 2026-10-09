@@ -10,50 +10,91 @@ import { ref, computed } from 'vue'
  * - cachedViews：keep-alive 的 include 数组，关闭标签页时移除对应组件名即清除缓存
  *
  * Home 页面始终存在且不可关闭（affix: true）
+ *
+ * 多实例：同一个页面可以开多个标签，每个实例的身份写在 URL 的 ?__inst=N 上，
+ * 由 instanceNameOf 换算成 keep-alive 里唯一的组件名（Aatcc201DryingRate__7）。
+ * 这样 include 才能精确到实例——关掉哪个标签就卸载哪个实例。
  */
+
+/**
+ * 从路由对象解析组件名（用于 keep-alive 匹配）
+ *
+ * Vue Router 中，route.matched[0] 是父路由（MainLayout），最后一个才是目标页面。
+ * route.name 对于子路由是子路由的 name，通常与 SFC 文件名一致。
+ *
+ * resolveComponentName 返回的名称必须与 <script setup> SFC 的文件名或
+ * defineOptions({name}) 完全一致，否则 keep-alive 无法匹配。
+ */
+export function resolveComponentName(route) {
+  // 1. 显式指定（最高优先级）
+  if (route.meta?.componentName) return route.meta.componentName
+
+  // 2. 从最内层（目标页面）路由记录取组件名
+  if (route.matched && route.matched.length > 0) {
+    const lastIdx = route.matched.length - 1
+    const comp = route.matched[lastIdx]?.components?.default
+    if (comp) {
+      if (comp.__name) return comp.__name   // <script setup>
+      if (comp.name) return comp.name        // Options API
+    }
+  }
+
+  // 3. route.name（子路由的 name，通常与 SFC 文件名一致）
+  if (route.name) return route.name
+
+  // 4. 兜底
+  return 'Unknown'
+}
+
+/**
+ * 由 fullPath 上的 ?__inst=N 生成实例在 keep-alive 里的唯一组件名。
+ * 没有 __inst 时返回裸组件名（两种形态天然不撞名）。
+ *
+ * ⚠️ 这个返回值必须与 MainLayout 里包装组件的 name 完全一致；
+ * 也**不能为空**，否则会被 cachedViews 的 filter(Boolean) 静默剔除、该实例被误 prune。
+ */
+export function instanceNameOf(fullPath, componentName) {
+  if (!componentName) return ''
+  const qIndex = fullPath ? fullPath.indexOf('?') : -1
+  if (qIndex === -1) return componentName
+  const inst = new URLSearchParams(fullPath.slice(qIndex + 1)).get('__inst')
+  return inst ? `${componentName}__${inst}` : componentName
+}
 
 export const useTabsStore = defineStore('tabs', () => {
   // ==================== State ====================
   const openedTabs = ref([])
   const activeTabPath = ref('')
 
+  // 实例号发号器：只增不复用，避免与已卸载实例的缓存名/包装组件撞号
+  let instSeq = 0
+
   // ==================== Computed ====================
 
-  /** keep-alive :include 绑定的组件名列表 */
+  /**
+   * keep-alive :include 绑定的组件名列表（多实例时是「组件名__实例号」）
+   *
+   * ⚠️ 必须恒为真数组，不能是 undefined：keep-alive 里 include 一旦 falsy 会反过来缓存所有东西。
+   */
   const cachedViews = computed(() =>
-    openedTabs.value.map(t => t.componentName).filter(Boolean)
+    openedTabs.value.map(t => instanceNameOf(t.fullPath, t.componentName)).filter(Boolean)
   )
+
+  /** 标签显示名：同一个 path 的第 2 个起加 (2)/(3)，放这里算所以关闭/重排后会自动重编号 */
+  const labeledTabs = computed(() => {
+    const seq = new Map()
+    return openedTabs.value.map(t => {
+      const n = (seq.get(t.path) || 0) + 1
+      seq.set(t.path, n)
+      return n > 1 ? { ...t, displayTitle: `${t.title} (${n})` } : { ...t, displayTitle: t.title }
+    })
+  })
 
   // ==================== Helpers ====================
 
-  /**
-   * 从路由对象解析组件名（用于 keep-alive 匹配）
-   *
-   * Vue Router 中，route.matched[0] 是父路由（MainLayout），最后一个才是目标页面。
-   * route.name 对于子路由是子路由的 name，通常与 SFC 文件名一致。
-   *
-   * resolveComponentName 返回的名称必须与 <script setup> SFC 的文件名或
-   * defineOptions({name}) 完全一致，否则 keep-alive 无法匹配。
-   */
-  function resolveComponentName(route) {
-    // 1. 显式指定（最高优先级）
-    if (route.meta?.componentName) return route.meta.componentName
-
-    // 2. 从最内层（目标页面）路由记录取组件名
-    if (route.matched && route.matched.length > 0) {
-      const lastIdx = route.matched.length - 1
-      const comp = route.matched[lastIdx]?.components?.default
-      if (comp) {
-        if (comp.__name) return comp.__name   // <script setup>
-        if (comp.name) return comp.name        // Options API
-      }
-    }
-
-    // 3. route.name（子路由的 name，通常与 SFC 文件名一致）
-    if (route.name) return route.name
-
-    // 4. 兜底
-    return 'Unknown'
+  /** 分配一个新的实例号（侧边栏每次点击调用一次） */
+  function nextInstSeq() {
+    return ++instSeq
   }
 
   /**
@@ -213,6 +254,7 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabPath,
     // computed
     cachedViews,
+    labeledTabs,
     // actions
     addTab,
     removeTab,
@@ -225,5 +267,6 @@ export const useTabsStore = defineStore('tabs', () => {
     resetTabs,
     // helpers (暴露给组件使用)
     resolveTitle,
+    nextInstSeq,
   }
 })
