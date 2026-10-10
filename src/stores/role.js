@@ -77,7 +77,7 @@ const useRoleStore = defineStore('role', {
         { path: 'AbrasionResistance_RotatingDrum', name: 'AbrasionResistance_RotatingDrum', component: AbrasionResistance_RotatingDrum, meta: { title: 'Abrasion Resistance_Rotating Drum' } },
         { path: 'DataSheetTask', name: 'DataSheetTask', component: DataSheetTask, meta: { title: 'DataSheetTask' } },
         { path: 'YarnCount', name: 'YarnCount', component: YarnCount, meta: { title: 'Yarn Count' } },
-        { path: 'DataEditor', name: 'DataEditor', component: DataEditor, meta: { title: 'DataEditor' } },
+        { path: 'DataEditor', name: 'DataEditor', component: DataEditor, meta: { title: 'DataEditor', singleton: true } },
         { path: 'LabSchedule', name: 'LabSchedule', component: LabSchedule, meta: { title: 'LabSchedule' } },
       ],
       LabManagement: [{ path: 'ItemConfig', name: 'ItemConfig', component: ItemConfig, meta: { title: 'Test Item Management' } },
@@ -88,7 +88,7 @@ const useRoleStore = defineStore('role', {
       { path: 'MenuManagement', name: 'MenuManagement', component: MenuManagement, meta: { title: 'Menu Management' } },
         { path: 'StructureConfig', name: 'StructureConfig', component: StructureConfig, meta: { title: 'ParamStructure Config' } },
         { path: 'LogicValidation', name: 'LogicValidation', component: LogicValidation, meta: { title: 'LogicValidation' } },
-        { path: 'TemplateManagement', name: 'TemplateManagement', component: TemplateManagement, meta: { title: 'TemplateManagement' } }
+        { path: 'TemplateManagement', name: 'TemplateManagement', component: TemplateManagement, meta: { title: 'TemplateManagement', singleton: true } }
       ]
     }))
   }),

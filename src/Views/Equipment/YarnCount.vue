@@ -122,14 +122,12 @@
             </el-form-item>
           </el-form>
 
-          <el-row :gutter="4" justify="space-between" class="len-grid">
-            <el-col v-for="i in LENGTH_COUNT" :key="i" :span="2">
-              <div class="len-cell">
-                <el-text class="len-idx" size="small" type="info">{{ i }}</el-text>
-                <el-input-number v-model="lengths[i - 1]" :precision="2" :min="0" :step="0.1" :controls="false" size="small" style="width:100%"/>
-              </div>
-            </el-col>
-          </el-row>
+          <div class="len-grid" :style="{ gridTemplateColumns: `repeat(${LENGTH_COUNT}, 1fr)` }">
+            <div v-for="i in LENGTH_COUNT" :key="i" class="len-cell">
+              <el-text class="len-idx" size="small" type="info">{{ i }}</el-text>
+              <el-input-number v-model="lengths[i - 1]" :precision="2" :min="0" :step="0.1" :controls="false" size="small" style="width:100%"/>
+            </div>
+          </div>
 
           <el-descriptions :column="3" size="small" border>
             <el-descriptions-item label="Average(cm)">{{ fmt(liveAverage, 2) }}</el-descriptions-item>
@@ -164,14 +162,24 @@
           </div>
         </el-card>
 
-        <!-- 汇总: 表0 的 R6/R7/R9 三格 -->
+        <!-- 汇总: 表0 的三个方向行 —— 每行 tex + 四个换算列(dtex / denier / cc / ’s) -->
         <el-card shadow="hover">
           <el-descriptions :column="3" size="small" border>
-            <el-descriptions-item label="Warp (Tex)"><span class="sum">{{ fmt(warpTex, 2) }}</span></el-descriptions-item>
-            <el-descriptions-item label="Weft (Tex)"><span class="sum">{{ fmt(weftTex, 2) }}</span></el-descriptions-item>
-            <el-descriptions-item label="Knit (Tex)"><span class="sum">{{ fmt(knitTex, 2) }}</span></el-descriptions-item>
+            <el-descriptions-item v-for="s in SUMMARIES" :key="s.name" :label="`${s.name} (Tex)`">
+              <span class="sum">{{ fmt(s.tex.value, TEX_DECIMALS) }}</span>
+              <span class="units">
+                dtex {{ fmt(s.units.value.dtex, UNIT_DECIMALS) }} ·
+                denier {{ fmt(s.units.value.denier, UNIT_DECIMALS) }} ·
+                cc {{ fmt(s.units.value.cc, UNIT_DECIMALS) }} ·
+                ’s {{ fmt(s.units.value.s, UNIT_DECIMALS) }}
+              </span>
+            </el-descriptions-item>
           </el-descriptions>
-          <el-text class="hint block" size="small" type="info">三个方向同口径 = 该方向各试样 Tex 的算术平均；没测的方向报告该格空白</el-text>
+          <el-text class="hint block" size="small" type="info">
+            三个方向同口径 = 该方向各试样 Tex 的算术平均；换算列由该方向的汇总 Tex 推出
+            （dtex = tex × 10，denier = tex × 9，cc = 590.5 ÷ tex，’s 与 cc 同值）。
+            没测的方向报告那一行整行留空
+          </el-text>
         </el-card>
       </div>
     </div>
@@ -209,6 +217,13 @@ const LENGTH_DECIMALS = 2
 const AVERAGE_DECIMALS = 2
 const MASS_DECIMALS = 3
 const TEX_DECIMALS = 2
+
+// 摘要表每个方向行后面还有四个换算列(报告表0 的 R5: tex | dtex | denier | cc | ’s)。
+// 口径与后端 YarnCountReportRequestDto / YarnCountMath.UnitsOf 同源, 改一处必须改另一处。
+const UNIT_DECIMALS = 2
+const DTEX_FACTOR = 10
+const DENIER_FACTOR = 9
+const COTTON_COUNT_CONSTANT = 590.5
 
 // ---- 状态 ----
 const baudRate = ref(19200)
@@ -370,13 +385,30 @@ function meanTex(dir) {
   return roundTo(list.reduce((a, b) => a + b, 0) / list.length, TEX_DECIMALS)
 }
 
+// 摘要表的四个换算单位 —— 都由**已舍入的**汇总 Tex 推出(与 Tex 用已舍入的 Average/Mass 同一原则):
+// 报告上印的数要互相能校验, 拿印出来的 tex 手算能得出印出来的 cc。
+// tex 缺失或 ≤ 0 时四个一起为 null(报告那一行五格整行留空): cc = 590.5 ÷ tex, tex 为 0 会算出"无穷支数"。
+function unitsOf(tex) {
+  if (tex == null || tex <= 0) return { dtex: null, denier: null, cc: null, s: null }
+  const cc = roundTo(COTTON_COUNT_CONSTANT / tex, UNIT_DECIMALS)
+  return {
+    dtex: roundTo(tex * DTEX_FACTOR, UNIT_DECIMALS),
+    denier: roundTo(tex * DENIER_FACTOR, UNIT_DECIMALS),
+    cc,
+    s: cc   // ’s 与 cc 同值: 表头 ’s 只是同一个支数的另一种写法
+  }
+}
+
 const liveAverage = computed(() => averageOf(lengths))
 const liveMass = computed(() => roundTo(mass.value, MASS_DECIMALS))
 const liveTex = computed(() => texOf(liveAverage.value, liveMass.value))
-const warpTex = computed(() => meanTex('Warp'))
-const weftTex = computed(() => meanTex('Weft'))
-// Knit 与经纬向同口径: 针织各试样 Tex 的算术平均(不再是手工输入)
-const knitTex = computed(() => meanTex('Knit'))
+
+// 三个方向各一行(与后端 Summaries 同构): 汇总 Tex + 它的四个换算值。
+// 一张表驱动模板渲染, 不再为每个方向写一遍 —— 加方向/改口径只有这一处。
+const SUMMARIES = DIRECTIONS.map(d => {
+  const tex = computed(() => meanTex(d.name))
+  return { name: d.name, tex, units: computed(() => unitsOf(tex.value)) }
+})
 
 // 数字显示: 没有数就显示破折号(与报告留空对应)
 const fmt = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toFixed(d))
@@ -737,9 +769,11 @@ onBeforeUnmount(() => {
    src/assets/css/instrument-panel.css(靠根节点的 .instrument-page 生效),
    这里只留本页特有的类。 */
 
-/* 左右侧列 —— 左列要放得下五段式试样编号(36+66+58+64+52=276px), 比宽重要 */
+/* 左右侧列 —— 左列要放得下五段式试样编号(36+66+58+64+52=276px), 比宽重要。
+   两列各自滚动: 右列三张卡(录入 + 13 行网格 + 汇总)在矮屏上会超过一屏, 没有 overflow
+   就会被 .main 的 height:100% 裁掉尾巴。 */
 .left { width: 320px; display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; overflow-y: auto; }
-.right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-y: auto; }
 
 /* 卡片标题(el-card__header 自带内边距与下边框, 所以这里不要 margin-bottom) */
 .ctitle { font-size: 13px; font-weight: 600; color: #2b3a4a; display: flex; align-items: center; gap: 6px; }
@@ -776,24 +810,31 @@ onBeforeUnmount(() => {
 .mid :deep(.el-space) { display: flex; width: 100%; }
 .mid .el-button .el-icon { margin-right: 4px; }
 
-/* 10 个长度读数: 一格一个, 号码在框上方 */
-.len-grid { margin: 4px 0 10px; }
+/* 10 个长度读数: 一格一个, 号码在框上方。
+   列数由 :style 里的 grid-template-columns 给(取 LENGTH_COUNT, 不在这儿写死)。
+   刻意不用 el-row/el-col: 24 栅格放不下 10 等份(span=2 只占 20 列), 余下 4 列会被
+   justify="space-between" 摊成格间空隙, 十格散得很开 —— 用 grid 才能整行等分、只留 gap。 */
+.len-grid { display: grid; gap: 4px; margin: 4px 0 10px; }
 .len-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
 .len-idx { font-size: 11px; color: #909399; }
-/* el-input--small 的 wrapper 左右各有 7px 内边距, el-col 只有 span=2 那么宽, 收窄补回文字宽度 */
+/* el-input--small 的 wrapper 左右各有 7px 内边距, 格子窄时先把内边距收窄 */
 .len-cell :deep(.el-input__wrapper) { padding: 1px 4px; }
 .len-cell :deep(.el-input__inner) { text-align: center; padding: 0; }
 
 /* 即时读数/汇总里的强调数字 */
 .hl { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
 .sum { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
+.units { display: block; margin-top: 2px; font-size: 11px; color: #909399;
+         font-family: 'Consolas', 'Courier New', monospace; }
 
-/* 记录网格: 15 行紧跟模板表1, 给足高度。.gridcard 是 el-card, .card-stack 让内容区变 flex 列 */
-.gridcard { flex: 1; min-height: 0; }
-.tbl-wrap { flex: 1; min-height: 0; overflow: hidden; }
-.tbl-wrap :deep(.el-table) { height: 100%; }
-.tbl-wrap :deep(.el-table__inner-wrapper) { height: 100%; }
-.tbl-wrap :deep(.el-table__body-wrapper) { height: calc(100% - 40px); overflow-y: auto; }
+/* 右列三张卡都不参与 flex 收缩 —— flex-shrink 默认 1, 整列内容超过一屏时卡片会被一起
+   压扁, 卡里的东西(表格行、汇总行)跟着被裁掉。一律按内容长, 放不下由 .right 滚动。 */
+.right > .el-card { flex: none; }
+
+/* 记录网格: 13 行(10 个长度 + Average/Mass/Tex)全表常显。
+   同理不给 el-table 设 height —— 设了高度的 el-table 会切成"固定高 + 内部滚动"模式,
+   高度还随窗口浮动, 结果就是行被裁在卡片里(要滚动才能看全)。 */
+.tbl-wrap { min-height: 0; }
 
 .gh { display: inline-flex; align-items: center; gap: 3px; }
 .delx { color: #c0c4cc; height: auto; padding: 0; }

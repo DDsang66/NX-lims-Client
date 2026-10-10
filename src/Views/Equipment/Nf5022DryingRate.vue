@@ -267,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, inject, onBeforeUnmount, onActivated, onDeactivated, watch } from 'vue'
+import { ref, reactive, computed, inject, onBeforeUnmount, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Connection, SwitchButton, Link, Document, Setting, Grid, VideoPlay, Files, Download, Check, DataAnalysis, TrendCharts, Tickets } from '@element-plus/icons-vue'
 
@@ -1027,15 +1027,9 @@ function buildChartOpt() {
 // ============================================================
 
 function pauseAll() {
-  clearTestTimeout()   // 切走清掉超时: 数据冻结期间到点会用冻结果算, 不合理
+  clearTestTimeout()
   stopLoop()
   stopSimTest()
-}
-async function resumeAll() {
-  if (connected.value) await startLoop()
-  if (testing.value) armTestTimeout()      // 恢复后重新计时(arm 内部先 clear 再 set, 幂等)
-  // keepSeq=true: 恢复时不重置仿真序号, 否则测试中曲线从 0 重头(与已采数据错乱)
-  if (simMode.value && testing.value) startSimTest(true)
 }
 
 onBeforeUnmount(() => {
@@ -1044,9 +1038,7 @@ onBeforeUnmount(() => {
   _close(portObj.value).catch(() => { })
   portObj.value = null
 })
-// keep-alive: 切走时暂停串口/仿真, 切回时恢复 (页面级缓存, 不丢组件状态)
-onDeactivated(() => pauseAll())
-onActivated(() => resumeAll())
+// 不做 keep-alive 切走暂停: 后台实例继续读串口/仿真/计时, 只有关标签(onBeforeUnmount)才停
 </script>
 
 <style scoped>

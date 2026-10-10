@@ -44,9 +44,9 @@
                  text-color="#333"
                  active-text-color="#409eff"
                  default-active="/main/Home"
-                 router
                  :collapse="isCollapse"
                  :collapse-transition="false"
+                 @select="onMenuSelect"
                  style="height: 100%">
 
           <!-- [新增] 折叠/展开 按钮 -->
@@ -236,8 +236,11 @@
         <TabBar />
         <div style="flex:1;min-height:0;overflow:auto;padding: 20px;">
           <router-view v-slot="{ Component }">
-            <keep-alive :include="tabsStore.cachedViews" :max="20">
-              <component :is="Component" />
+            <!-- 不加 :max —— 缓存条目数由 include 精确约束（= 打开的标签数）；
+                 加了只会在超限时按 LRU 静默卸载一个后台仪器实例，串口被悄悄关掉 -->
+            <keep-alive :include="tabsStore.cachedViews">
+              <component :is="wrapForInstance(Component, currentInstanceName)"
+                         :key="route.fullPath" />
             </keep-alive>
           </router-view>
         </div>
@@ -269,7 +272,7 @@
 </template>
 <script>
   import TabBar from '@/components/Layout/TabBar.vue'
-  import { useTabsStore } from '@/stores/tabs'
+  import { useTabsStore, instanceNameOf, resolveComponentName } from '@/stores/tabs'
 
   import '@/assets/css/plugins/bootstrap.min.css';
   import '@/assets/css/plugins//animate.min.css';
@@ -281,7 +284,7 @@
   import '@/assets/css/plugins/font-awesome.min.css';
   import '@/assets/css/style.css';
   import '@/assets/css/responsive.css';
-  import { inject, ref, onMounted, watch } from 'vue'
+  import { inject, ref, watch, computed, h, defineComponent } from 'vue'
   import router from "@/router/index.js";
   import { useRoute } from 'vue-router'
   import { ArrowDown, ArrowUp, Lock, Fold, Expand, HomeFilled, Document, Edit, Files, Setting, User, Operation } from "@element-plus/icons-vue";
@@ -367,19 +370,52 @@
       const tabsStore = useTabsStore()
       const route = useRoute()
 
-      // 初始化 Home 标签页
-      onMounted(() => {
-        tabsStore.addTab({ path: '/main/Home', fullPath: '/main/Home', name: 'Home', meta: { affix: true } })
-        if (route.path !== '/main/Home') {
-          // 如果当前不在 Home，也添加当前页面
-          tabsStore.addTab(route)
-        }
-      })
+      // 每个实例一个 keep-alive 名：带 ?__inst=N 时是「组件名__实例号」
+      const currentInstanceName = computed(() =>
+        instanceNameOf(route.fullPath, resolveComponentName(route))
+      )
 
-      // 监听路由 path 变化，自动添加标签页
-      // note: addTab 使用 fullPath 作为 tab id，因此同一页面不同参数会创建独立标签页
+      // 按名字记忆化包装组件。keep-alive 的 include 只认组件 name，
+      // 靠这层包装才能精确到实例 —— 关掉哪个标签就卸载哪个实例。
+      // 同一实例多次渲染必须拿到同一个组件类型，否则缓存会散掉。
+      const wrappers = new Map()
+      function wrapForInstance(Component, name) {
+        if (!Component || !name) return Component
+        if (wrappers.has(name)) return wrappers.get(name)
+        const Wrapped = defineComponent({
+          name,
+          inheritAttrs: false,
+          setup(_, { attrs, slots }) {
+            return () => h(Component, attrs, slots)
+          },
+        })
+        wrappers.set(name, Wrapped)
+        return Wrapped
+      }
+
+      // 侧边栏点击：singleton / affix 页复用已有标签，其余每次点都新开一个实例
+      function onMenuSelect(index) {
+        const target = router.resolve(index)
+        if (!target.matched.length) return router.push(index)
+        const meta = target.meta || {}    //防御性兜底
+        //页面标记为「单例」或「固定」时，fullPath 不带 __inst，一定命中已有标签，只激活不新建。
+        if (meta.singleton || meta.affix) return router.push(index)
+        //普通页面：每次都新开一个实例，fullPath 带 ?__inst=N，避免命中已有标签。
+        router.push({ path: index, query: { __inst: tabsStore.nextInstSeq() } })
+      }
+
+      // 初始化 Home 标签页 + 当前页。必须在 setup 里同步执行，不能放 onMounted：
+      // 否则首屏渲染时 cachedViews 还是空的，组件会以「无包装的原始类型」挂载，
+      // 之后再换成包装组件 → Vue 判为不同节点 → 卸载重挂，页面闪一次、onMounted 跑两遍。
+      tabsStore.addTab({ path: '/main/Home', fullPath: '/main/Home', name: 'Home', meta: { affix: true } })
+      if (route.path !== '/main/Home') {
+        tabsStore.addTab(route)
+      }
+
+      // 监听路由 fullPath 变化，自动添加/激活标签页
+      // note: 必须用 fullPath —— 同一页面的两个实例 path 相同，只有 fullPath 能区分
       watch(
-        () => route.path,
+        () => route.fullPath,
         () => {
           tabsStore.addTab(route)
         }
@@ -411,7 +447,11 @@
         isCollapse,
         toggleSidebar,
         // 标签页系统
-        tabsStore
+        tabsStore,
+        route,
+        currentInstanceName,
+        wrapForInstance,
+        onMenuSelect
       }
     }
   };
