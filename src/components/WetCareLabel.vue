@@ -328,7 +328,8 @@
 
       <div class="form-group col-xl-12">
         <label class="mb-2 d-block">{{$t('specialCareInstruction')}} <span class="text-danger">*</span></label>
-        <el-select v-model="selectedSCI" class="w-100" clearable placeholder="N/A">
+        <el-select v-model="selectedSCI" class="w-100" clearable placeholder="N/A"
+                   multiple allow-create default-first-option filterable>
           <el-option v-for="option in scis"
                      :key="option.value"
                      :label="option.label"
@@ -455,7 +456,7 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
 
 
   const selectedIronProcedure=ref('');
-  const selectedSCI = ref('');
+  const selectedSCI = ref([]);
   const showAppend = ref(false);
   // const isWashingLabelVisible = ref(false);
   // const isDryLabelVisible = ref(false);
@@ -632,17 +633,13 @@ import {onMounted, onUnmounted, ref, watch} from 'vue';
 
 
   const scis = ref([
-    { value: 'Front Zippers Must be Opened', label: 'Front Zippers Must be Opened' },
-    { value: 'Wash Inside Out', label: 'Wash Inside Out' },
-    { value: 'Wash in Laundry Bag', label: 'Wash in Laundry Bag' },
-    { value: 'Close All Botton and Zipper before Washing', label: 'Close All Botton and Zipper before Washing' },
-    { value: 'Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Net Bag,Close All Botton and Zipper before Washing' },
-    { value: 'Wash Inside Out,Close All Botton and Zipper before Washing', label: 'Wash Inside Out,Close All Botton and Zipper before Washing' },
-    { value: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing', label: 'Wash in Laundry Bag,Wash in Net Bag,Close All Botton and Zipper before Washing' },
-    {value:'Close fastener',label: 'Close fastener'},
-    {value: 'Close fastener before washing',label: 'Close fastener before washing'},
-    {value:'Wash and Dry Inside Out',label: 'Wash and Dry Inside Out'},
-    {value:'Washing in mesh bag.Do not wring or twist.',label: 'Washing in mesh bag.Do not wring or twist.'}
+    { value: 'Front zippers must be opened', label: 'Front zippers must be opened' },
+    { value: 'Wash inside out', label: 'Wash inside out' },
+    { value: 'Wash in laundry bag', label: 'Wash in laundry bag' },
+    { value: 'Wash in mesh bag', label: 'Wash in mesh bag' },
+    { value: 'Close all botton and zipper before washing', label: 'Close all botton and zipper before washing' },
+    { value: 'Wash in Net Bag', label: 'Wash in Net Bag' },
+    { value: 'Close fastener', label: 'Close fastener' }
   ]);
   const detergentOptions=ref([
     { value: 'Mild Detergent', label: 'Mild Detergent' },
@@ -756,6 +753,15 @@ const procedureMap = new Map([
   }]
 ]);
 
+  // 拼接 specialCareInstruction：第一个保持原样，其余首字母小写
+  function formatSpecialCareInstruction(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return ''
+    return arr.map((instruction, index) => {
+      if (index === 0) return instruction
+      return instruction.charAt(0).toLowerCase() + instruction.slice(1)
+    }).join(', ')
+  }
+
   watch(
     [
       detergent,selectedWashingProcedure, selectedDryProcedure, selectedDCProcedure, selectedIronProcedure,selectedIronMethod, selectedSCI, selectedBleachProcedure],() => {
@@ -765,7 +771,7 @@ const procedureMap = new Map([
         dcProcedure: selectedDCProcedure.value.value,
         ironProcedure: selectedIronProcedure.value,
         ironMethod:  selectedIronMethod.value.value,
-        sci: selectedSCI.value,
+        sci: formatSpecialCareInstruction(selectedSCI.value),
         bleachProcedure: selectedBleachProcedure.value.value
         ,detergent:detergent.value
       });
