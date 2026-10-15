@@ -81,7 +81,38 @@
                 </div>
               </div>
             </el-form-item>
+            <!-- 织物类型: 决定用哪份模板 + 有哪些方向 + 每方向几个试样格。切换会清空已录试样(会先问) -->
+            <!-- 股数: 只改报告上 ’s 那一格印的分数 分子/股数(分子=cc×股数 算出来的数), 不动任何数 -->
+            <el-form-item label="织物类型">
+              <el-radio-group :model-value="fabricType" @change="onFabricTypeChange">
+                <el-radio-button v-for="f in FABRIC_TYPES" :key="f.name" :value="f.name">{{ f.name }}</el-radio-button>
+              </el-radio-group>
+              <span class="lbl2">股数</span>
+              <el-input-number v-model="ply" :min="1" :precision="0" :step="1" style="width:88px" controls-position="right"/>
+            </el-form-item>
           </el-form>
+        </el-card>
+
+        <!-- 卷绕张力: 操作员设机台用的辅助换算 —— 不进报告、不进任何记录、不提交后端, 刷新即空 -->
+        <el-card shadow="hover">
+          <template #header>
+            <div class="ctitle"><el-icon><Odometer /></el-icon>卷绕张力</div>
+          </template>
+          <div class="env-row">
+            <div class="env-cell">
+              <span class="env-lbl">卷绕张力系数</span>
+              <el-input-number v-model="tensionCoef" :precision="2" :min="0" :step="0.01" style="width:100%" controls-position="right"/>
+            </div>
+            <div class="env-cell">
+              <span class="env-lbl">Tex</span>
+              <el-input-number v-model="tensionTex" :precision="2" :min="0" :step="0.01" style="width:100%" controls-position="right"/>
+            </div>
+          </div>
+          <div class="tn-row">
+            <span class="env-lbl">卷绕张力</span>
+            <span class="val">{{ fmt(windingTension, TENSION_DECIMALS) }}</span>
+          </div>
+          <el-text class="hint block" size="small" type="info">只在前端展示，不进报告、不进任何记录</el-text>
         </el-card>
       </div>
 
@@ -105,7 +136,7 @@
           <template #header>
             <div class="ctitle" style="justify-content:space-between;">
               <span><el-icon><Grid /></el-icon>当前试样</span>
-              <el-text class="hint" size="small" type="info">方向 {{ direction }} 只有 {{ specCount }} 个试样格(模板如此), 与报告表一一对应</el-text>
+              <el-text class="hint" size="small" type="info">{{ fabricType }} 模板: 方向 {{ direction }} 有 {{ specCount }} 个试样格, 与报告表一一对应</el-text>
             </div>
           </template>
 
@@ -129,7 +160,7 @@
             </div>
           </div>
 
-          <el-descriptions :column="3" size="small" border>
+          <el-descriptions class="desc-even" :column="3" size="small" border>
             <el-descriptions-item label="Average(cm)">{{ fmt(liveAverage, 2) }}</el-descriptions-item>
             <el-descriptions-item label="Mass(g/50)">{{ fmt(liveMass, 3) }}</el-descriptions-item>
             <el-descriptions-item label="Tex"><span class="hl">{{ fmt(liveTex, 2) }}</span></el-descriptions-item>
@@ -148,11 +179,13 @@
           <div class="tbl-wrap">
             <el-table :data="gridData" border stripe size="small">
               <el-table-column prop="label" label="" width="112" fixed/>
-              <el-table-column v-for="(c, i) in gridCols" :key="c.key" :prop="'c' + i" width="98" align="right">
+              <el-table-column v-for="(c, i) in gridCols" :key="c.key" :prop="'c' + i" width="108" align="right">
                 <template #header>
                   <span class="gh">
                     {{ c.label }}
-                    <el-button v-if="c.data" class="delx" link type="danger" size="small" title="删除该试样" @click="removeSpecimen(c)">
+                    <el-button class="delx" link type="danger" size="small"
+                               :title="`删除 ${c.label} (只清这一列)`"
+                               @click="removeSpecimen(c.key, c.label)">
                       <el-icon><Close /></el-icon>
                     </el-button>
                   </span>
@@ -162,22 +195,22 @@
           </div>
         </el-card>
 
-        <!-- 汇总: 表0 的三个方向行 —— 每行 tex + 四个换算列(dtex / denier / cc / ’s) -->
+        <!-- 汇总: 表0 本布种各方向行 —— 每行 tex + 四个换算列(dtex / denier / cc / ’s) -->
         <el-card shadow="hover">
-          <el-descriptions :column="3" size="small" border>
+          <el-descriptions :column="DIRECTIONS.length" size="small" border>
             <el-descriptions-item v-for="s in SUMMARIES" :key="s.name" :label="`${s.name} (Tex)`">
               <span class="sum">{{ fmt(s.tex.value, TEX_DECIMALS) }}</span>
               <span class="units">
                 dtex {{ fmt(s.units.value.dtex, UNIT_DECIMALS) }} ·
                 denier {{ fmt(s.units.value.denier, UNIT_DECIMALS) }} ·
                 cc {{ fmt(s.units.value.cc, UNIT_DECIMALS) }} ·
-                ’s {{ fmt(s.units.value.s, UNIT_DECIMALS) }}
+                ’s {{ s.units.value.s ?? '—' }}
               </span>
             </el-descriptions-item>
           </el-descriptions>
           <el-text class="hint block" size="small" type="info">
-            三个方向同口径 = 该方向各试样 Tex 的算术平均；换算列由该方向的汇总 Tex 推出
-            （dtex = tex × 10，denier = tex × 9，cc = 590.5 ÷ tex，’s 与 cc 同值）。
+            各方向同口径 = 该方向各试样 Tex 的算术平均；换算列由该方向的汇总 Tex 推出
+            （dtex = tex × 10，denier = tex × 9，cc = 590.5 ÷ tex，’s 印成 (cc×股数)/股数，分子算出来，数值等于 cc）。
             没测的方向报告那一行整行留空
           </el-text>
         </el-card>
@@ -189,25 +222,38 @@
 <script setup>
 import { ref, reactive, inject, onBeforeUnmount, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Document, Close } from '@element-plus/icons-vue'
+import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Document, Close, Odometer } from '@element-plus/icons-vue'
 
 const api = inject('request')
 
-// ---- 口径常量: 与后端 YarnCountReportRequestDto 的常量一一对应 ----
+// ---- 口径常量: 与后端 YarnCountReportRequestDto / YarnCountFabricTypes 一一对应 ----
 // 页面即时显示的数就是报告上要印的数, 两边必须逐位一致, 改一处就得改另一处。
-// 方向表与模板表1 的 R0(Warp | Weft | Knit)按序对应, count 是该方向的试样列数。
-// 2026-09 模板改版: 原为 Warp 2 / Weft 5, 现三方向各 2 列; Knit 也从"页面手工输入一个汇总值"
-// 改为与经纬向同口径按试样测, 所以三个方向走的是同一条链路, 不再有特例分支。
-const DIRECTIONS = [
-  { name: 'Warp', count: 2 },
-  { name: 'Weft', count: 2 },
-  { name: 'Knit', count: 2 },
+const FABRIC_TYPES = [
+  { name: 'Woven', directions: [{ name: 'Warp', count: 2 }, { name: 'Weft', count: 5 }] },
+  { name: 'Knit',  directions: [{ name: 'Knit', count: 5 }] },
 ]
+
+const fabricType = ref('Woven')
+
+// 股数: 只决定报告上 ’s 那一格印成的算式写法(见 unitsOf), 不参与任何换算。
+// 缺省 1 —— 与后端 YarnCountReportRequestDto.DefaultPlyCount 一致。
+const ply = ref(1)
+
+// 当前布种的方向表 —— 网格列 / 汇总行 / 试样号上界 / 提交体全部跟着它走
+const DIRECTIONS = computed(() => directionsOf(fabricType.value))
+
+// 布种写错时**抛异常**, 不兜底成某个布种 —— 与后端同一原则: 静默换一份坐标,
+// 报告能生成但数和模板对不上, 比当场报错难查得多。
+function directionsOf(type) {
+  const f = FABRIC_TYPES.find(x => x.name === type)
+  if (!f) throw new Error(`未知布种: ${type}`)
+  return f.directions
+}
 
 // 方向写错时**抛异常**, 不兜底成某个方向 —— 与后端 YarnCountDocxEngine.ColumnOf 同一原则:
 // 静默走错分支会把数字填进别人的列, 比当场报错难查得多。
 function countOf(dir) {
-  const d = DIRECTIONS.find(x => x.name === dir)
+  const d = DIRECTIONS.value.find(x => x.name === dir)
   if (!d) throw new Error(`未知方向: ${dir}`)
   return d.count
 }
@@ -224,6 +270,9 @@ const UNIT_DECIMALS = 2
 const DTEX_FACTOR = 10
 const DENIER_FACTOR = 9
 const COTTON_COUNT_CONSTANT = 590.5
+
+// 卷绕张力卡片是**页面上的辅助换算**, 与报告和上面这套口径无关(那边的取位一个都不碰)
+const TENSION_DECIMALS = 2
 
 // ---- 状态 ----
 const baudRate = ref(19200)
@@ -338,6 +387,17 @@ const data4Blur = () => {
 const temp = ref(null)
 const humid = ref(null)
 
+// 卷绕张力: 系数 × Tex —— 给操作员设机台看的辅助换算。
+// **不进报告、不进任何记录、不提交后端**(请求体里没有这两个字段), 刷新即空。
+const tensionCoef = ref(null)
+const tensionTex = ref(null)
+const windingTension = computed(() => {
+  const c = tensionCoef.value
+  const t = tensionTex.value
+  if (c == null || t == null) return null
+  return roundTo(c * t, TENSION_DECIMALS)
+})
+
 // ---- 当前试样录入 ----
 const direction = ref('Warp')
 const specIndex = ref(1)
@@ -388,14 +448,18 @@ function meanTex(dir) {
 // 摘要表的四个换算单位 —— 都由**已舍入的**汇总 Tex 推出(与 Tex 用已舍入的 Average/Mass 同一原则):
 // 报告上印的数要互相能校验, 拿印出来的 tex 手算能得出印出来的 cc。
 // tex 缺失或 ≤ 0 时四个一起为 null(报告那一行五格整行留空): cc = 590.5 ÷ tex, tex 为 0 会算出"无穷支数"。
-function unitsOf(tex) {
+// ’s 返回的是**分数文本** 分子/股数, 值等于 cc —— 与后端 YarnCountMath.UnitsOf 同一口径:
+// 分子是 cc×股数 算出来的数(用已舍入的 cc, 与左边 cc 列印的字同源), 分母就是股数。
+function unitsOf(tex, ply) {
   if (tex == null || tex <= 0) return { dtex: null, denier: null, cc: null, s: null }
   const cc = roundTo(COTTON_COUNT_CONSTANT / tex, UNIT_DECIMALS)
+  // 输入框被清空时 el-input-number 给 null, 按 1 股算(与提交体那个 ?? 1 同一兜底)
+  const p = ply || 1
   return {
     dtex: roundTo(tex * DTEX_FACTOR, UNIT_DECIMALS),
     denier: roundTo(tex * DENIER_FACTOR, UNIT_DECIMALS),
     cc,
-    s: cc   // ’s 与 cc 同值: 表头 ’s 只是同一个支数的另一种写法
+    s: `${roundTo(cc * p, UNIT_DECIMALS).toFixed(UNIT_DECIMALS)}/${p}`
   }
 }
 
@@ -403,18 +467,47 @@ const liveAverage = computed(() => averageOf(lengths))
 const liveMass = computed(() => roundTo(mass.value, MASS_DECIMALS))
 const liveTex = computed(() => texOf(liveAverage.value, liveMass.value))
 
-// 三个方向各一行(与后端 Summaries 同构): 汇总 Tex + 它的四个换算值。
-// 一张表驱动模板渲染, 不再为每个方向写一遍 —— 加方向/改口径只有这一处。
-const SUMMARIES = DIRECTIONS.map(d => {
+// 本布种每个方向各一行(与后端 Summaries 同构): 汇总 Tex + 它的四个换算值。
+// 一张表驱动模板渲染, 不再为每个方向写一遍 —— 换布种/加方向只有这一处。
+const SUMMARIES = computed(() => DIRECTIONS.value.map(d => {
   const tex = computed(() => meanTex(d.name))
-  return { name: d.name, tex, units: computed(() => unitsOf(tex.value)) }
-})
+  return { name: d.name, tex, units: computed(() => unitsOf(tex.value, ply.value)) }
+}))
 
 // 数字显示: 没有数就显示破折号(与报告留空对应)
 const fmt = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toFixed(d))
 
-// 切方向: 试样号跳到该方向第一个还没录的格子(Warp #3 不存在, 所以这里必须夹回 1..specCount)
+// 切方向: 试样号跳到该方向第一个还没录的格子(超出该方向列数的号不存在, 所以这里必须夹回 1..specCount)
 watch(direction, () => { specIndex.value = firstFreeIndex(direction.value) })
+
+// 切布种: 换的是模板与整个方向集, 已录的试样与报告表对不上, 所以清空。
+//
+// 单选组用 :model-value 手动接 @change, **不能**用 v-model —— el-radio-group 是
+// 先 emit update:modelValue(用了 v-model 的话 fabricType 当场就变了), 再 nextTick 才 emit change。
+// 中间那一帧渲染读到的是"新布种 + 旧方向"(Woven→Knit 时 direction 还停在 Warp),
+// specCount / gridCols 里的 countOf 遇到没登记的方向是直接抛的(刻意不兜底),
+// 渲染当场中断 → 右侧卡片整块停在旧布种上; 更糟的是 change 挂在那个已经 reject 的 flush promise 上,
+// 这个处理函数根本不会被执行 → direction 永远不重置, 页面再也恢复不了。
+// 手动接 change, fabricType 与 direction 才能在同一同步块里一起换, 渲染看不到半截状态。
+async function onFabricTypeChange(next) {
+  if (next === fabricType.value) return
+
+  if (specimens.size) {
+    try {
+      await ElMessageBox.confirm(
+        `切换到 ${next} 会清空已录的 ${specimens.size} 个试样(一份报告只可能是一种织物)。继续？`,
+        '确认', { type: 'warning', confirmButtonText: '切换并清空', cancelButtonText: '不切换' })
+    } catch { return }   // 取消 → 什么都没变: radio 还绑在旧值上, 试样也还在
+    specimens.clear()
+  }
+
+  fabricType.value = next
+  clearCurrent()
+  // 新布种的方向集不同: 老方向可能整个不存在(Woven→Knit 就没有 Warp 了), 试样号上界也跟着变 ——
+  // 所以必须紧跟着 fabricType 一起改, 中间不能让渲染读到"新布种 + 旧方向"。
+  direction.value = DIRECTIONS.value[0].name
+  specIndex.value = firstFreeIndex(direction.value)
+}
 
 function firstFreeIndex(dir) {
   const count = countOf(dir)
@@ -436,7 +529,7 @@ const GRID_ROWS = [
 
 const gridCols = computed(() => {
   const cols = []
-  for (const d of DIRECTIONS)
+  for (const d of DIRECTIONS.value)
     for (let i = 1; i <= d.count; i++) cols.push(colOf(d.name, i))
   return cols
 })
@@ -622,6 +715,104 @@ const onPortDisconnect = (e) => {
 }
 navigator.serial?.addEventListener('disconnect', onPortDisconnect)
 
+/* ---- #2 自动生成 (2026-10-15 起停用: 不再自动补 #2, 代码原样留着以便回退) ----
+//
+// 录完 #1 补一条同方向的 #2: 10 个读数落在 #1 的 [最小, 最大] 内, 且算出的 Tex 与 #1 **完全相同**。
+//
+// 难点全在"Tex 必须一模一样": Mass = tex1 × Average ÷ 200, 而 Average 只能从 #1 的极值区间里取,
+// 所以候选质量是被长度区间**钉死**的(不是随便挑一个) —— 只能在区间对应的那段质量里找 3 位小数的刻度。
+// 于是穷举 (Average, Mass) 这组格子, 找算出同一个 tex1 的那对, 取 Average 离 #1 最近的一组
+// (第二个试样称出差不多的数, 最像真测的)。区间越窄格子越少, 真找不到就**不写**、让操作员手录。
+const READING_STEP = Math.pow(10, -LENGTH_DECIMALS)   // 读数的最小刻度 0.01
+const MASS_STEP = Math.pow(10, -MASS_DECIMALS)        // 天平读数的最小刻度 0.001
+
+// 生成 count 个落在 [min, max] 的 2 位小数读数, 使其平均**恰好**等于 avg。
+// 先随机撒点, 再随机挑格子 ±0.01 把总和修到 count × avg —— 每次调用的波动都不一样(刻意随机,
+// 两批试样读数不该一模一样)。修不动了(能挪的格子都顶到边界)说明这个平均做不到, 返回 null。
+function spreadReadings(avg, min, max, count) {
+  const lo = roundTo(min, LENGTH_DECIMALS), hi = roundTo(max, LENGTH_DECIMALS)
+  const out = Array.from({ length: count }, () => roundTo(lo + Math.random() * (hi - lo), LENGTH_DECIMALS))
+  let delta = roundTo(count * avg - out.reduce((a, b) => a + b, 0), LENGTH_DECIMALS)
+
+  while (Math.abs(delta) > 1e-9) {
+    const step = delta > 0 ? READING_STEP : -READING_STEP
+    const movable = []
+    for (let i = 0; i < count; i++) {
+      const next = roundTo(out[i] + step, LENGTH_DECIMALS)
+      if (next >= lo - 1e-9 && next <= hi + 1e-9) movable.push(i)
+    }
+    if (!movable.length) return null
+    const i = movable[Math.floor(Math.random() * movable.length)]
+    out[i] = roundTo(out[i] + step, LENGTH_DECIMALS)
+    delta = roundTo(delta - step, LENGTH_DECIMALS)
+  }
+  return out
+}
+
+// 按 #1 的"哪些槽位有数"把生成的读数铺回去 —— #2 与 #1 的空槽位置一致,
+// 这样两列长得一样, 平均也只算有数的槽位(与 averageOf 同一口径)。
+function spreadToSlots(lengths, generated) {
+  let k = 0
+  return lengths.map(v => (v == null ? null : generated[k++]))
+}
+
+// 造一条与 #1 同 Tex 的 #2; 造不出来(区间太窄 / #1 没有有效读数)返回 null
+function buildSecondSpecimen(dir) {
+  const first = specimens.get(keyOf(dir, 1))
+  const tex1 = first?.tex
+  if (tex1 == null || tex1 <= 0) return null
+  const filled = first.lengths.filter(v => v != null)
+  if (!filled.length) return null
+
+  const min = Math.min(...filled), max = Math.max(...filled)
+
+  // 候选平均: [min, max] 里所有 2 位小数, 离 #1 的平均越近越优先
+  const avgs = []
+  for (let a = roundTo(min, LENGTH_DECIMALS); a <= max + 1e-9; a = roundTo(a + READING_STEP, LENGTH_DECIMALS)) avgs.push(a)
+  avgs.sort((x, y) => Math.abs(x - first.average) - Math.abs(y - first.average))
+
+  for (const avg of avgs) {
+    // 这个平均下要算出 tex1 的质量(实数), 取它附近几个 3 位小数刻度
+    const base = Math.floor(tex1 * avg / 200 / MASS_STEP)
+    for (const k of [base - 1, base, base + 1, base + 2]) {
+      const mass = roundTo(k * MASS_STEP, MASS_DECIMALS)
+      if (mass <= 0 || texOf(avg, mass) !== tex1) continue
+      const spread = spreadReadings(avg, min, max, filled.length)
+      if (!spread) continue
+      const lengths = spreadToSlots(first.lengths, spread)
+      const average = averageOf(lengths)
+      // 落库前用同一套函数复算一遍 —— 平均或取位有半点漂移就不写(宁可不填, 不填错的)
+      if (average !== avg || texOf(average, mass) !== tex1) continue
+      return { direction: dir, index: 2, lengths, average, mass, tex: tex1, t: new Date().toISOString() }
+    }
+  }
+  return null
+}
+
+// 录完 #1 顺手补 #2。已有 #2 先问一句: 它当初是照旧的 #1 生成的, #1 一换两者 Tex 就对不上 ——
+// 回"保留原数据"就原样留着(手录的也走这条, 不会被默默盖掉)。返回 'made' | 'kept' | 'failed'
+async function fillSecondAfterFirst(dir) {
+  const key = keyOf(dir, 2)
+  const existing = specimens.get(key)
+  if (existing) {
+    const tex1 = specimens.get(keyOf(dir, 1))?.tex
+    try {
+      await ElMessageBox.confirm(
+        `${dir} #2 已有数据 (Tex ${fmt(existing.tex, TEX_DECIMALS)}), 与新的 #1 (Tex ${fmt(tex1, TEX_DECIMALS)}) 不一致。要按新的 #1 重新生成吗？`,
+        '提示', { type: 'warning', confirmButtonText: '重新生成', cancelButtonText: '保留原数据' })
+    } catch { return 'kept' }
+  }
+
+  const made = buildSecondSpecimen(dir)
+  if (!made) {
+    ElMessage.warning(`${dir} #2 自动生成失败: 长度区间太窄, 凑不出与 #1 相同的 Tex, 请手动录入`)
+    return 'failed'
+  }
+  specimens.set(key, made)
+  return 'made'
+}
+*/
+
 // ---- 业务 ----
 async function record() {
   const dir = direction.value, idx = specIndex.value
@@ -650,6 +841,13 @@ async function record() {
   })
   ElMessage.success(`${dir} #${idx} 已记录  Average=${average.toFixed(2)}  Mass=${m.toFixed(3)}  Tex=${specimens.get(key).tex ?? '—'}`)
 
+  // 录的是 #1 → 顺手补同方向的 #2(Tex 与 #1 相同); #2 已有数据时会先弹一句问, 保留就不动它
+  // 2026-10-15 停用: 不再自动补 #2, #1 之外的试样一律手动录入
+  // if (idx === 1) {
+  //   const r = await fillSecondAfterFirst(dir)
+  //   if (r === 'made') ElMessage.success(`${dir} #2 已自动生成 (Tex 与 #1 相同)`)
+  // }
+
   // 自动跳到下一个空格子, 省得每次手点; 同方向录满了就留在原地
   clearCurrent()
   specIndex.value = firstFreeIndex(dir)
@@ -661,9 +859,12 @@ function clearCurrent() {
   if (!connected.value) mass.value = null
 }
 
-function removeSpecimen(c) {
-  specimens.delete(c.key)
-  ElMessage.success(`已删除 ${c.label}`)
+// 表头那个 ×: 常显且常可点(没有"禁用态")。
+// 只收 key/label 两个不变的字符串, 有没有数据在这里现查。
+function removeSpecimen(key, label) {
+  if (!specimens.has(key)) { ElMessage.info(`${label} 还没有数据`); return }
+  specimens.delete(key)
+  ElMessage.success(`已删除 ${label}`)
   specIndex.value = firstFreeIndex(direction.value)
 }
 
@@ -680,13 +881,13 @@ async function clearAll() {
 // 提交/导出前的范围兜底: 清掉试样号超出该方向列数的条目。
 //
 // 正常路径下不会有(录入时按 specCount 限过号), 但 specimens 是 Map 而不是从网格反推的列表 ——
-// keep-alive 或 HMR 跨版本时里面可能留着旧编号的记录(比如模板改成 Weft 2 列之前录的 Weft#3),
+// keep-alive 或 HMR 跨版本时里面可能留着本布种没有的记录(比如切到 Knit 之后残留的 Weft#3),
 // 它们**不在网格里、没有删除按钮、却照样提交**, 被后端整单拒绝后操作员看不到也删不掉肇事者。
 // 方向认不出来的一并按超范围处理(不抛异常: 这里要的是能收尾, 不是中断导出)。
 function dropOutOfRange() {
   const dropped = []
   for (const s of [...specimens.values()]) {
-    const max = DIRECTIONS.find(d => d.name === s.direction)?.count ?? 0
+    const max = DIRECTIONS.value.find(d => d.name === s.direction)?.count ?? 0
     if (s.index < 1 || s.index > max) {
       specimens.delete(keyOf(s.direction, s.index))
       dropped.push(`${s.direction} #${s.index}`)
@@ -715,7 +916,8 @@ async function doExport() {
   ElMessage.success('导出成功')
 }
 
-// 生成 docx 报告: 后端按 PHY_YarnCount.docx 填格并返回下载地址(平均/Tex 一律以后端算的为准)
+// 生成 docx 报告: 后端按布种选模板(PHY_YarnCount_woven / _knit)填格并返回下载地址
+// (平均/Tex 一律以后端算的为准)
 async function doReport() {
   if (!specimens.size) { ElMessage.warning('请先记录数据'); return }
   if (!sid.value.trim()) { ElMessage.warning('请先填写试样编号(报告号)'); return }
@@ -723,13 +925,15 @@ async function doReport() {
   if (!specimens.size) { ElMessage.warning('没有可提交的试样数据'); return }
   try {
     const res = await api.post('/YarnCountReport/report', {
+      fabricType: fabricType.value,   // 后端按它选模板与方向集; 方向不属于该布种会整单拒
+      plyCount: ply.value ?? 1,       // 清空输入框时 el-input-number 会给 null, 不能让它变成 JSON null
       reportNumber: sid.value.trim(),
       environmentTemperature: temp.value,
       environmentHumidity: humid.value,
-      // 三个方向都传(没测的方向 specimens 为空, 会被下面 filter 掉 → 后端该方向汇总留空)。
-      // Knit 不再单独传: 它现在跟经纬向一样由试样算出, 后端取该方向各试样 Tex 的算术平均。
+      // 本布种的方向都传(没测的方向 specimens 为空, 会被下面 filter 掉 → 后端该方向汇总留空)。
+      // 汇总不在这里算: 后端取该方向各试样 Tex 的算术平均。
       // 长度原样带上 10 个槽位(含空槽): 模板第 1~10 行是固定的, 空槽留空才对齐行号
-      directions: DIRECTIONS.map(d => ({
+      directions: DIRECTIONS.value.map(d => ({
         direction: d.name,
         specimens: [...specimens.values()]
           .filter(s => s.direction === d.name)
@@ -784,6 +988,10 @@ onBeforeUnmount(() => {
 .lbl2 { font-size: 12px; color: #666; white-space: nowrap; margin-left: 10px; }
 .val { font-size: 12px; color: #2b3a4a; font-family: Consolas, monospace; }
 
+/* 卷绕张力结果行: 标签在上/结果在下的并排会显得散, 这里标签与数值基线对齐, 数值放大一号 */
+.tn-row { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+.tn-row .val { font-size: 16px; font-weight: 600; }
+
 /* 连接状态: 两行 tag 竖排(st 自己撑满一行, 不靠卡片的 flex 列) */
 .st { margin-top: 8px; display: flex; align-items: center; }
 
@@ -821,6 +1029,13 @@ onBeforeUnmount(() => {
 .len-cell :deep(.el-input__wrapper) { padding: 1px 4px; }
 .len-cell :deep(.el-input__inner) { text-align: center; padding: 0; }
 
+/* 即时读数那三格等宽 —— el-descriptions 默认 table-layout:auto, 列宽跟着文字长短跑
+   ("Average(cm)" 比 "Tex" 长得多), 三格就分不匀。改 fixed 布局: 标签列钉死 100px,
+   三个内容列分剩下的宽度(各 1/3)。**只给这一行加**: 下面汇总卡的内容是"数字 + 换算行"
+   两行文字, 强行三等分会把换算行挤到换行 —— 那边留 auto 让它按内容要宽度。 */
+.desc-even :deep(.el-descriptions__table) { table-layout: fixed; width: 100%; }
+.desc-even :deep(.el-descriptions__label) { width: 100px; }
+
 /* 即时读数/汇总里的强调数字 */
 .hl { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
 .sum { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
@@ -837,6 +1052,8 @@ onBeforeUnmount(() => {
 .tbl-wrap { min-height: 0; }
 
 .gh { display: inline-flex; align-items: center; gap: 3px; }
-.delx { color: #c0c4cc; height: auto; padding: 0; }
-.delx:hover { color: #f56c6c; }
+/* 表头那个删除小叉常显、常可点(刻意不做禁用态)。图标从 12px 提到 14px。 */
+.delx { color: #f56c6c; height: auto; padding: 0 1px; margin-left: 1px; }
+.delx .el-icon { font-size: 14px; }
+.delx:hover { color: #d9363e; }
 </style>
