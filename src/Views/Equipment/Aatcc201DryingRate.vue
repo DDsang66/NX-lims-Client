@@ -667,6 +667,7 @@ function beginSlot(slot, station, keepSeq) {
     ? `测试3 (工位${station} 重测) 开始 —— 盖板打开→闭合沿为起点`
     : `工位${station} 测试开始 (盖板打开→闭合沿为起点)`
   if (simMode.value) startSimTelemetry(keepSeq)   // 首个活动槽 → 仿真序号清零从头跑
+  startAutoStopPoll()                             // 真机: 测试期间定期问后端"到平台了吗"
 }
 
 function toggleTest(st) {
@@ -691,12 +692,14 @@ function toggleTest3() {
 
 // 断开/拔线等异常终止: 只停所有活动槽, 不触发 compute(残缺序列算出的速率无意义)
 function stopAllActive() {
+  stopAutoStopPoll()
   for (let i = 0; i < SLOT_COUNT; i++) if (activeTest[i]) activeTest[i] = false
   stopSimTelemetry()
 }
 
 function maybeFinish() {
-  if (anyTesting.value) return
+  if (anyTesting.value) return      // 还有槽在跑 → 轮询继续(别在这里停, 否则剩下那槽再也不会自动收尾)
+  stopAutoStopPoll()
   stopSimTelemetry()
   statusText.value = '测试已停止, 计算中...'
   compute()
@@ -715,18 +718,23 @@ function resetAll() {
 // 计算 / 报告
 // ============================================================
 
+// 计算请求体(compute / 自动收尾轮询共用): 槽位对齐(后端契约) —— 列表第 i 项 = 报告 #(i+1);
+// 未测的中间槽传空 Frames 占位, 否则会挤位
+function buildComputePayload() {
+  return {
+    reportNumber: reportNumber.value.trim(),
+    sampleName: sampleName.value.trim(),
+    temperature: temperature.value,
+    humidity: humidity.value,
+    stations: [0, 1, 2].map(i => ({ station: slotStation(i), waterMl: waterMl.value, frames: stFrames[i] }))
+  }
+}
+
 async function compute() {
   if (!reportNoReady.value) { ElMessage.warning('请先填写报告号序号'); return }
   computing.value = true
   try {
-    const res = await api.post('/MoistureDryingRate/compute/aatcc201', {
-      reportNumber: reportNumber.value.trim(),
-      sampleName: sampleName.value.trim(),
-      temperature: temperature.value,
-      humidity: humidity.value,
-      // 槽位对齐(后端契约): 列表第 i 项 = 报告 #(i+1); 未测的中间槽传空 Frames 占位, 否则会挤位
-      stations: [0, 1, 2].map(i => ({ station: slotStation(i), waterMl: waterMl.value, frames: stFrames[i] }))
-    })
+    const res = await api.post('/MoistureDryingRate/compute/aatcc201', buildComputePayload())
     if (res.data?.isSuccess) {
       computeResult.value = res.data.value
       const sts = res.data.value?.stations || []
@@ -738,6 +746,39 @@ async function compute() {
     }
   } catch (e) { statusText.value = '空闲'; ElMessage.error('网络错误: ' + e.message) }
   finally { computing.value = false }
+}
+
+// ---- 测试进行中的自动收尾轮询（真机路径；仿真走自己的写死收尾）----
+// 后端 compute 是纯函数(静态 Calculate 无副作用、不落库), 所以可以边测边问;
+// 只读 participated, 不碰 computeResult / slotHasResult / statusText。
+// 全部活动槽都判"到平台"才收尾 —— 与仿真收尾同语义, 避免"槽1 有结果、槽2 还在跑"的半截结果表。
+// 30 秒一轮: 真机 1 点 ≈ 1 秒, 平台判据窗口 175 点(≈3min), 最坏晚 30 秒收尾, 可忽略。
+const AUTO_STOP_POLL_MS = 30000
+let autoStopTimer = null
+
+async function pollAutoStop() {
+  if (!anyTesting.value) { stopAutoStopPoll(); return }
+  try {
+    const res = await api.post('/MoistureDryingRate/compute/aatcc201', buildComputePayload())
+    if (!res.data?.isSuccess) return
+    const sts = res.data.value?.stations || []
+    const activeIdx = [0, 1, 2].filter(i => activeTest[i])
+    if (activeIdx.length === 0 || !activeIdx.every(i => sts[i]?.participated)) return
+    stopAutoStopPoll()
+    for (const i of activeIdx) activeTest[i] = false
+    statusText.value = '测试自动结束（温度平台已确认），计算中...'
+    compute()   // 与手动点"停止"走同一条计算路径
+  } catch { /* 静默: 下一轮再试, 不能打扰正在跑的测试 */ }
+}
+
+function startAutoStopPoll() {
+  if (simMode.value) return          // 仿真 610 帧写死收尾, 不叠加轮询
+  if (autoStopTimer) return
+  autoStopTimer = setInterval(pollAutoStop, AUTO_STOP_POLL_MS)
+}
+
+function stopAutoStopPoll() {
+  if (autoStopTimer) { clearInterval(autoStopTimer); autoStopTimer = null }
 }
 
 async function generateReport() {
@@ -1052,6 +1093,7 @@ function buildChartOpt(st) {
 function pauseAll() {
   stopLoop()
   stopSimTelemetry()
+  stopAutoStopPoll()
   stopTelemetryWatchdog()
 }
 
