@@ -42,6 +42,7 @@
 
 <script setup>
   import { ref, reactive, computed, onMounted, inject, watch } from 'vue'
+  import { ElMessage } from 'element-plus'
   import LeftTopSection from './LeftTopSection.vue'
   import LeftMultiFiberSection from './LeftMultiFiberSection.vue'
   import LeftSingleFiberSection from './LeftSingleFiberSection.vue'
@@ -71,7 +72,8 @@
     reportNumber: '',
     menuName: [],
     additionItem: 'type1',  // 默认选中 Multi
-    standard: ''
+    standard: '',
+    standardMode: 'Current' // 标准口径：'Current' 常规（缺省）/ 'Dual' 2C。由 Setting Form 标题行那个二选一切换
   })
 
   // 模拟数据 - 通过 fiberType 字段标识组件类型
@@ -82,7 +84,32 @@
 
   // Method 候选改由后端提供—— 原先是这里 10 条硬编码, 加标准要改前端重新发版。
   // value 与 label 相同是既有约定, 后端就按这个约定返回纯字符串列表。
+  //
+  // **两份清单**（常规 / 2C）一次下发, 所以切模式是纯前端动作、不重新请求：
+  // methodOptions 存两份, menuName 是**当前生效的那一份**（也就是下拉的数据源,
+  // 直接喂给 LeftTopSection 的 :menuName）。别把 menuName 换成计算属性 ——
+  // 下面的切换 watcher 需要在"值"上做替换, 计算属性给不了那个时机。
+  const methodOptions = ref({ Current: [], Dual: [] })
   const menuName = ref([])
+
+  // 切模式时已选项必须先**按值重映射、再**滤掉不在新清单里的。
+  // 只做 filter 是不够的：下面三条在两个模式里**值本身就不同**，
+  // 原样提交给 2C 记录会被后端按 2C 口径解析、派生出口径错的链（报告上印错版本号）。
+  // 三条与后端 MethodOptionsCurrent / MethodOptionsDual 逐字对应 ——
+  // 两条 AATCC 的**空格数刻意不同**（双空格那条是复合方法名，Korea 那条本来就是单空格）。
+  const MODE_VALUE_SWAP = [
+    ['Regulation (Eu) No. 1007/2011', 'EU regulation No. 1007/2011 VIII'],
+    ['AATCC TM20-2021  AATCC TM20A-2025', 'AATCC TM20-2021  AATCC TM20A-2021'],
+    ['AATCC TM20-2021 AATCC TM20A-2025 (Korea)', 'AATCC TM20-2021 AATCC TM20A-2021 (Korea)']
+  ]
+
+  // 认不出的模式一律按常规 —— 与后端 FiberWorksheetService.ParseStandardMode 同口径
+  const optionsFor = (mode) => methodOptions.value[mode === 'Dual' ? 'Dual' : 'Current'] || []
+
+  function swapMethod(value, toDual) {
+    const hit = MODE_VALUE_SWAP.find(([current, dual]) => (toDual ? current : dual) === value)
+    return hit ? (toDual ? hit[1] : hit[0]) : value
+  }
 
   // 分组候选—— 同样来自后端, 见 getFiberOptions。
   const fiberOptions = ref({ cellulosicSub: [], regeneratedSub: [], bicomponentSub: [] })
@@ -93,16 +120,34 @@
   ])
 
   const baseCompositions = ref([]);
+
+  // 常用纤维的固定优先顺序。
+  // 后端 /render/compositionsearch 没有 ORDER BY, 下来的是 fiber_database 聚集索引的 Guid 字节序
+  // （看着像乱序, 官方也不保证稳定）, 所以展示顺序在前端这一处定死。
+  const PINNED_COMPOSITIONS = ['Wool', 'Polyamide', 'Nylon', 'Acrylic', 'Viscose', 'Rayon',
+    'Cotton', 'Polyester', 'Elastane', 'Spandex', 'Linen', 'Modal', 'Lyocell'];
+  // 通配/分组父槽（*Animal 那一类）：字母序会把 '*' 排到最前, 所以单独挑出来垫底
+  const isWildcardComposition = name => name.startsWith('*');
+  const byCompositionName = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
+
+  /** 头段（双组分类名）按给定次序 → 13 个常用名按固定序 → 其余字母序 → 通配项垫底。只重排, 不增不删。 */
+  function sortCompositions(list, head) {
+    const pinned = new Map(PINNED_COMPOSITIONS.map((n, i) => [n, i]));
+    const taken = new Set([...head, ...PINNED_COMPOSITIONS]);
+    const fixed = list.filter(n => pinned.has(n)).sort((a, b) => pinned.get(a) - pinned.get(b));
+    const rest = list.filter(n => !taken.has(n) && !isWildcardComposition(n)).sort(byCompositionName);
+    const tail = list.filter(n => !taken.has(n) && isWildcardComposition(n)).sort(byCompositionName);
+    return [...head, ...fixed, ...rest, ...tail];
+  }
+
   const allCompositions = computed(() => {
-    const list = [...baseCompositions.value];
     const methods = form.value.menuName || [];
-    const hasFz = methods.some(m => m.startsWith('FZ/T'));
-    const hasAatcc = methods.some(m => m.startsWith('AATCC'));
-    if (hasFz && !list.includes('Bicomponent Fiber'))
-      list.unshift('Bicomponent Fiber');
-    if (hasAatcc && !list.includes('Biconstituent Fiber'))
-      list.unshift('Biconstituent Fiber');
-    return list;
+    const head = [];
+    // 头两项 = 两个双组分类名, 勾了对应方法族才出现。它们**不在 fiber_database 里**,
+    // 是前端按方法族插进来的；两个都勾时的先后照现状（原来是两次 unshift 的结果）。
+    if (methods.some(m => m.startsWith('AATCC'))) head.push('Biconstituent Fiber');
+    if (methods.some(m => m.startsWith('FZ/T'))) head.push('Bicomponent Fiber');
+    return sortCompositions([...baseCompositions.value], head);
   });
   const rows = ref([]);
 
@@ -132,18 +177,46 @@
     }
   })
 
+  // 切标准口径（Setting Form 标题行那个二选一）：换下拉数据源 + 把已选项搬到新清单上。
+  // 录入的纤维/称量数据**不清空** —— 口径只影响报告上印的标准版本，与录入内容无关
+  // （对比上面 additionItem 那个 watch：单↔多组分换的是模板与录入结构，那才要清）。
+  watch(() => form.value.standardMode, (mode, oldMode) => {
+    if (!mode || mode === oldMode) return
+    const toDual = mode === 'Dual'
+    const target = optionsFor(mode)
+    const selected = form.value.menuName || []
+    // 换值 → 留下还在新清单里的；换完不在新清单里的（CAN/CNS/JIS 三族 2C 下整族不进）去掉
+    const kept = selected.map(v => swapMethod(v, toDual)).filter(v => target.some(o => o.value === v))
+    const dropped = selected.filter(v => !target.some(o => o.value === swapMethod(v, toDual)))
+
+    form.value.menuName = kept
+    menuName.value = target
+    // 静默丢掉已选项会让人以为勾选丢了，报一句
+    if (dropped.length) {
+      ElMessage.warning(`当前口径的清单里没有这些方法，已移除：${dropped.join('、')}`)
+    }
+  })
+
   // 获取成分选项列表
   async function getCompositions() {
     baseCompositions.value = (await request.get('/render/compositionsearch')).data.data
   }
 
   // 获取纤维模块的分组候选（Method / cellulosic 子纤维 / bicomponent 子纤维）
+  //
+  // methodOptions2C 缺了就**留空**、不回退到常规那份：2C 下摆出常规清单，
+  // 分析员勾出来的会是常规版本的标准串，报告上印错版本号而不报错 —— 空下拉更早暴露问题。
   async function getFiberOptions() {
     try {
       const res = await request.get('/FiberAnalysis/fiber-options')
       if (res.data?.success) {
         const d = res.data.data || {}
-        menuName.value = (d.methodOptions || []).map(m => ({ value: m, label: m }))
+        const asOptions = list => (list || []).map(m => ({ value: m, label: m }))
+        methodOptions.value = {
+          Current: asOptions(d.methodOptions),
+          Dual: asOptions(d.methodOptions2C)
+        }
+        menuName.value = optionsFor(form.value.standardMode)
         fiberOptions.value = {
           cellulosicSub: d.cellulosicSub || [],
           regeneratedSub: d.regeneratedSub || [],
@@ -190,6 +263,9 @@
       method: form.value.menuName || [],
       componentType: form.value.additionItem === 'type1' ? 'Multi' : 'Single',
       buyer: form.value.standard || '',
+      // 标准口径（'Current' / 'Dual'）—— **不是库列**，后端只拿它决定报告上印哪套版本；
+      // 2C 与否由后端写进文件名（{报告号}_2C_{时间戳}_FiberAnalysis.docx），历史列表从文件名认。
+      standardMode: form.value.standardMode || 'Current',
       // conclusion 段删行下线（input2~input5 空号保留，勿补位）
       verifyResult: payload.extraInputs?.input1 || '',
       recommendedLabel: payload.extraInputs?.input6 ? [payload.extraInputs.input6] : [],

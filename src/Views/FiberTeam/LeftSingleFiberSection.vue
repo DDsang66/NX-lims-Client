@@ -171,7 +171,18 @@
         </el-form-item>
       </el-form>
       <el-table v-loading="historyLoading" class="removeTableGaps" :data="filteredHistory" border stripe size="small" style="width:100%;">
-        <el-table-column prop="reportNumber" label="报告号" min-width="200" show-overflow-tooltip/>
+        <!-- 2C 那份报告靠**单独一列**的标签看（格子空着就是常规）：模式不落库，
+             它只体现在文件名里那个 2C 段上（后端 FiberReportFileMeta.Is2C 从文件名解析出来的）。
+             也正因为它被剥掉了，「2C」不是能搜到的关键字 —— 上面的筛选框搜不到，
+             别把它当筛选词用（要按 2C 筛得另开一路过滤）。 -->
+        <el-table-column label="报告号" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.reportNumber }}</template>
+        </el-table-column>
+        <el-table-column label="口径" width="70" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.is2C" type="warning" size="small" effect="plain">2C</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="生成时间" width="180">
           <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
         </el-table-column>

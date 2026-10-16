@@ -2,7 +2,19 @@
   <section class="panel-section">
     <!-- 标题区 -->
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between;">
-      <label class="panel-title">{{ $t('Setting Form') }}</label>
+      <div class="header-left">
+        <label class="panel-title">{{ $t('Setting Form') }}</label>
+        <!-- 标准口径二选一：常规 = 各标准的当前版本；2C = 只印 CNAS 与 CMA **双资质**范围内的版本
+             （资质范围通常落后于最新版，盖章出报告只能引资质内的版本）。
+             做二选一而不是 toggle，是因为按钮上要能直接看出**当前是哪个口径**。
+             值随下面的 watch(localForm) 一路带回父组件，模式本身**不落库** —— 它只活在这一趟生成里。 -->
+        <el-radio-group v-model="localForm.standardMode"
+                        class="mode-switch"
+                        title="常规 = 当前版本；2C = 只印 CNAS 与 CMA 双资质范围内的版本">
+          <el-radio-button value="Current">常规</el-radio-button>
+          <el-radio-button value="Dual">2C</el-radio-button>
+        </el-radio-group>
+      </div>
       <el-button type="primary" @click="$emit('refresh')">Refresh</el-button>
     </div>
 
@@ -174,6 +186,21 @@
     font-weight: bold;
     color: #3364d5;
     display: block;
+  }
+
+  /* 标题 + 口径开关同一组靠左，Refresh 单独留在右端 */
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  /* 口径开关要一眼看见、好点，所以比旁边的 Refresh（默认 32px）再大一号 */
+  .mode-switch :deep(.el-radio-button__inner) {
+    font-size: 16px;
+    line-height: 1;
+    padding: 12px 20px;
   }
 
   .panel-body {
