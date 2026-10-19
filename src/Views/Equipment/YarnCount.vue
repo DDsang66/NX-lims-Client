@@ -98,21 +98,25 @@
           <template #header>
             <div class="ctitle"><el-icon><Odometer /></el-icon>卷绕张力</div>
           </template>
-          <div class="env-row">
-            <div class="env-cell">
-              <span class="env-lbl">卷绕张力系数</span>
-              <el-input-number v-model="tensionCoef" :precision="2" :min="0" :step="0.01" style="width:100%" controls-position="right"/>
-            </div>
+          <div class="env-cell">
+            <span class="env-lbl">纱线种类 (Yarn)</span>
+            <el-select v-model="tensionYarn" placeholder="选择纱线种类" style="width:100%" :fit-input-width="false">
+              <el-option v-for="r in TENSION_RULES" :key="r.yarn" :value="r.yarn" :label="r.yarn"/>
+            </el-select>
+          </div>
+          <div class="env-row" style="margin-top:10px">
             <div class="env-cell">
               <span class="env-lbl">Tex</span>
               <el-input-number v-model="tensionTex" :precision="2" :min="0" :step="0.01" style="width:100%" controls-position="right"/>
             </div>
+            <div class="env-cell">
+              <span class="env-lbl">卷绕张力</span>
+              <span class="tn-val">{{ fmt(windingTension, TENSION_DECIMALS) }}</span>
+              <span v-if="tensionRule" class="tn-expr">{{ tensionRule.expr }}</span>
+            </div>
           </div>
-          <div class="tn-row">
-            <span class="env-lbl">卷绕张力</span>
-            <span class="val">{{ fmt(windingTension, TENSION_DECIMALS) }}</span>
-          </div>
-          <el-text class="hint block" size="small" type="info">只在前端展示，不进报告、不进任何记录</el-text>
+          <el-text v-if="tensionOutOfRange" class="hint block" size="small" type="warning">该 Tex 不在标准表范围内</el-text>
+          <el-text class="hint block" size="small" type="info">按标准 Annex「Straightening tensions」换算，只在前端展示，不进报告、不进任何记录</el-text>
         </el-card>
       </div>
 
@@ -271,8 +275,23 @@ const DTEX_FACTOR = 10
 const DENIER_FACTOR = 9
 const COTTON_COUNT_CONSTANT = 590.5
 
-// 卷绕张力卡片是**页面上的辅助换算**, 与报告和上面这套口径无关(那边的取位一个都不碰)
+// 卷绕张力: 标准 Annex「Straightening tensions」表, 纯页面辅助 —— 与报告和上面这套口径无关
 const TENSION_DECIMALS = 2
+// 每档在 tex 落在 [min, max](缺省即无界) 时用 factor × tex + add。
+// 表里毛纺写的是 15~60 / 61~300, 60~61 之间的数(如 60.5)按后一档算 —— 顺序匹配, 60 正好落在前一档。
+const TENSION_RULES = [
+  { yarn: 'Cotton spun', bands: [
+    { max: 7, factor: 0.75, add: 0, expr: '(0.75 × tex)' },        // 7 tex or finer
+    { factor: 0.2, add: 4, expr: '(0.2 × tex) + 4' }                // coarser than 7 tex
+  ] },
+  { yarn: 'Woollen and worsted spun', bands: [
+    { min: 15, max: 60, factor: 0.2, add: 4, expr: '(0.2 × tex) + 4' },
+    { min: 60, max: 300, factor: 0.07, add: 12, expr: '(0.07 × tex) + 12' }
+  ] },
+  { yarn: 'Man-made continuous filament non-textured', bands: [
+    { factor: 0.5, add: 0, expr: '(0.5 × tex)' }                    // all
+  ] }
+]
 
 // ---- 状态 ----
 const baudRate = ref(19200)
@@ -387,15 +406,26 @@ const data4Blur = () => {
 const temp = ref(null)
 const humid = ref(null)
 
-// 卷绕张力: 系数 × Tex —— 给操作员设机台看的辅助换算。
+// 卷绕张力: 选纱线种类 + 填 Tex → 按该档规则算 —— 给操作员设机台看的辅助换算。
 // **不进报告、不进任何记录、不提交后端**(请求体里没有这两个字段), 刷新即空。
-const tensionCoef = ref(null)
+const tensionYarn = ref('')
 const tensionTex = ref(null)
-const windingTension = computed(() => {
-  const c = tensionCoef.value
+const tensionRule = computed(() => {
+  const yarn = TENSION_RULES.find(r => r.yarn === tensionYarn.value)
   const t = tensionTex.value
-  if (c == null || t == null) return null
-  return roundTo(c * t, TENSION_DECIMALS)
+  if (!yarn || t == null || t <= 0) return null
+  return yarn.bands.find(b => (b.min == null || t >= b.min) && (b.max == null || t <= b.max)) ?? null
+})
+const windingTension = computed(() => {
+  const b = tensionRule.value
+  const t = tensionTex.value
+  if (!b || t == null) return null
+  return roundTo(b.factor * t + b.add, TENSION_DECIMALS)
+})
+// 选了纱线、填了正数 Tex, 却没有任何一档命中(毛纺 <15 或 >300) —— 提示, 不硬算
+const tensionOutOfRange = computed(() => {
+  const t = tensionTex.value
+  return !!tensionYarn.value && t != null && t > 0 && !tensionRule.value
 })
 
 // ---- 当前试样录入 ----
@@ -988,9 +1018,9 @@ onBeforeUnmount(() => {
 .lbl2 { font-size: 12px; color: #666; white-space: nowrap; margin-left: 10px; }
 .val { font-size: 12px; color: #2b3a4a; font-family: Consolas, monospace; }
 
-/* 卷绕张力结果行: 标签在上/结果在下的并排会显得散, 这里标签与数值基线对齐, 数值放大一号 */
-.tn-row { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
-.tn-row .val { font-size: 16px; font-weight: 600; }
+/* 卷绕张力结果: 数值放大一号, 下面一行灰字是命中的那档公式 */
+.tn-val { font-size: 16px; font-weight: 600; color: #2b3a4a; font-family: Consolas, monospace; line-height: 1.4; }
+.tn-expr { font-size: 11px; color: #909399; font-family: Consolas, monospace; }
 
 /* 连接状态: 两行 tag 竖排(st 自己撑满一行, 不靠卡片的 flex 列) */
 .st { margin-top: 8px; display: flex; align-items: center; }
