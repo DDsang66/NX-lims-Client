@@ -23,7 +23,8 @@
                                 :bicomponentSubOptions="fiberOptions.bicomponentSub"
                                 @confirm="handleFiberConfirm"
                                 @save-draft="handleSaveDraft"
-                                @build-analysis="handleBuildAnalysis" />
+                                @build-analysis="handleBuildAnalysis"
+                                @restore="handleReportRestore" />
 
       <left-single-fiber-section v-else
                                  :key="refreshKey"
@@ -31,7 +32,8 @@
                                  :allCompositions="allCompositions"
                                  @confirm="handleFiberConfirm"
                                  @save-draft="handleSaveDraft"
-                                 @build-analysis="handleBuildAnalysis" />
+                                 @build-analysis="handleBuildAnalysis"
+                                 @restore="handleReportRestore" />
     </div>
 
     <!-- 右侧 60% -->
@@ -354,6 +356,16 @@
       const origin = new URL(request.defaults.baseURL).origin
       reportDocUrl.value = `${origin}${res1.data.value.downloadUrl}`
     }
+  }
+
+  // 历史报告"回传" → 右侧 OnlyOffice。与 handleBuildAnalysis 同一个地址范式：
+  // 必须用绝对地址（document.url 是**文档服务器**去拉取的），取 axios baseURL 的 origin。
+  // 末尾 ?_=<时间戳> 是刻意的：重复回传同一份时 URL 不变、RightPanel 的 watch 不触发，
+  // 也会撞上同一个 OnlyOffice key；带上它每次都是新 key、重新从后端拉原件。
+  function handleReportRestore(fileName) {
+    const origin = new URL(request.defaults.baseURL).origin
+    reportDocUrl.value =
+      `${origin}/api/FiberAnalysis/reports/${encodeURIComponent(fileName)}?_=${Date.now()}`
   }
 
   onMounted(() => {

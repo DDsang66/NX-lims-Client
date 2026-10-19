@@ -328,8 +328,9 @@
         <el-table-column label="大小" width="100">
           <template #default="{ row }">{{ (row.sizeBytes / 1024).toFixed(1) }} KB</template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="150">
+        <el-table-column label="操作" align="center" width="210">
           <template #default="{ row }">
+            <el-button size="small" type="success" @click="restoreHistoryFile(row)">回传</el-button>
             <el-button size="small" type="primary" @click="downloadHistoryFile(row.fileName)">下载</el-button>
             <el-button size="small" type="danger" @click="deleteHistoryFile(row)">删除</el-button>
           </template>
@@ -432,7 +433,7 @@
       : props.cellulosicSubOptions
   }
 
-  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis'])
+  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis', 'restore'])
 
   const isNoticeOpen = ref(true)
 
@@ -634,6 +635,13 @@
     if (!keyword) return historyList.value
     return historyList.value.filter(r => (r.reportNumber || '').toLowerCase().includes(keyword))
   })
+
+  // 回传：不下载，把这份已生成的报告交给右侧 OnlyOffice 显示 —— 没装 Word 的机器也能看。
+  // 地址由父组件拼（document.url 是文档服务器去拉的，不是浏览器），这里只报文件名。
+  function restoreHistoryFile(row) {
+    historyVisible.value = false
+    emit('restore', row.fileName)
+  }
 
   // 下载必须走 axios：请求拦截器要带 accessToken，裸 <a href> 或页面里那个给 OnlyOffice
   // 预览用的 API_BASE 绝对地址都拿不到 token，会静默失败。
