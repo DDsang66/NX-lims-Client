@@ -197,26 +197,6 @@
             </el-table>
           </div>
         </el-card>
-
-        <!-- 汇总: 表0 本布种各方向行 —— 每行 tex + 四个换算列(dtex / denier / cc / ’s) -->
-        <el-card shadow="hover">
-          <el-descriptions :column="DIRECTIONS.length" size="small" border>
-            <el-descriptions-item v-for="s in SUMMARIES" :key="s.name" :label="`${s.name} (Tex)`">
-              <span class="sum">{{ fmt(s.tex.value, TEX_DECIMALS) }}</span>
-              <span class="units">
-                dtex {{ fmt(s.units.value.dtex, UNIT_DECIMALS) }} ·
-                denier {{ fmt(s.units.value.denier, UNIT_DECIMALS) }} ·
-                cc {{ fmt(s.units.value.cc, UNIT_DECIMALS) }} ·
-                ’s {{ s.units.value.s ?? '—' }}
-              </span>
-            </el-descriptions-item>
-          </el-descriptions>
-          <el-text class="hint block" size="small" type="info">
-            各方向同口径 = 该方向各试样 Tex 的算术平均；换算列由该方向的汇总 Tex 推出
-            （dtex = tex × 10，denier = tex × 9，cc = 590.5 ÷ tex，’s 印成 (cc×股数)/股数，分子算出来，数值等于 cc）。
-            没测的方向报告那一行整行留空
-          </el-text>
-        </el-card>
       </div>
     </div>
   </div>
@@ -238,11 +218,11 @@ const FABRIC_TYPES = [
 
 const fabricType = ref('Woven')
 
-// 股数: 只决定报告上 ’s 那一格印成的算式写法(见 unitsOf), 不参与任何换算。
+// 股数: 只决定报告上 ’s 那一格印成的算式写法(见后端 YarnCountMath.UnitsOf), 不参与任何换算。
 // 缺省 1 —— 与后端 YarnCountReportRequestDto.DefaultPlyCount 一致。
 const ply = ref(1)
 
-// 当前布种的方向表 —— 网格列 / 汇总行 / 试样号上界 / 提交体全部跟着它走
+// 当前布种的方向表 —— 网格列 / 试样号上界 / 提交体全部跟着它走
 const DIRECTIONS = computed(() => directionsOf(fabricType.value))
 
 // 布种写错时**抛异常**, 不兜底成某个布种 —— 与后端同一原则: 静默换一份坐标,
@@ -267,27 +247,20 @@ const AVERAGE_DECIMALS = 2
 const MASS_DECIMALS = 3
 const TEX_DECIMALS = 2
 
-// 摘要表每个方向行后面还有四个换算列(报告表0 的 R5: tex | dtex | denier | cc | ’s)。
-// 口径与后端 YarnCountReportRequestDto / YarnCountMath.UnitsOf 同源, 改一处必须改另一处。
-const UNIT_DECIMALS = 2
-const DTEX_FACTOR = 10
-const DENIER_FACTOR = 9
-const COTTON_COUNT_CONSTANT = 590.5
-
 // 卷绕张力: 标准 Annex「Straightening tensions」表, 纯页面辅助 —— 与报告和上面这套口径无关
 const TENSION_DECIMALS = 2
 // 每档在 tex 落在 [min, max](缺省即无界) 时用 factor × tex + add。
 // 表里毛纺写的是 15~60 / 61~300, 60~61 之间的数(如 60.5)按后一档算 —— 顺序匹配, 60 正好落在前一档。
 const TENSION_RULES = [
-  { yarn: 'Cotton spun', bands: [
+  { yarn: 'ISO : Cotton spun', bands: [
     { max: 7, factor: 0.75, add: 0, expr: '(0.75 × tex)' },        // 7 tex or finer
     { factor: 0.2, add: 4, expr: '(0.2 × tex) + 4' }                // coarser than 7 tex
   ] },
-  { yarn: 'Woollen and worsted spun', bands: [
+  { yarn: 'ISO : Woollen and worsted spun', bands: [
     { min: 15, max: 60, factor: 0.2, add: 4, expr: '(0.2 × tex) + 4' },
     { min: 60, max: 300, factor: 0.07, add: 12, expr: '(0.07 × tex) + 12' }
   ] },
-  { yarn: 'Man-made continuous filament non-textured', bands: [
+  { yarn: 'ISO : Man-made continuous filament non-textured', bands: [
     { factor: 0.5, add: 0, expr: '(0.5 × tex)' }                    // all
   ] },
   { yarn: 'AATCC', bands: [
@@ -466,45 +439,9 @@ function texOf(average, mass) {
   return roundTo(mass * 200 / average, TEX_DECIMALS)
 }
 
-// 方向汇总 = 该方向各试样 Tex 的算术平均(等权), 算不出 Tex 的试样不拉低汇总
-function meanTex(dir) {
-  const list = []
-  for (let i = 1; i <= countOf(dir); i++) {
-    const s = specimens.get(keyOf(dir, i))
-    if (s?.tex != null) list.push(s.tex)
-  }
-  if (!list.length) return null
-  return roundTo(list.reduce((a, b) => a + b, 0) / list.length, TEX_DECIMALS)
-}
-
-// 摘要表的四个换算单位 —— 都由**已舍入的**汇总 Tex 推出(与 Tex 用已舍入的 Average/Mass 同一原则):
-// 报告上印的数要互相能校验, 拿印出来的 tex 手算能得出印出来的 cc。
-// tex 缺失或 ≤ 0 时四个一起为 null(报告那一行五格整行留空): cc = 590.5 ÷ tex, tex 为 0 会算出"无穷支数"。
-// ’s 返回的是**分数文本** 分子/股数, 值等于 cc —— 与后端 YarnCountMath.UnitsOf 同一口径:
-// 分子是 cc×股数 算出来的数(用已舍入的 cc, 与左边 cc 列印的字同源), 分母就是股数。
-function unitsOf(tex, ply) {
-  if (tex == null || tex <= 0) return { dtex: null, denier: null, cc: null, s: null }
-  const cc = roundTo(COTTON_COUNT_CONSTANT / tex, UNIT_DECIMALS)
-  // 输入框被清空时 el-input-number 给 null, 按 1 股算(与提交体那个 ?? 1 同一兜底)
-  const p = ply || 1
-  return {
-    dtex: roundTo(tex * DTEX_FACTOR, UNIT_DECIMALS),
-    denier: roundTo(tex * DENIER_FACTOR, UNIT_DECIMALS),
-    cc,
-    s: `${roundTo(cc * p, UNIT_DECIMALS).toFixed(UNIT_DECIMALS)}/${p}`
-  }
-}
-
 const liveAverage = computed(() => averageOf(lengths))
 const liveMass = computed(() => roundTo(mass.value, MASS_DECIMALS))
 const liveTex = computed(() => texOf(liveAverage.value, liveMass.value))
-
-// 本布种每个方向各一行(与后端 Summaries 同构): 汇总 Tex + 它的四个换算值。
-// 一张表驱动模板渲染, 不再为每个方向写一遍 —— 换布种/加方向只有这一处。
-const SUMMARIES = computed(() => DIRECTIONS.value.map(d => {
-  const tex = computed(() => meanTex(d.name))
-  return { name: d.name, tex, units: computed(() => unitsOf(tex.value, ply.value)) }
-}))
 
 // 数字显示: 没有数就显示破折号(与报告留空对应)
 const fmt = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toFixed(d))
@@ -1006,7 +943,7 @@ onBeforeUnmount(() => {
    这里只留本页特有的类。 */
 
 /* 左右侧列 —— 左列要放得下五段式试样编号(36+66+58+64+52=276px), 比宽重要。
-   两列各自滚动: 右列三张卡(录入 + 13 行网格 + 汇总)在矮屏上会超过一屏, 没有 overflow
+   两列各自滚动: 右列两张卡(录入 + 13 行网格)在矮屏上会超过一屏, 没有 overflow
    就会被 .main 的 height:100% 裁掉尾巴。 */
 .left { width: 320px; display: flex; flex-direction: column; justify-content: center; gap: 12px; flex-shrink: 0; overflow-y: auto; }
 .right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-y: auto; }
@@ -1063,19 +1000,15 @@ onBeforeUnmount(() => {
 
 /* 即时读数那三格等宽 —— el-descriptions 默认 table-layout:auto, 列宽跟着文字长短跑
    ("Average(cm)" 比 "Tex" 长得多), 三格就分不匀。改 fixed 布局: 标签列钉死 100px,
-   三个内容列分剩下的宽度(各 1/3)。**只给这一行加**: 下面汇总卡的内容是"数字 + 换算行"
-   两行文字, 强行三等分会把换算行挤到换行 —— 那边留 auto 让它按内容要宽度。 */
+   三个内容列分剩下的宽度(各 1/3)。 */
 .desc-even :deep(.el-descriptions__table) { table-layout: fixed; width: 100%; }
 .desc-even :deep(.el-descriptions__label) { width: 100px; }
 
-/* 即时读数/汇总里的强调数字 */
+/* 即时读数里的强调数字 */
 .hl { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
-.sum { color: #409eff; font-weight: 600; font-family: 'Consolas', 'Courier New', monospace; font-size: 16px; }
-.units { display: block; margin-top: 2px; font-size: 11px; color: #909399;
-         font-family: 'Consolas', 'Courier New', monospace; }
 
-/* 右列三张卡都不参与 flex 收缩 —— flex-shrink 默认 1, 整列内容超过一屏时卡片会被一起
-   压扁, 卡里的东西(表格行、汇总行)跟着被裁掉。一律按内容长, 放不下由 .right 滚动。 */
+/* 右列两张卡都不参与 flex 收缩 —— flex-shrink 默认 1, 整列内容超过一屏时卡片会被一起
+   压扁, 卡里的东西(表格行)跟着被裁掉。一律按内容长, 放不下由 .right 滚动。 */
 .right > .el-card { flex: none; }
 
 /* 记录网格: 13 行(10 个长度 + Average/Mass/Tex)全表常显。
