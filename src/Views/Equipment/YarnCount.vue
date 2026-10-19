@@ -116,7 +116,6 @@
             </div>
           </div>
           <el-text v-if="tensionOutOfRange" class="hint block" size="small" type="warning">该 Tex 不在标准表范围内</el-text>
-          <el-text class="hint block" size="small" type="info">按标准 Annex「Straightening tensions」换算，只在前端展示，不进报告、不进任何记录</el-text>
         </el-card>
       </div>
 
@@ -290,7 +289,10 @@ const TENSION_RULES = [
   ] },
   { yarn: 'Man-made continuous filament non-textured', bands: [
     { factor: 0.5, add: 0, expr: '(0.5 × tex)' }                    // all
-  ] }
+  ] },
+  { yarn: 'AATCC', bands: [
+    { factor: 0.25, add: 0, expr: '(0.25 × tex)' }                    // 美标all
+  ]}
 ]
 
 // ---- 状态 ----
