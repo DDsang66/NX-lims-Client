@@ -63,10 +63,16 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1"
+                        :model-value="row.trial1"
+                        @update:model-value="onMassInput(row, 'trial1', $event)"
+                        :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2"
+                        :model-value="row.trial2"
+                        @update:model-value="onMassInput(row, 'trial2', $event)"
+                        :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeSplitRow(rIndex)">
@@ -99,10 +105,14 @@
                         </el-select>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
-                        <el-input v-model="sub.gsmTrail1" placeholder="Trial#1" size="small" style="width: 80px" />
+                        <el-input placeholder="Trial#1" size="small" style="width: 80px"
+                          :model-value="sub.gsmTrail1"
+                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)" />
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
-                        <el-input v-model="sub.gsmTrail2" placeholder="Trial#2" size="small" style="width: 80px" />
+                        <el-input placeholder="Trial#2" size="small" style="width: 80px"
+                          :model-value="sub.gsmTrail2"
+                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -164,10 +174,16 @@
                       </el-select>
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #1" v-model="row.trial1" :disabled="isBicomponentRow(row)" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #1"
+                        :model-value="row.trial1"
+                        @update:model-value="onMassInput(row, 'trial1', $event)"
+                        :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
-                      <el-input type="text" inputmode="decimal" placeholder="Trial #2" v-model="row.trial2" :disabled="isBicomponentRow(row)" />
+                      <el-input type="text" inputmode="decimal" placeholder="Trial #2"
+                        :model-value="row.trial2"
+                        @update:model-value="onMassInput(row, 'trial2', $event)"
+                        :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -200,10 +216,14 @@
                         </el-select>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
-                        <el-input v-model="sub.gsmTrail1" placeholder="Trial#1" size="small" style="width: 80px" />
+                        <el-input placeholder="Trial#1" size="small" style="width: 80px"
+                          :model-value="sub.gsmTrail1"
+                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)" />
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
-                        <el-input v-model="sub.gsmTrail2" placeholder="Trial#2" size="small" style="width: 80px" />
+                        <el-input placeholder="Trial#2" size="small" style="width: 80px"
+                          :model-value="sub.gsmTrail2"
+                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -346,8 +366,17 @@
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
   import { handleGridKeydown } from '@/utils/tableKeyboardNav.js'
   import { createStartsWithFilter } from '@/utils/selectFilter.js'
+  import { applyInlineCalc } from '@/utils/inlineCalc.js'
 
   const request = inject('request');
+
+  // 称量格：输入算式时，敲下最后一个 `=` 的输入事件里直接换成结果（规则见 utils/inlineCalc.js）。
+  // 这些格子刻意用 :model-value + @update:model-value 单向绑定，保证模型里只出现最终值 ——
+  // 若保留 v-model 再加 @input，el-input 会先把带 `=` 的原文写进模型，而父组件的
+  // Number(...) || 0 会把原文变成 0、静默丢行。
+  function onMassInput(target, key, value) {
+    target[key] = applyInlineCalc(value)
+  }
 
   // 子纤维候选改由父组件传入（原先两处内联且**全小写** 'hemp'/'cotton'/'linen'/'ramie'，
   // 与 fiber_database 的拼写不一致 —— 存进库的就是小写名，报告上照原样印出）。
