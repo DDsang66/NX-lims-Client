@@ -170,7 +170,7 @@
           <el-input v-model="historyKeyword" clearable placeholder="按报告号筛选" size="default" style="width:280px"/>
         </el-form-item>
       </el-form>
-      <el-table v-loading="historyLoading" class="removeTableGaps" :data="filteredHistory" border stripe size="small" style="width:100%;">
+      <el-table v-loading="historyLoading" class="removeTableGaps" :data="pagedHistory" border stripe size="small" style="width:100%;">
         <!-- 2C 那份报告靠**单独一列**的标签看（格子空着就是常规）：模式不落库，
              它只体现在文件名里那个 2C 段上（后端 FiberReportFileMeta.Is2C 从文件名解析出来的）。
              也正因为它被剥掉了，「2C」不是能搜到的关键字 —— 上面的筛选框搜不到，
@@ -197,6 +197,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- 分页切的是**筛选后**的结果：先按报告号过滤，再切 20 条一页 -->
+      <el-pagination
+        v-model:current-page="historyPage"
+        class="history-pagination"
+        background
+        :page-size="HISTORY_PAGE_SIZE"
+        :total="filteredHistory.length"
+        layout="total, prev, pager, next" />
     </el-dialog>
   </section>
 </template>
@@ -345,6 +353,8 @@
   const historyKeyword = ref('')
   const historyList = ref([])
   const historyLoading = ref(false)
+  const HISTORY_PAGE_SIZE = 20
+  const historyPage = ref(1)
 
   // 一次拉全量，筛选在本地做（按报告号子串，改动输入即出结果，不再打后端）
   async function loadHistory() {
@@ -356,15 +366,29 @@
       ElMessage.error('查询失败: ' + e.message)
     } finally {
       historyLoading.value = false
+      // 删除后也走这里：删掉当前页最后一条时，把页码夹回上一页，不留空页
+      const maxPage = Math.max(1, Math.ceil(filteredHistory.value.length / HISTORY_PAGE_SIZE))
+      if (historyPage.value > maxPage) historyPage.value = maxPage
     }
   }
 
-  watch(historyVisible, v => { if (v) loadHistory() })
+  watch(historyVisible, v => {
+    if (v) { historyPage.value = 1; loadHistory() }
+  })
+
+  // 筛选条件一变就回第 1 页，否则可能停在筛选后不存在的页上
+  watch(historyKeyword, () => { historyPage.value = 1 })
 
   const filteredHistory = computed(() => {
     const keyword = historyKeyword.value.trim().toLowerCase()
     if (!keyword) return historyList.value
     return historyList.value.filter(r => (r.reportNumber || '').toLowerCase().includes(keyword))
+  })
+
+  // 先过滤、再分页 —— 两者顺序不能颠倒
+  const pagedHistory = computed(() => {
+    const start = (historyPage.value - 1) * HISTORY_PAGE_SIZE
+    return filteredHistory.value.slice(start, start + HISTORY_PAGE_SIZE)
   })
 
   // 回传：不下载，把这份已生成的报告交给右侧 OnlyOffice 显示 —— 没装 Word 的机器也能看。
@@ -733,9 +757,11 @@
     }
   }
 
-
-
-
+  .history-pagination {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
 </style>
 
 
