@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-  import { reactive, watch, defineProps, defineEmits, ref, onMounted } from 'vue'
+  import { reactive, watch, ref, onMounted } from 'vue'
 
   // ==================== Props ====================
   const props = defineProps({
