@@ -811,7 +811,7 @@ async function record() {
   ElMessage.success(`${dir} #${idx} 已记录  Average=${average.toFixed(2)}  Mass=${m.toFixed(3)}  Tex=${specimens.get(key).tex ?? '—'}`)
 
   // 录的是 #1 → 顺手补同方向的 #2(Tex 与 #1 相同); #2 已有数据时会先弹一句问, 保留就不动它
-  // 2026-10-15 停用: 不再自动补 #2, #1 之外的试样一律手动录入
+  // 停用: 不再自动补 #2, #1 之外的试样一律手动录入
   // if (idx === 1) {
   //   const r = await fillSecondAfterFirst(dir)
   //   if (r === 'made') ElMessage.success(`${dir} #2 已自动生成 (Tex 与 #1 相同)`)
