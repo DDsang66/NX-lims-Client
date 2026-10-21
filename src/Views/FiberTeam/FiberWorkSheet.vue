@@ -21,6 +21,8 @@
                                 :cellulosicSubOptions="fiberOptions.cellulosicSub"
                                 :regeneratedSubOptions="fiberOptions.regeneratedSub"
                                 :bicomponentSubOptions="fiberOptions.bicomponentSub"
+                                :prefill="restorePayload"
+                                @prefilled="onPrefilled"
                                 @confirm="handleFiberConfirm"
                                 @save-draft="handleSaveDraft"
                                 @build-analysis="handleBuildAnalysis"
@@ -30,6 +32,8 @@
                                  :key="refreshKey"
                                  v-model:rows="rows"
                                  :allCompositions="allCompositions"
+                                 :prefill="restorePayload"
+                                 @prefilled="onPrefilled"
                                  @confirm="handleFiberConfirm"
                                  @save-draft="handleSaveDraft"
                                  @build-analysis="handleBuildAnalysis"
@@ -43,7 +47,7 @@
 </template>
 
 <script setup>
-  import { ref, reactive, computed, onMounted, inject, watch } from 'vue'
+  import { ref, reactive, computed, onMounted, inject, watch, nextTick } from 'vue'
   import { ElMessage } from 'element-plus'
   import LeftTopSection from './LeftTopSection.vue'
   import LeftMultiFiberSection from './LeftMultiFiberSection.vue'
@@ -58,6 +62,13 @@
   // 生成之后被换成带时间戳的报告地址（见 handleBuildAnalysis）—— 非空即"已有报告"。
   const reportDocUrl = ref('')
   const refreshKey = ref(0)
+
+  // 历史报告回填：后端按文件名找回那次生成的录入 DTO，这里原样转给当前显示的那个左区组件。
+  // 组件灌完数据后 emit('prefilled')，这里立刻清空 —— 否则 Refresh / 切单多组分重新挂载时
+  // 会把同一份数据再灌一遍，把用户改过的东西冲掉。
+  const restorePayload = ref(null)
+
+  function onPrefilled() { restorePayload.value = null }
 
   // Report Number 分段数据
   const twoDigitYear = ref(new Date().getFullYear() % 100)
@@ -358,14 +369,56 @@
     }
   }
 
-  // 历史报告"回传" → 右侧 OnlyOffice。与 handleBuildAnalysis 同一个地址范式：
-  // 必须用绝对地址（document.url 是**文档服务器**去拉取的），取 axios baseURL 的 origin。
-  // 末尾 ?_=<时间戳> 是刻意的：重复回传同一份时 URL 不变、RightPanel 的 watch 不触发，
-  // 也会撞上同一个 OnlyOffice key；带上它每次都是新 key、重新从后端拉原件。
-  function handleReportRestore(fileName) {
-    const origin = new URL(request.defaults.baseURL).origin
-    reportDocUrl.value =
-      `${origin}/api/FiberAnalysis/reports/${encodeURIComponent(fileName)}?_=${Date.now()}`
+  // 历史报告"回填"：不再把 docx 交给 OnlyOffice，而是按文件名把**那一次生成时的录入数据**
+  // 从 fiber_analysis 读回来、灌进左侧表单。报告的 docx 仍可用旁边的「下载」看原件。
+  //
+  // 文件名是唯一入口：报告号、生成时刻、是否 2C 都在文件名上（模式刻意不落库）。
+  // 找不到对应行就只提示，不退回 OnlyOffice。
+  async function handleReportRestore(fileName) {
+    let dto
+    try {
+      const res = await request.get(`/FiberAnalysis/reports/${encodeURIComponent(fileName)}/worksheet`)
+      dto = res.data?.data
+    } catch {
+      dto = null
+    }
+    if (!dto) {
+      ElMessage.warning('该报告在库中无对应录入记录')
+      return
+    }
+
+    // 先落"整页"的字段。standardMode 的 watch 是异步的：先把已选方法清空，避免它在
+    // 换口径时把上一份报告的选择按新清单重映射、顺带弹一条"已移除"的警告。
+    form.value.menuName = []
+    form.value.standardMode = dto.standardMode || 'Current'
+    form.value.additionItem = dto.componentType === 'Single' ? 'type2' : 'type1'
+    form.value.standard = dto.buyer || ''
+    Object.assign(reportNums, splitReportNumber(dto.reportNumber))
+    form.value.reportNumber = dto.reportNumber || ''
+
+    // 等单/多组分那一路真的挂载完，再灌已选方法与明细
+    await nextTick()
+    form.value.menuName = dto.method || []
+    // 右侧回到模板预览 —— 回填不等于已生成过报告
+    reportDocUrl.value = ''
+    restorePayload.value = { token: Date.now(), dto }
+  }
+
+
+  // 报告号 → 界面上的五段。
+  // 段数不是 5 时整串塞进 data4，LeftTopSection 的 watcher 拼回去仍是原文。
+  function splitReportNumber(reportNumber) {
+    const parts = String(reportNumber || '').split('.')
+    if (parts.length !== 5) {
+      return { data1: '', data2: '', data3: '', data4: reportNumber || '', data5: '' }
+    }
+    return {
+      data1: parts[0] + '.',
+      data2: parts[1] + '.',
+      data3: parts[2] + '.',
+      data4: parts[3],
+      data5: '.' + parts[4]
+    }
   }
 
   onMounted(() => {

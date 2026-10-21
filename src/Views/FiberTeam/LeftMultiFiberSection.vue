@@ -242,8 +242,8 @@
         <!-- 新增：独立的12个输入框区域，位于 mainContainer 下方 -->
         <div class="extra-inputs-container">
           <!-- 第一行：1个输入框 -->
-          <!-- 2026-09-28：Final Result / Durability Label / Other Label / Comprehensive 四项
-               随模板 conclusion 段删行一并下线。
+          <!-- Final Result / Durability Label / Other Label / Comprehensive 四项
+               已下线。
                ⚠️ 剩余项仍用 input1 / input6 / input8 / input9 / input10 这些**位置式旧键名**，
                删掉的 input2~input5 必须**留空号**，不可把后面的往前挪。 -->
           <div class="row">
@@ -321,8 +321,8 @@
     </transition>
 
     <!-- 历史报告列表：后端扫 SaveDocx 根目录 + 全部 FiberAnalysis{yyyyMM} 子目录，
-         只认 *_FiberAnalysis.docx（挡别的模块的报告）。列表只有 报告号/时间/大小 ——
-         文件名里没有样品名，纤维也没有对应的 docx 读取器，所以不做回填。 -->
+         只认 *_FiberAnalysis.docx（挡别的模块的报告）。
+         「回填」不读 docx —— 它按文件名回库里找生成那次报告的录入行，把数据灌回左侧表单。 -->
     <el-dialog v-model="historyVisible" title="历史报告文件" width="820px">
       <el-form size="small" @submit.prevent>
         <el-form-item label-width="0">
@@ -350,7 +350,7 @@
         </el-table-column>
         <el-table-column label="操作" align="center" width="210">
           <template #default="{ row }">
-            <el-button size="small" type="success" @click="restoreHistoryFile(row)">回传</el-button>
+            <el-button size="small" type="success" @click="restoreHistoryFile(row)">回填</el-button>
             <el-button size="small" type="primary" @click="downloadHistoryFile(row.fileName)">下载</el-button>
             <el-button size="small" type="danger" @click="deleteHistoryFile(row)">删除</el-button>
           </template>
@@ -449,6 +449,11 @@
     bicomponentSubOptions: {
       type: Array,
       default: () => []
+    },
+    // 历史报告回填数据：{ token, dto }。父组件按文件名从 fiber_analysis 取回。
+    prefill: {
+      type: Object,
+      default: null
     }
   })
 
@@ -470,7 +475,7 @@
       : props.cellulosicSubOptions
   }
 
-  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis', 'restore'])
+  const emit = defineEmits(['update:sections', 'confirm', 'save-draft', 'build-analysis', 'restore', 'prefilled'])
 
   const isNoticeOpen = ref(true)
 
@@ -573,6 +578,76 @@
     emit('update:sections', val)
     emit('confirm', val)
   }, { deep: true })
+
+  /* ============ 历史报告回填 ============ */
+  // prefill = { token, dto }：dto 就是 BuildAnalysisDto 的反序列化结果，字段与 buildDto 同构，
+  // 只是多选备注在库里按 '\n' 拼成了一个串，这里拆回数组。
+  // 只认新 token 的那一次 —— 灌完 emit('prefilled')，父组件随即清空 prop，
+  // 免得 Refresh / 重新挂载时把用户刚改的数据又冲一遍。
+  let appliedPrefillToken = null
+
+  // 库里存的是"计算输入"，不是界面快照：percentage=0 的子纤维、整行为空的子行在
+  // buildDto 里就被滤掉了，所以回填出来的表格会比当初录入的少几行 —— 这是刻意的，
+  // 用这份数据重新生成的报告与原件结论一致。
+  function toRows(rows) {
+    return (rows || []).map(r => ({
+      composition: r.fiberName || '',
+      trial1: r.gsmTrail1 ?? null,
+      trial2: r.gsmTrail2 ?? null,
+      cellulosicSubFibers: (r.cellulosicSubFibers || []).map(s => ({
+        fiberName: s.fiberName || '',
+        percentage: s.percentage ?? ''
+      })),
+      bicomponentSubFibers: (r.bicomponentSubFibers || []).map(s => ({
+        fiberName: s.fiberName || '',
+        gsmTrail1: s.gsmTrail1 ?? 0,
+        gsmTrail2: s.gsmTrail2 ?? 0
+      }))
+    }))
+  }
+
+  // 备注：多选在 buildDto 里拼成 '\n' 串，这里拆回来；单值字段直接对位。
+  // input7 / input11 / input12 / bottleNumber / gramWeight **不落库**，回填时清掉，
+  // 别让上一份报告的值留在界面上。
+  function applyPrefillExtras(dto) {
+    const lines = text => String(text || '').split('\n').filter(Boolean)
+    extraInputs.input1 = dto.verifyResult || ''
+    extraInputs.input6 = (dto.recommendedLabel || [])[0] || ''
+    extraInputs.resultRemark = lines(dto.resultRemark)
+    extraInputs.input8 = lines(dto.labelRemark)
+    extraInputs.input9 = dto.judgmentLabelRemark || ''
+    extraInputs.input10 = dto.languageLabelRemark || ''
+    extraInputs.input7 = ''
+    extraInputs.input11 = ''
+    extraInputs.input12 = ''
+    extraInputs.bottleNumber = []
+    extraInputs.gramWeight = ''
+  }
+
+  function applyPrefill(prefill) {
+    if (!prefill?.dto || prefill.token === appliedPrefillToken) return
+    appliedPrefillToken = prefill.token
+
+    const dto = prefill.dto
+    const multiple = dto.multipleBuildAnalysis || {}
+
+    sampleInput.value = multiple.sample || ''
+    splitSection.rows = toRows(multiple.fiberSplittingList?.[0]?.splittingRows)
+    localSections.value = (multiple.fiberDissolvedList || []).map((sec, i) => ({
+      id: Date.now() + i,
+      title: `Dissolved #${i + 1}`,
+      rows: toRows(sec.dissolvedRows),
+      headerInputs: {
+        trial1: sec.originalGSMTrail1 ?? null,
+        trial2: sec.originalGSMTrail2 ?? null
+      }
+    }))
+
+    applyPrefillExtras(dto)
+    emit('prefilled')
+  }
+
+  watch(() => props.prefill, applyPrefill, { immediate: true })
 
   // 单选框选项
   const judgmentLabelOptions = ref([]);
@@ -689,8 +764,8 @@
     return filteredHistory.value.slice(start, start + HISTORY_PAGE_SIZE)
   })
 
-  // 回传：不下载，把这份已生成的报告交给右侧 OnlyOffice 显示 —— 没装 Word 的机器也能看。
-  // 地址由父组件拼（document.url 是文档服务器去拉的，不是浏览器），这里只报文件名。
+  // 回填：不打开 OnlyOffice，把这份报告生成时的录入数据灌回左侧表单。
+  // 取数由父组件做（它才知道表单整体状态），这里只报文件名。
   function restoreHistoryFile(row) {
     historyVisible.value = false
     emit('restore', row.fileName)
