@@ -241,14 +241,24 @@
     </div>
 
     <!-- 历史报告列表 -->
-    <el-dialog v-model="historyVisible" title="历史报告文件" width="640px">
+    <el-dialog v-model="historyVisible" title="历史报告文件" width="880px">
       <el-form size="small" @submit.prevent>
         <el-form-item label-width="0">
-          <el-input v-model="historyKeyword" clearable placeholder="按报告号筛选" style="width:220px;"/>
+          <el-input v-model="historyKeyword" clearable placeholder="按报告号 / 样品名称筛选" style="width:220px;"/>
+          <el-button size="small" type="success" :disabled="!canCombine" :loading="combining"
+                     @click="combineSelected" style="margin-left:8px;">
+            合并所选报告{{ historySelection.length >= 2 ? `(${historySelection.length})` : '' }}
+          </el-button>
+          <span class="combine-hint">(勾选同一报告号下的多次测试, 每次测试原样成一页)</span>
         </el-form-item>
       </el-form>
-      <el-table :data="filteredHistory" border stripe size="small" style="width:100%;">
+      <el-table :data="filteredHistory" border stripe size="small" style="width:100%;"
+                @selection-change="onHistorySelect">
+        <el-table-column type="selection" width="42"/>
         <el-table-column prop="reportNumber" label="报告号" width="160"/>
+        <el-table-column prop="sampleName" label="样品名称" min-width="150" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.sampleName || '-' }}</template>
+        </el-table-column>
         <el-table-column label="生成时间" width="170">
           <template #default="{ row }">{{ ts(row.generatedAt) }}</template>
         </el-table-column>
@@ -918,14 +928,17 @@ watch(historyVisible, v => { if (v) loadHistory() })
 const filteredHistory = computed(() => {
   const keyword = historyKeyword.value.trim().toLowerCase()
   if (!keyword) return historyList.value
-  return historyList.value.filter(r => (r.reportNumber || '').toLowerCase().includes(keyword))
+  return historyList.value.filter(r =>
+    (r.reportNumber || '').toLowerCase().includes(keyword) ||
+    (r.sampleName || '').toLowerCase().includes(keyword)
+  )
 })
 
 // 删除报告: 物理删除不可恢复 → 先二次确认; 文件名就是列表给的原名(后端再挡一次路径穿越)
 async function deleteFile(row) {
   try {
     await ElMessageBox.confirm(
-      `确定删除报告「${row.reportNumber}」吗? 删除后不可恢复。`,
+      `确定删除报告「${row.reportNumber}」${row.sampleName ? ' 样品 ' + row.sampleName : ''} 吗? 删除后不可恢复。`,
       '删除确认', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
   } catch { return }   // 取消/关闭 → 什么都不做
 
@@ -933,8 +946,41 @@ async function deleteFile(row) {
     const res = await api.delete(`/MoistureDryingRate/reports/${encodeURIComponent(row.fileName)}`)
     if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '删除失败'); return }
     ElMessage.success('已删除')
+    historySelection.value = []   // 删完重新拉列表, 勾选跟着清掉
     loadHistory()
   } catch (e) { ElMessage.error('网络错误: ' + e.message) }
+}
+
+// ---- 合并所选报告 (同一报告号下、不同时间做的多次测试 → 一份报告, 每次测试原样成一页) ----
+// 样品名从报告 docx 里读回(后端 ListNf5022Reports 回填 sampleName), 用于分辨同报告号下是哪次测试。
+const historySelection = ref([])
+const combining = ref(false)
+function onHistorySelect(rows) { historySelection.value = rows || [] }
+// 至少 2 份、且报告号一致才可合并(不同报告号 = 不同报告, 后端也会拦)
+const canCombine = computed(() => {
+  const rows = historySelection.value
+  return rows.length >= 2 && rows.every(r => r.reportNumber === rows[0].reportNumber)
+})
+
+async function combineSelected() {
+  const rows = historySelection.value
+  if (rows.length < 2) { ElMessage.warning('请至少勾选 2 份报告'); return }
+  if (!rows.every(r => r.reportNumber === rows[0].reportNumber)) {
+    ElMessage.warning('只能合并同一报告号下的报告'); return
+  }
+  combining.value = true
+  try {
+    const res = await api.post('/MoistureDryingRate/combine/nf5022', {
+      fileNames: rows.map(r => r.fileName)
+    })
+    if (!res.data?.isSuccess) { ElMessage.error(res.data?.error || '合并失败'); return }
+    const { downloadUrl, fileName } = res.data.value
+    ElMessage.success('合并成功, 开始下载')
+    downloadBlob(downloadUrl, fileName)
+    historySelection.value = []   // 重新拉列表 → 行对象换了, 勾选清掉(免得按钮还停在可合并态)
+    loadHistory()                 // 合并产物也进列表(样品名 = 各页名顿号拼接), 可再被选中继续合并
+  } catch (e) { ElMessage.error('网络错误: ' + e.message) }
+  finally { combining.value = false }
 }
 
 function downloadFile(fileName) {
@@ -956,6 +1002,10 @@ let simSeq = 0
 // 仿真各工位滴水量(mg) —— 必须全站一致: 2023 判据是"蒸发量追平滴水量(差 ≤20mg)",
 // 若各站滴水量不同, 到点时刻就错开, 演示时看着像"到点却不收尾"。0.2mL ≈ 200mg。
 const SIM_WATER_MG = 200
+// 各工位每个采样点的蒸发量(mg) —— 刻意逐站不同, 否则六站算出的速率一模一样,
+// 报告/合并时看不出是哪次测试。滴水量仍全站一致, 蒸发快的站先到终止条件,
+// 蒸发慢的站由 sp×(p−1) ≥ 60 的上限收尾, 不会出现"到点却不收尾"。
+const SIM_EVAP_STEP_MG = [12, 11, 13, 10, 14, 9]
 
 function onSimModeChange() {
   if (simMode.value) {
@@ -983,10 +1033,10 @@ function startSimTest(keepSeq = false) {
     simSeq++
     for (let i = 0; i < 6; i++) {
       if (!stationChecked.value[i]) continue
-      // 蒸发量从 0 线性升到滴水量 (每点 +12), 秤读数 raw 从 架+布+水 递减到 架+布
+      // 蒸发量从 0 线性升到滴水量 (每点 +SIM_EVAP_STEP_MG[i], 逐站不同), 秤读数 raw 从 架+布+水 递减到 架+布
       // —— 蒸发时称重必然递减, 与真机 &1 帧方向一致; 用水量取已滴的 waterWeight, 没滴过就按 SIM_WATER_MG 兜底(仍保持各站一致)
       const water = waterWeight.value[i] || SIM_WATER_MG
-      const evap = Math.min(Math.max(simSeq - 1, 0) * 12, water)
+      const evap = Math.min(Math.max(simSeq - 1, 0) * SIM_EVAP_STEP_MG[i], water)
       const raw = frameWeight.value[i] + clothWeight.value[i] + water - evap
       handleFrame('&1' + '0' + String.fromCharCode(49 + i) + String(Math.round(raw)).padStart(6, '0'))
     }
@@ -1082,4 +1132,6 @@ onBeforeUnmount(() => {
 .stat-cell .lbl { font-size: 11px; color: #909399; }
 .stat-cell .val { font-size: 13px; font-weight: 600; color: #2b3a4a; font-family: Consolas, monospace; }
 :deep(.el-tabs__header) { margin-bottom: 6px; }
+/* 历史报告合并提示: 跟在合并按钮右边的一句说明 */
+.combine-hint { font-size: 12px; color: #909399; margin-left: 8px; }
 </style>
