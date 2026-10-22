@@ -106,12 +106,12 @@
   const menuName = ref([])
 
   // 切模式时已选项必须先**按值重映射、再**滤掉不在新清单里的。
-  // 只做 filter 是不够的：下面三条在两个模式里**值本身就不同**，
+  // 只做 filter 是不够的：下面两条在两个模式里**值本身就不同**，
   // 原样提交给 2C 记录会被后端按 2C 口径解析、派生出口径错的链（报告上印错版本号）。
-  // 三条与后端 MethodOptionsCurrent / MethodOptionsDual 逐字对应 ——
+  // 两条与后端 MethodOptionsCurrent / MethodOptionsDual 逐字对应 ——
   // 两条 AATCC 的**空格数刻意不同**（双空格那条是复合方法名，Korea 那条本来就是单空格）。
+  // EU 那条不在表里：后端两份清单里都是 "Regulation (Eu) No. 1007/2011"，无需换值。
   const MODE_VALUE_SWAP = [
-    ['Regulation (Eu) No. 1007/2011', 'EU regulation No. 1007/2011 VIII'],
     ['AATCC TM20-2021  AATCC TM20A-2025', 'AATCC TM20-2021  AATCC TM20A-2021'],
     ['AATCC TM20-2021 AATCC TM20A-2025 (Korea)', 'AATCC TM20-2021 AATCC TM20A-2021 (Korea)']
   ]
@@ -143,24 +143,24 @@
   const isWildcardComposition = name => name.startsWith('*');
   const byCompositionName = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
 
-  /** 头段（双组分类名）按给定次序 → 13 个常用名按固定序 → 其余字母序 → 通配项垫底。只重排, 不增不删。 */
-  function sortCompositions(list, head) {
+  /** 13 个常用名按固定序 → 其余字母序 → 通配项垫底 → 尾段（双组分类名）。只重排, 不增不删。 */
+  function sortCompositions(list, foot) {
     const pinned = new Map(PINNED_COMPOSITIONS.map((n, i) => [n, i]));
-    const taken = new Set([...head, ...PINNED_COMPOSITIONS]);
+    const taken = new Set([...foot, ...PINNED_COMPOSITIONS]);
     const fixed = list.filter(n => pinned.has(n)).sort((a, b) => pinned.get(a) - pinned.get(b));
     const rest = list.filter(n => !taken.has(n) && !isWildcardComposition(n)).sort(byCompositionName);
     const tail = list.filter(n => !taken.has(n) && isWildcardComposition(n)).sort(byCompositionName);
-    return [...head, ...fixed, ...rest, ...tail];
+    return [...fixed, ...rest, ...tail, ...foot];
   }
 
   const allCompositions = computed(() => {
     const methods = form.value.menuName || [];
-    const head = [];
-    // 头两项 = 两个双组分类名, 勾了对应方法族才出现。它们**不在 fiber_database 里**,
+    // 两个双组分类名 = 下拉最底两项, 勾了对应方法族才出现。它们**不在 fiber_database 里**,
     // 是前端按方法族插进来的；两个都勾时的先后照现状（原来是两次 unshift 的结果）。
-    if (methods.some(m => m.startsWith('AATCC'))) head.push('Biconstituent Fiber');
-    if (methods.some(m => m.startsWith('FZ/T'))) head.push('Bicomponent Fiber');
-    return sortCompositions([...baseCompositions.value], head);
+    const foot = [];
+    if (methods.some(m => m.startsWith('AATCC'))) foot.push('Biconstituent Fiber');
+    if (methods.some(m => m.startsWith('FZ/T'))) foot.push('Bicomponent Fiber');
+    return sortCompositions([...baseCompositions.value], foot);
   });
   const rows = ref([]);
 
