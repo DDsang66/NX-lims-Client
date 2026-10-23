@@ -152,10 +152,18 @@
                   <tr>
                     <th class="header-row-2">Composition</th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing" v-model="section.headerInputs.trial1" class="header-input" />
+                      <!-- 表头称量格同样是称量数据，走与行内 Trial 相同的末尾等号内联计算；
+                           单向绑定与 onMassInput 的理由见脚本顶部注释 -->
+                      <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing"
+                        :model-value="section.headerInputs.trial1"
+                        @update:model-value="onMassInput(section.headerInputs, 'trial1', $event)"
+                        class="header-input" />
                     </th>
                     <th class="header-row-2">
-                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing" v-model="section.headerInputs.trial2" class="header-input" />
+                      <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing"
+                        :model-value="section.headerInputs.trial2"
+                        @update:model-value="onMassInput(section.headerInputs, 'trial2', $event)"
+                        class="header-input" />
                     </th>
                     <th class="header-row-2" style="text-align:center">
                       <!-- 这里留空或者放置其他操作，如果需要的话 -->
