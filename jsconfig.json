@@ -1,8 +1,15 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "allowJs": true,
+    "checkJs": false,
     "paths": {
       "@/*": ["./src/*"]
     }
   },
+  "include": ["src/**/*", "shims-vue.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

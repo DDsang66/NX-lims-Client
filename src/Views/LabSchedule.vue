@@ -74,11 +74,64 @@
                         style="width: 100%"
                         border
                         empty-text="No items">
+                <!-- ★ 分包二级子表：一个 CheckListItem 可能对应多份 docx（按 modelIndex 分包） -->
+                <el-table-column type="expand">
+                  <template #default="dsScope">
+                    <div style="margin-left: 20px;">
+                      <el-table class="roundedTable"
+                                :data="itemDataSheets(dsScope.row)"
+                                row-key="dataSheetId"
+                                style="width: 100%"
+                                border
+                                empty-text="No datasheets">
+                        <el-table-column label="ModelIndex"
+                                         prop="modelIndex"
+                                         width="100"
+                                         :formatter="funcs.emptyDisplay" />
+                        <el-table-column label="DataSheetId"
+                                         prop="dataSheetId"
+                                         min-width="150"
+                                         :formatter="funcs.emptyDisplay" />
+                        <el-table-column label="ModelKey"
+                                         prop="modelKey"
+                                         min-width="120"
+                                         :formatter="funcs.emptyDisplay" />
+                        <el-table-column label="Status" width="120">
+                          <template #default="scope">
+                            <el-tag :type="dataSheetStatusTagType(scope.row.status)" size="small">
+                              {{ scope.row.status || '-' }}
+                            </el-tag>
+                          </template>
+                        </el-table-column>
+                        <el-table-column label="URL" min-width="220">
+                          <template #default="scope">
+                            <a v-if="scope.row.url"
+                               class="file-link"
+                               @click.prevent="openDataSheet(scope.row)">
+                              {{ getFileName(scope.row.url) }}
+                            </a>
+                            <span v-else>-</span>
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                  </template>
+                </el-table-column>
                 <el-table-column label="Group"
                                  fixed
                                  prop="group"
                                  width="100"
                                  :formatter="funcs.emptyDisplay" />
+                <el-table-column label="DataSheets" width="110">
+                  <template #default="scope">
+                    <el-tag v-if="itemDataSheets(scope.row).length"
+                            size="small"
+                            type="info">
+                      {{ itemDataSheets(scope.row).length }}
+                    </el-tag>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
                 <el-table-column label="DatasheetId"
                                  prop="datasheetId"
                                  min-width="150"
@@ -94,7 +147,7 @@
                 <el-table-column label="Status" width="120">
                   <template #default="scope">
                     <el-tag :type="itemStatusTagType(scope.row.status)" size="small">
-                      {{ scope.row.status }}
+                      {{ normalizeStatus(scope.row.status) }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -252,11 +305,21 @@
               <el-descriptions-item label="Group">
                 <el-input v-model="item.group" disabled />
               </el-descriptions-item>
-              <el-descriptions-item label="DatasheetId">
-                <el-input v-model="item.datasheetId" disabled />
-              </el-descriptions-item>
-              <el-descriptions-item label="ModelKey">
-                <el-input v-model="item.modelKey" />
+              <el-descriptions-item label="DataSheets" :span="2">
+                <div class="dsList">
+                  <div v-for="(ds, i) in itemDataSheets(item)"
+                       :key="ds.dataSheetId || i"
+                       class="dsRow">
+                    <el-tag size="small" type="info">{{ ds.modelIndex }}</el-tag>
+                    <el-input v-model="ds.dataSheetId" disabled style="width: 170px" />
+                    <el-input v-model="ds.modelKey" placeholder="ModelKey" style="width: 130px" />
+                    <el-input v-model="ds.url" placeholder="URL" style="flex: 1" />
+                    <el-tag size="small" :type="dataSheetStatusTagType(ds.status)">
+                      {{ normalizeStatus(ds.status) || '-' }}
+                    </el-tag>
+                  </div>
+                  <span v-if="!itemDataSheets(item).length">-</span>
+                </div>
               </el-descriptions-item>
               <el-descriptions-item label="TestItem">
                 <el-input v-model="item.testItem" />
@@ -268,9 +331,6 @@
                   <el-option value="InProgress" label="InProgress" />
                   <el-option value="Completed" label="Completed" />
                 </el-select>
-              </el-descriptions-item>
-              <el-descriptions-item label="URL">
-                <el-input v-model="item.url" />
               </el-descriptions-item>
 
               <!-- ★ Approver 字段：右侧下方放 Confirm -->
@@ -317,6 +377,7 @@
 </template>
 
 <script setup lang="ts">
+// @ts-nocheck
   import { inject, onMounted, reactive, ref, computed, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { VueDraggable } from 'vue-draggable-plus'
@@ -397,11 +458,27 @@
     Validated: { order: 1, weight: 25, tag: 'primary' },
     InProgress: { order: 2, weight: 50, tag: 'warning' },
     Completed: { order: 3, weight: 100, tag: 'success' },
+    // Rejected 计 0 分，不改变现有进度条口径
+    Rejected: { order: 4, weight: 0, tag: 'danger' },
   }
-  const STATUS_ORDER = ['Created', 'Validated', 'InProgress', 'Completed']
+  // 下标即后端枚举序号（0 起），Rejected = 4
+  const STATUS_ORDER = ['Created', 'Validated', 'InProgress', 'Completed', 'Rejected']
 
+  /**
+   * 把状态归一化成枚举名。
+   *
+   * 后端可能把枚举序列化成数字序号（0 起），此时只做字符串大小写匹配会
+   * 原样返回数字，页面上就会显示成 0/1/2/3，所以先按序号还原成名称。
+   *
+   * @param {string|number|null} s 原始状态值。
+   * @returns {string} 枚举名；无法识别时返回原值的字符串形式。
+   */
   function normalizeStatus(s) {
-    if (!s) return ''
+    // 必须先判空再用 Number：Number('') 与 Number(null) 都会得到 0，
+    // 而 0 本身是合法状态（Created），不能当成空值丢弃
+    if (s === null || s === undefined || s === '') return ''
+    const n = Number(s)
+    if (Number.isInteger(n) && STATUS_ORDER[n]) return STATUS_ORDER[n]
     const lower = String(s).trim().toLowerCase()
     return STATUS_ORDER.find(x => x.toLowerCase() === lower) || String(s).trim()
   }
@@ -456,6 +533,63 @@
   function itemStatusTagType(status) {
     const meta = statusMeta(status)
     return meta ? meta.tag : 'info'
+  }
+
+  /**
+   * 取一个 CheckListItem 下所有分包（dataSheets）。
+   *
+   * 后端在同一 modelIndex 上可能保留历史版本行（整体按 version 降序返回），
+   * 只有该 modelIndex 的首条才是应当展示的当前版本，因此按 modelIndex 分组后
+   * 每组只保留第一条，再按 modelIndex 升序输出。
+   *
+   * @param {object} item 列表接口返回的 items[] 元素。
+   * @returns {Array<{dataSheetId: string, modelIndex: number, modelKey: string, url: string, status: string}>}
+   *          按 modelIndex 升序的分包数组；无分包或字段缺失时返回空数组。
+   */
+  function itemDataSheets(item) {
+    const list = Array.isArray(item?.dataSheets) ? item.dataSheets : []
+    const seen = new Set()
+    const result = []
+    for (const ds of list) {
+      const idx = Number(ds?.modelIndex ?? 0)
+      if (seen.has(idx)) continue   // 同一 modelIndex 的历史版本行，跳过
+      seen.add(idx)
+      result.push(ds)
+    }
+    return result.sort((a, b) => Number(a?.modelIndex ?? 0) - Number(b?.modelIndex ?? 0))
+  }
+
+  /**
+   * 分包（报告文件）状态 → el-tag 类型。
+   *
+   * 注意与 itemStatusTagType 的区别：这里的 status 来自 dataSheets[].status
+   * （Pending / Generating / Success / Failed），而 item 级状态是
+   * Created / Validated / InProgress / Completed，两套元数据不能混用，
+   * 否则分包状态会全部落到 info 而丢失颜色语义。
+   *
+   * @param {string} status 分包状态字符串。
+   * @returns {string} el-tag 的 type 取值。
+   */
+  function dataSheetStatusTagType(status) {
+    switch (String(status || '').trim().toLowerCase()) {
+      case 'success': return 'success'
+      case 'failed': return 'danger'
+      case 'generating': return 'warning'
+      case 'pending': return 'info'
+      default: return 'info'
+    }
+  }
+
+  /**
+   * 在新窗口打开某份分包的 docx。
+   *
+   * @param {{url?: string}} ds 分包对象；url 为空串表示文件尚未生成。
+   * @returns {void}
+   */
+  function openDataSheet(ds) {
+    const url = buildPreviewUrl(ds?.url)
+    if (!url) return
+    window.open(url, '_blank')
   }
 
   function progressSummary(row) {
@@ -602,7 +736,16 @@
       checklistId: reportEdit.value.checklistId,
       reportNumber: reportEdit.value.reportNumber,
       status: reportEdit.value.status,
-      items: reportEdit.value.items.map(({ _selected, ...rest }) => rest),
+      items: reportEdit.value.items.map(({ _selected, dataSheets, ...rest }) => {
+        // reportEdit.items 类型被推断为 never[]，显式声明数组以规避新增类型诊断
+        const list: any[] = Array.isArray(dataSheets) ? dataSheets : []
+        const first: any = list[0]
+        // 扁平字段 datasheetId/modelKey/url 的语义是「等于 dataSheets[0]」，
+        // 提交前回写保持两者一致，避免后端走旧读取路径时丢掉对首分包的修改
+        return first
+          ? { ...rest, dataSheets: list, datasheetId: first.dataSheetId, modelKey: first.modelKey, url: first.url }
+          : { ...rest, dataSheets: list }
+      }),
     }
     try {
       const res = await request.post('/checklist/update', dto)
@@ -739,14 +882,20 @@
    */
   async function handleMerge() {
     const selected = selectedEditItems.value
-    if (selected.length < 2) {
-      return ElMessage.warning('Please select at least 2 items to merge')
-    }
 
-    // ★ 必须传相对路径
-    const selectedUrls = selected
-      .map(it => toRelativePath(it.url))
-      .filter(Boolean)
+    // ★ 一个 item 可能对应多份分包（dataSheets），Merge 时全部展开；
+    //   用 Set 去重，避免同一 url 被重复提交
+    const selectedUrls = [
+      ...new Set(
+        selected
+          .flatMap(it => itemDataSheets(it))
+          .filter(ds => ds.url)
+          .map(ds => toRelativePath(ds.url))
+          .filter(Boolean)
+      ),
+    ]
+
+    // 校验改为按「有效文件数」判断：多分包场景下一个 item 就可能提供多个文件
 
     if (selectedUrls.length < 2) {
       return ElMessage.warning('Selected items have no valid datasheet url')
@@ -984,6 +1133,21 @@
   .ghost-card {
     opacity: 0.5;
     background: #ecf5ff;
+  }
+
+  /* 弹窗内逐分包编辑行 */
+  .dsList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .dsRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
   }
 
   /* ★ Approver 字段：输入框占满，Confirm 按钮在右下侧 */

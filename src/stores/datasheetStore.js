@@ -353,11 +353,50 @@ export const useDatasheetStore = defineStore('datasheet', () => {
   }
 
   /* ========== 重试 ========== */
+  function refreshTaskCounters(task) {
+    if (!task) return
+
+    const items = task.items || []
+    task.total = items.length
+    task.success = items.filter(item => isSuccessStatus(item.status)).length
+    task.failed = items.filter(item => isFailedStatus(item.status)).length
+    task.generating = items.filter(item => {
+      const status = normalizeStatus(item.status)
+      return status === 'GENERATING' || status === 'MERGING'
+    }).length
+    task.pending = items.filter(item => normalizeStatus(item.status) === 'PENDING').length
+    task.status = task.generating > 0 || task.pending > 0 ? 'GENERATING' : task.status
+  }
+
+  function markItemsForRetry(task, items) {
+    if (!task || !items.length) return
+
+    items.forEach(item => {
+      item.status = 'PENDING'
+      item.errorMessage = null
+      item.fileUrl = null
+      item.updatedAt = new Date().toISOString()
+    })
+
+    task.mergedPdfUrl = null
+    refreshTaskCounters(task)
+    attachTaskStream(task.checkListId, task.reportNo)
+  }
+
   async function retryItem(item) {
+    const task = taskList.value.find(t =>
+      (t.items || []).some(currentItem => currentItem.datasheetId === item.datasheetId)
+    )
+
     try {
       const res = await request.post(`/datasheet/retry/${item.datasheetId}`)
-      if (res.data?.isSuccess) emit('success', `Retry requested for ${item.testItemId || item.datasheetId}`)
-      else emit('error', res.data?.error || 'Retry failed')
+      if (res.data?.isSuccess) {
+        const taskItem = task?.items?.find(currentItem => currentItem.datasheetId === item.datasheetId)
+        if (taskItem) markItemsForRetry(task, [taskItem])
+        emit('success', `Retry requested for ${item.testItemId || item.datasheetId}`)
+      } else {
+        emit('error', res.data?.error || 'Retry failed')
+      }
     } catch (e) {
       console.error('Retry error:', e)
       emit('error', e.response?.data?.error || 'Retry failed')
@@ -372,8 +411,13 @@ export const useDatasheetStore = defineStore('datasheet', () => {
     }
     try {
       const res = await request.post(`/datasheet/retry-batch/${task.checkListId}`)
-      if (res.data?.isSuccess) emit('success', `Batch retry requested for ${count} datasheets`)
-      else emit('error', res.data?.error || 'Batch retry failed')
+      if (res.data?.isSuccess) {
+        const failedItems = task.items.filter(item => isFailedStatus(item.status))
+        markItemsForRetry(task, failedItems)
+        emit('success', `Batch retry requested for ${count} datasheets`)
+      } else {
+        emit('error', res.data?.error || 'Batch retry failed')
+      }
     } catch (e) {
       console.error('Batch retry error:', e)
       emit('error', e.response?.data?.error || 'Batch retry failed')

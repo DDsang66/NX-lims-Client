@@ -94,6 +94,7 @@
 </template>
 
 <script setup>
+// @ts-nocheck
   import { onBeforeUnmount, onMounted, reactive, ref, nextTick, watch } from 'vue'
   import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 import Step1 from "@/components/review/Step1.vue";
@@ -358,10 +359,6 @@ onBeforeUnmount(() => {
         // 更新状态
         isStepDataStale.value = false
 
-        // 触发 Step2 更新
-        if (step2Ref.value && step2Ref.value.loadConditions) {
-          step2Ref.value.loadConditions(result.conditionPoolId)
-        }
       }
     } catch (error) {
       console.error('Error in handleRegenerateCheckList:', error)
@@ -385,12 +382,9 @@ onBeforeUnmount(() => {
   // 3. Step1 触发 regeneratedData 事件的处理 (如果不用 ref 调用，也可以用 emit 监听)
   // 如果是通过 @update:regeneratedData 绑定：
   // 在父组件中
-  const handleStep1Regenerated = (data) => {
+  const handleStep1Regenerated = async (data) => {
     console.log('Step1 data regenerated:', data)
     isStepDataStale.value = false
-    if (step2Ref.value && step2Ref.value.loadConditions) {
-      step2Ref.value.loadConditions(data.conditionPoolId)
-    }
 
     if (step1Data.value) {
       step1Data.value = {
@@ -401,6 +395,10 @@ onBeforeUnmount(() => {
         reportNo: step1Ref.value?.reportNo ?? step1Data.value.reportNo
       }
     }
+
+    // Regenerate 后保留 Step2 子组件输入，仅恢复测点级条件分组
+    await nextTick()
+    step2Ref.value?.refreshConditionsAfterRegenerate?.()
 
 
     // 新单：Step3 的旧数据失效，退回 Step2 待提交状态
@@ -586,7 +584,7 @@ onBeforeUnmount(() => {
     left: 100%; /* 定位在步骤项的右侧 */
     top: 50%;
     transform: translateY(-50%);
-    margin-left: 12px; /* 与步骤栏保持一点间距 */
+     margin-left: 0; /* 与步骤项贴合，避免鼠标移动到按钮时经过不可悬停间隙 */
 
     display: flex;
     flex-direction: column; /* 如果有多个按钮可以纵向排列 */

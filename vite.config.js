@@ -13,7 +13,10 @@ export default defineConfig(
     ],
   server: {
     host: '0.0.0.0',   // 或 '192.168.235.8'
-    port: 5173
+    port: 5173,
+    watch: {
+      ignored: ['**/.vs/**']  // 忽略 Visual Studio 的临时目录
+    }
   },
   resolve: {
     alias: {

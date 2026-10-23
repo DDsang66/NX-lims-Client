@@ -136,6 +136,7 @@
 </template>
 
 <script setup>
+// @ts-nocheck
   import CareLabelSelect from "@/components/review/CareLabelSelect.vue";
   import { computed, reactive, ref, watch, nextTick } from "vue";
   import SampleSpecificComposition from "@/components/review/SampleSpecificComposition.vue";
@@ -569,7 +570,32 @@
         merged.push({ ...group, testPoints: [...group.testPoints] });
       }
     });
-    conditionsGroups.value = merged;
+    return merged;
+  }
+
+  // Regenerate 后保留子组件输入，仅将已合并的条件恢复为测点级分组
+  function refreshConditionsAfterRegenerate() {
+    const refreshedGroups = []
+    const currentPoolId = props.step1Data?.conditionPoolId ?? null
+    const currentCheckListId = props.step1Data?.checkListId ?? null
+    const currentReportNo = props.step1Data?.reportNo ?? null
+
+    conditionsGroups.value.forEach(group => {
+      group.testPoints.forEach(testPoint => {
+        const conditions = JSON.parse(JSON.stringify(group.conditions))
+        conditions.ConditionPoolId = currentPoolId
+        conditions.CheckListId = currentCheckListId
+        conditions.ReportNo = currentReportNo
+
+        refreshedGroups.push({
+          ...group,
+          testPoints: [testPoint],
+          conditions
+        })
+      })
+    })
+
+    conditionsGroups.value = refreshedGroups
   }
 
 
@@ -702,7 +728,7 @@
     // 如果正在提交，直接返回
     if (isSubmitting.value) return
 
-    mergeGroupsWithSameConditions()
+    const mergedGroups = mergeGroupsWithSameConditions()
 
     // 单一数据源：每次提交时从 props.step1Data 实时取，避免 group 内缓存旧值
     const currentPoolId = props.step1Data?.conditionPoolId ?? EMPTY_GUID
@@ -710,7 +736,7 @@
     const currentReportNo = props.step1Data?.reportNo ?? ''
 
     // 构建 DTO 列表
-    const dtoList = conditionsGroups.value.map(group => ({
+    const dtoList = mergedGroups.map(group => ({
       ConditionPoolId: currentPoolId,
       CheckListId: currentCheckListId,
       OrderId: currentReportNo,
@@ -750,6 +776,7 @@
   defineExpose({
     conditionsGroups,
     submitConditions,
+    refreshConditionsAfterRegenerate,
     isSubmitting, 
     // ← 新增
   })

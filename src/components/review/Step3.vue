@@ -7,81 +7,88 @@
       </div>
       
       <div class="cardBody">
-        <el-table 
-          :data="groupedByParameter" 
-          border 
-          style="width: 100%"
-          class="checkListTable"
-        >
-          <el-table-column prop="index" label="#" width="60" align="center" />
-          
-          <el-table-column label="Test Item" width="220">
-            <template #default="scope">
-              <!-- ★ 多个测点合并展示 -->
-              <div class="itemNameList">
-                <div v-for="(name, i) in scope.row.testItemNames" :key="i" class="itemNameRow">
-                  <span class="itemName">{{ name }}</span>
-                  <span v-if="name !== scope.row.testItemIds[i]" class="itemId">
-                    ({{ scope.row.testItemIds[i] }})
+        <div v-for="group in groupedByTestGroup" :key="group.key" class="testGroupSection">
+          <div class="testGroupHeader">
+            <div class="testGroupTitle">
+              <span class="testGroupLabel">Test Group</span>
+              <strong>{{ group.label }}</strong>
+            </div>
+            <span class="testGroupCount">{{ group.items.length }} item<span v-if="group.items.length !== 1">s</span></span>
+          </div>
+
+          <el-table
+            :data="group.items"
+            border
+            style="width: 100%"
+            class="checkListTable"
+          >
+            <el-table-column prop="index" label="#" width="60" align="center" />
+
+            <el-table-column label="Test Item" width="220">
+              <template #default="scope">
+                <div class="itemNameList">
+                  <div v-for="(name, i) in scope.row.testItemNames" :key="i" class="itemNameRow">
+                    <span class="itemName">{{ name }}</span>
+                    <span v-if="name !== scope.row.testItemIds[i]" class="itemId">
+                      ({{ scope.row.testItemIds[i] }})
+                    </span>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Standards" width="280">
+              <template #default="scope">
+                <div class="standardsList">
+                  <span
+                    v-for="(std, idx) in scope.row.standardsDisplay"
+                    :key="idx"
+                    class="standardTag"
+                  >
+                    {{ std.code }}
+                    <span v-if="std.name !== std.id" class="standardId">({{ std.id }})</span>
                   </span>
                 </div>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column label="Standards" width="280">
-            <template #default="scope">
-              <div class="standardsList">
-                <span 
-                  v-for="(std, idx) in scope.row.standardsDisplay" 
-                  :key="idx"
-                  class="standardTag"
-                >
-                  {{ std.code }}
-                  <span v-if="std.name !== std.id" class="standardId">({{ std.id }})</span>
-                </span>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="testGroup" label="Test Group" width="120" align="center" />
-          
-          <el-table-column label="Samples" width="200">
-            <template #default="scope">
-              {{ scope.row.samples?.join(', ') || '' }}
-            </template>
-          </el-table-column>
-          
-          <el-table-column label="Parameter" min-width="280">
-            <template #default="scope">
-              <!-- 1. 空参数：直接显示 - -->
-              <span v-if="scope.row.parameters === '-' || !scope.row.parameters || scope.row.parameters.length === 0"
-                    class="parameterDash">-</span>
+              </template>
+            </el-table-column>
 
-              <!-- 2. 结构化参数（★ 用 mergeSameParamGroups 合并相同内容的测点） -->
-              <div v-else class="parameterBlock">
-                <div v-for="(paramGroup, gIdx) in mergeSameParamGroups(scope.row.parameters)"
-                     :key="gIdx"
-                     class="paramGroup">
-                  <span class="paramGroupLabel">{{ paramGroup.group }}</span>
-                  <span class="paramGroupBracket">[</span>
-                  <div class="paramItems">
-                    <div v-for="(entry, eIdx) in paramGroup.entries"
-                         :key="eIdx"
-                         class="paramItem">
-                      <span class="paramKey">{{ entry.key }}</span>
-                      <span class="paramColon">:</span>
-                      <span class="paramValue">{{ entry.value }}</span>
+            <el-table-column prop="testGroup" label="Test Group" width="120" align="center" />
+
+            <el-table-column label="Samples" width="200">
+              <template #default="scope">
+                {{ scope.row.samples?.join(', ') || '' }}
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Parameter" min-width="280">
+              <template #default="scope">
+                <span v-if="scope.row.parameters === '-' || !scope.row.parameters || scope.row.parameters.length === 0"
+                      class="parameterDash">-</span>
+
+                <div v-else class="parameterBlock">
+                  <div v-for="(paramGroup, gIdx) in mergeSameParamGroups(scope.row.parameters)"
+                       :key="gIdx"
+                       class="paramGroup">
+                    <span class="paramGroupLabel">{{ paramGroup.group }}</span>
+                    <span class="paramGroupBracket">[</span>
+                    <div class="paramItems">
+                      <div v-for="(entry, eIdx) in paramGroup.entries"
+                           :key="eIdx"
+                           class="paramItem">
+                        <span class="paramKey">{{ entry.key }}</span>
+                        <span class="paramColon">:</span>
+                        <span class="paramValue">{{ entry.value }}</span>
+                      </div>
                     </div>
+                    <span class="paramGroupBracket">]</span>
                   </div>
-                  <span class="paramGroupBracket">]</span>
                 </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="requirement" label="Requirement" min-width="180" />
-          <el-table-column prop="cuttingMethod" label="Cutting Method" width="150" />
-        </el-table>
+              </template>
+            </el-table-column>
+            <el-table-column prop="requirement" label="Requirement" min-width="180" />
+            <el-table-column prop="cuttingMethod" label="Cutting Method" width="150" />
+          </el-table>
+        </div>
       </div>
     </div>
     
@@ -412,49 +419,50 @@ function mergeDistinct(values) {
 const groupedByParameter = computed(() => {
   if (!checkListData.value?.items) return []
 
-  // 1) 先做 id → name 映射
-  const baseItems = [...checkListData.value.items]
+  // 一个 checklist item 始终对应表格中的一行。
+  // 这里只按 testGroup 排序，不再跨 checklist item 按 parameter 合并。
+  return [...checkListData.value.items]
     .sort((a, b) => (Number(a.testGroup) || 0) - (Number(b.testGroup) || 0))
-    .map((item) => {
+    .map((item, idx) => {
       const info = props.testItemMap[item.testItemId]
-      const name = info?.nameEn || info?.nameChn || item.testItemId
+      const testItemName = info?.nameEn || info?.nameChn || item.testItemId
       const standardsDisplay = (item.standards || []).map(stdId => ({
         id: stdId,
         code: props.standardIdToCodeMap[stdId] || stdId
       }))
+
       return {
-        ...item,
-        testItemName: name,
-        standardsDisplay
+        index: idx + 1,
+        parameters: item.parameters,
+        testItemNames: [testItemName],
+        testItemIds: [item.testItemId],
+        standardsDisplay,
+        samples: item.samples || [],
+        testGroup: item.testGroup,
+        requirement: item.requirement || '-',
+        cuttingMethod: item.cuttingMethod || '-'
       }
     })
+})
 
-  // 2) 按 parameter key 分组（按整个 item 的 parameters 分组，保持原样）
+const groupedByTestGroup = computed(() => {
   const groups = new Map()
-  for (const item of baseItems) {
-    const key = parameterKeyOf(item)
+
+  for (const item of groupedByParameter.value) {
+    const key = String(item.testGroup ?? '') || '__EMPTY_TEST_GROUP__'
+
     if (!groups.has(key)) {
       groups.set(key, {
         key,
-        parameters: item.parameters,
+        label: String(item.testGroup ?? '') || '-',
         items: []
       })
     }
+
     groups.get(key).items.push(item)
   }
 
-  // 3) 转成表格可渲染的数组
-  return [...groups.values()].map((g, idx) => ({
-    index: idx + 1,
-    parameters: g.parameters,
-    testItemNames: g.items.map(i => i.testItemName),
-    testItemIds: g.items.map(i => i.testItemId),
-    standardsDisplay: mergeStandards(g.items),
-    samples: mergeSamples(g.items),
-    testGroup: g.items[0].testGroup,
-    requirement: mergeDistinct(g.items.map(i => i.requirement)),
-    cuttingMethod: mergeDistinct(g.items.map(i => i.cuttingMethod))
-  }))
+  return [...groups.values()]
 })
 
 /* 按钮处理 --------------------------------------------------------------------------------------*/
@@ -697,6 +705,45 @@ onUnmounted(() => {
 
 .cardBody {
   padding: 20px;
+}
+
+.testGroupSection + .testGroupSection {
+  margin-top: 20px;
+}
+
+.testGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 8px 14px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+}
+
+.testGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--el-text-color-primary);
+}
+
+.testGroupLabel {
+  color: var(--el-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.testGroupTitle strong {
+  font-size: 15px;
+}
+
+.testGroupCount {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 /* 表格样式 */
