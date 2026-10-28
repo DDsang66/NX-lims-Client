@@ -219,6 +219,8 @@
 <script setup>
 import { ref, reactive, inject, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+// 串口数据上报：把本机串口报文实时转给其它监听终端
+import { reportSerialData } from '@/utils/terminalReport'
 import { Connection, Link, SwitchButton, ScaleToOriginal, Grid, CirclePlus, RefreshLeft, Delete, Download, Printer, Upload, Document } from '@element-plus/icons-vue'
 
 const api = inject('request')
@@ -501,6 +503,25 @@ function startLoop() {
           for (const part of parts) {
             const w = matchWeight(part)   // 按当前品牌解析(Sartorius 无锚定 / Mettler 锚定稳定帧)
             if (w != null) weight.value = w
+            // 上报给监听端：payload 用对象、不提前 stringify；不 await、不重试，失败不影响称量主流程
+            reportSerialData({
+              page: 'physical-weight',
+              raw: part,
+              weight: w,
+              unit: 'g',
+              parseOk: w != null,
+              serial: portCfg.value
+                ? {
+                    baudRate: portCfg.value.baudRate,
+                    dataBits: portCfg.value.dataBits,
+                    parity: portCfg.value.parity,
+                    stopBits: portCfg.value.stopBits,
+                  }
+                : null,
+              testType: testType.value,
+              buyer: buyer.value,
+              reportNo: sid.value,
+            })
           }
         }
       }
