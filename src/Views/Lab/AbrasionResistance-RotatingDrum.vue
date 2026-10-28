@@ -1760,6 +1760,24 @@
               for (const part of parts) {
                 const w = matchWeight(part)
                 if (w != null) weight.value = w
+                // 上报给监听端：payload 用对象，不提前 stringify；不 await，失败不影响串口流程
+                reportSerialData({
+                  page: 'abrasion-rotating-drum',
+                  raw: part,
+                  weight: w,
+                  unit: 'g',
+                  parseOk: w != null,
+                  serial: portCfg.value
+                    ? {
+                        baudRate: portCfg.value.baudRate,
+                        dataBits: portCfg.value.dataBits,
+                        parity: portCfg.value.parity,
+                        stopBits: portCfg.value.stopBits,
+                      }
+                    : null,
+                  reportNo: reportNo.value,
+                  sample: sampleNumber.value,
+                })
               }
             }
           }

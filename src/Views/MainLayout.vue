@@ -210,6 +210,9 @@
             <el-menu-item index="/main/PhysicalWeight">
               <span>Physical Weight</span>
             </el-menu-item>
+            <el-menu-item index="/main/MoistureAnalyzer">
+              <span>Moisture Analyzer</span>
+            </el-menu-item>
             <el-menu-item index="/main/Nf5022DryingRate">
               <span>NF5022 MoistureDryingRate</span>
             </el-menu-item>

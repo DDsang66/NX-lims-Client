@@ -17,6 +17,7 @@ import OrderReporting from "@/Views/OrderReporting.vue";
 import Tchibo from "@/Views/Review/Tchibo.vue";
 import useRoleStore from '@/stores/role.js'
 import OrderView from "@/Views/OrderView.vue";
+import SerialMonitor from "@/Views/Equipment/SerialMonitor.vue";
 
 const routes = [
   {
@@ -37,7 +38,8 @@ const routes = [
       {path:'Profile',name:'Profile',component:Profile,meta:{title:'Personal Center'}},
       {path:'FAQ',name:'FAQ',component:FAQ,meta:{title:'FAQ'}},
       {path:'InstructionManual',name:'InstructionManual',component:InstructionManual,meta:{title:'Instruction Manual'}},
-      {path:'OrderView',name:'OrderView',component:OrderView,meta:{title:'Order Overview'}}
+      {path:'OrderView',name:'OrderView',component:OrderView,meta:{title:'Order Overview'}},
+      {path:'SerialMonitor',name:'SerialMonitor',component:SerialMonitor,meta:{title:'Serial Monitor'}}
     ]
   },
 ];
