@@ -112,8 +112,8 @@
   // 两条 AATCC 的**空格数刻意不同**（双空格那条是复合方法名，Korea 那条本来就是单空格）。
   // EU 那条不在表里：后端两份清单里都是 "Regulation (Eu) No. 1007/2011"，无需换值。
   const MODE_VALUE_SWAP = [
-    ['AATCC TM20-2021  AATCC TM20A-2025', 'AATCC TM20-2021  AATCC TM20A-2021'],
-    ['AATCC TM20-2021 AATCC TM20A-2025 (Korea)', 'AATCC TM20-2021 AATCC TM20A-2021 (Korea)']
+    ['AATCC TM20-2021  AATCC TM20A-2025', 'AATCC TM20-2021  AATCC TM20A-2021e'],
+    ['AATCC TM20-2021 AATCC TM20A-2025 (Korea)', 'AATCC TM20-2021 AATCC TM20A-2021e (Korea)']
   ]
 
   // 认不出的模式一律按常规 —— 与后端 FiberWorksheetService.ParseStandardMode 同口径
