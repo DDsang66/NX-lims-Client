@@ -4,16 +4,6 @@
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between;">
       <div class="header-left">
         <label class="panel-title">{{ $t('Setting Form') }}</label>
-        <!-- 标准口径二选一：常规 = 各标准的当前版本；2C = 只印 CNAS 与 CMA **双资质**范围内的版本
-             （资质范围通常落后于最新版，盖章出报告只能引资质内的版本）。
-             做二选一而不是 toggle，是因为按钮上要能直接看出**当前是哪个口径**。
-             值随下面的 watch(localForm) 一路带回父组件，模式本身**不落库** —— 它只活在这一趟生成里。 -->
-        <el-radio-group v-model="localForm.standardMode"
-                        class="mode-switch"
-                        title="常规 = 当前版本；2C = 只印 CNAS 与 CMA 双资质范围内的版本">
-          <el-radio-button value="Current">常规</el-radio-button>
-          <el-radio-button value="Dual">2C</el-radio-button>
-        </el-radio-group>
       </div>
       <el-button type="primary" @click="$emit('refresh')">Refresh</el-button>
     </div>
@@ -23,22 +13,28 @@
       <el-form class="setting-form" label-width="120px" :size="size">
         <!-- 第一行：Report Number | Addition Item -->
         <div class="form-row">
-          <!-- 左侧：Report Number -->
+          <!-- 左侧：Report Number（宽度保持原样 1:1，别跟着 Method 那行变） -->
           <div class="form-col">
             <el-form-item class="custom-item">
                 <template #label>Report Number <span class="text-danger">*</span></template>
-              <div class="input-group">
-                <el-input v-model="localReportNums.data1" style="width: 70px;" disabled></el-input>
-                <el-select v-model="localReportNums.data2" filterable style="width: 100px;">
-                  <el-option value="405.">405.</el-option>
-                  <el-option value="441.">441.</el-option>
-                </el-select>
-                <el-select v-model="localReportNums.data3" filterable style="width: 100px;">
-                  <el-option :value="twoDigitYear+'.'"></el-option>
-                  <el-option :value="twoDigitYear-1+'.'"></el-option>
-                </el-select>
-                <el-input v-model="localReportNums.data4" style="width: 220px;" @keydown="data4Keydown" @blur="data4Blur"></el-input>
-                <el-input v-model="localReportNums.data5" style="width: 60px;"></el-input>
+              <!-- 紧凑两排：87. | 405. | 26. 在一排，流水号 | .01 在第二排。
+                   单排五格在半幅面板里放不下（会被挤成四排），固定宽度只留给定长段。 -->
+              <div class="input-group report-no">
+                <div class="input-line">
+                  <el-input v-model="localReportNums.data1" class="rn-prefix" disabled></el-input>
+                  <el-select v-model="localReportNums.data2" class="rn-flex" filterable>
+                    <el-option value="405.">405.</el-option>
+                    <el-option value="441.">441.</el-option>
+                  </el-select>
+                  <el-select v-model="localReportNums.data3" class="rn-flex" filterable>
+                    <el-option :value="twoDigitYear+'.'"></el-option>
+                    <el-option :value="twoDigitYear-1+'.'"></el-option>
+                  </el-select>
+                </div>
+                <div class="input-line">
+                  <el-input v-model="localReportNums.data4" class="rn-serial" @keydown="data4Keydown" @blur="data4Blur"></el-input>
+                  <el-input v-model="localReportNums.data5" class="rn-suffix"></el-input>
+                </div>
               </div>
             </el-form-item>
           </div>
@@ -59,14 +55,24 @@
 
         <!-- 第二行：Location | Method -->
         <div class="form-row">
-          <!-- 左侧：Location -->
-          <div class="form-col">
+          <!-- 左侧：Method（方法下拉 + 口径开关，故与上面 Report Number 一样取 2 份宽） -->
+          <div class="form-col col-main">
             <el-form-item class="custom-item">
                 <template #label>Method <span class="text-danger">*</span></template>
               <div class="input-group">
-                <el-select v-model="localForm.menuName" style="flex: 1; margin-right: 8px;" multiple collapse-tags>
+                <el-select v-model="localForm.menuName" class="method-select" multiple collapse-tags>
                   <el-option v-for="m in menuName" :key="m.value" :value="m.value" :label="m.label"></el-option>
                 </el-select>
+                <!-- 标准口径二选一：常规 = 各标准的当前版本；2C = 只印 CNAS 与 CMA **双资质**范围内的版本
+                     （资质范围通常落后于最新版，盖章出报告只能引资质内的版本）。
+                     做二选一而不是 toggle，是因为按钮上要能直接看出**当前是哪个口径**。
+                     值随下面的 watch(localForm) 一路带回父组件，模式本身**不落库** —— 它只活在这一趟生成里。 -->
+                <el-radio-group v-model="localForm.standardMode"
+                                class="mode-switch"
+                                title="常规 = 当前版本；2C = 只印 CNAS 与 CMA 双资质范围内的版本">
+                  <el-radio-button value="Current">常规</el-radio-button>
+                  <el-radio-button value="Dual">2C</el-radio-button>
+                </el-radio-group>
               </div>
             </el-form-item>
           </div>
@@ -74,8 +80,8 @@
           <!-- 中间：垂直分割线 -->
           <div class="v-divider"></div>
 
-          <!-- 右侧：Method -->
-          <div class="form-col">
+          <!-- 右侧：Buyer -->
+          <div class="form-col col-side">
             <el-form-item label="Buyer" class="custom-item">
               <el-select v-model="localForm.standard" style="width: 100%;">
                 <el-option value=""></el-option>
@@ -196,11 +202,21 @@
     flex-shrink: 0;
   }
 
-  /* 口径开关要一眼看见、好点，所以比旁边的 Refresh（默认 32px）再大一号 */
+  /* 口径开关现在贴在 Method 下拉右边：与下拉同高、别抢宽度，所以字号收到 13px */
+  .mode-switch {
+    flex-shrink: 0;
+    margin-left: 3px;
+  }
+
   .mode-switch :deep(.el-radio-button__inner) {
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1;
-    padding: 12px 20px;
+    padding: 9px 12px;
+  }
+
+  .method-select {
+    flex: 1;
+    min-width: 0;
   }
 
   .panel-body {
@@ -223,6 +239,13 @@
     flex: 1;
     display: flex;
     align-items: center;
+  }
+
+  /* 只 Method 那一行取 2:1：右边 Buyer 只有一个下拉、有富余，
+     匀出来的宽度留给 Method 下拉 + 口径开关，Method 框保持加开关之前的宽度。
+     Report Number 那行仍是 1:1，宽度不变。 */
+  .form-col.col-main {
+    flex: 2;
   }
 
   .custom-item {
@@ -253,6 +276,37 @@
     align-items: center;
     width: 100%;
     gap: 5px;
+  }
+
+  /* Report Number：两排，两个定长段（87. / .01）不吃剩余宽度，其余等分 */
+  .input-group.report-no {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .input-line {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 5px;
+  }
+
+  /* 值要完整可见：等分段只许涨、不许缩到切字，各自留一个刚好放得下内容的下限 */
+  .input-line .rn-flex {
+    flex: 1 1 0;
+    min-width: 84px;
+  }
+
+  .input-line .rn-serial {
+    flex: 1 1 0;
+    min-width: 120px;
+  }
+
+  .input-line .rn-prefix,
+  .input-line .rn-suffix {
+    flex: 0 0 60px;
+    width: 60px;
   }
 
   .v-divider {

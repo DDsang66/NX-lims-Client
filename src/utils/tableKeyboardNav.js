@@ -88,6 +88,37 @@ function findVertical(table, row, col, step) {
   return null
 }
 
+/** 表内第一个可导航格；col 用来在同列不可得时退回该行首格（与 ↓ 的落点规则一致） */
+function firstNavigableCell(table, col) {
+  for (const r of Array.from(table.rows)) {
+    const hit = cellInRowAt(r, col)
+    if (hit) return hit.cell
+  }
+  return null
+}
+
+/**
+ * Enter 在**本表最后一行**时接着跳到的位置：同一 `.mainContainer` 里下一张表的首格
+ * （溶解段的多个 section 就是多张表）。
+ *
+ * 只在容器内找：出到 document 级别会跑出本表单，焦点跳进别的组件。
+ * 没包在 `.mainContainer` 里时退到父节点 —— 那只装得下本表，自然返回 null、行为跟改前一样。
+ */
+function firstCellInNextTable(table, col) {
+  const scope = table.closest('.mainContainer') || table.parentElement
+  if (!scope) return null
+
+  const tables = Array.from(scope.querySelectorAll('table.custom-table-layout'))
+  const i = tables.indexOf(table)
+  if (i < 0) return null
+
+  for (let k = i + 1; k < tables.length; k++) {
+    const hit = firstNavigableCell(tables[k], col)
+    if (hit) return hit
+  }
+  return null
+}
+
 /**
  * Tab：只在本行内往后走一格，**行尾返回 null**。
  * 与 → 刻意不同：→ 行尾环绕到下一行（Excel 手感），Tab 行尾放行浏览器默认，
@@ -144,12 +175,15 @@ export function handleGridKeydown(event) {
 
   const row = cell.parentElement
   const col = colOf(row, cell)
-  const next =
+  let next =
     dir === 'up' ? findVertical(table, row, col, -1)
       : dir === 'down' ? findVertical(table, row, col, 1)
         : dir === 'left' ? findHorizontal(table, row, cell, -1)
           : dir === 'right' ? findHorizontal(table, row, cell, 1)
             : nextInRow(row, cell)
+
+  // Enter 走到本表末行时接着进下一张表（跨 section）；↓ 走到头仍然停住 —— 见 findVertical 的注释。
+  if (!next && event.key === 'Enter') next = firstCellInNextTable(table, col)
 
   if (isArrow) {
     // 方向键一律接管，**即使走到头也拦**：不拦的话 EP 会借 ↓ 开下拉，
@@ -157,8 +191,8 @@ export function handleGridKeydown(event) {
     event.preventDefault()
     event.stopPropagation()
   } else {
-    // Enter 到头（最后一行）与 Tab 到头（行尾）都放行浏览器默认：
-    // Tab 顺势把焦点交给表格下方的 Add 按钮。
+    // Enter 到**最后一张表**的末行、Tab 到行尾，都放行浏览器默认：
+    // Tab 顺势把焦点交给表格下方的 Add 按钮（Enter 早一步已试过跨表）。
     if (!next) return
     event.preventDefault()
     // 成分下拉**关着**时回车若继续冒泡，EP 的 handleKeydown 会 selectOption() →

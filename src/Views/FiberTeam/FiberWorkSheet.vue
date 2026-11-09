@@ -98,11 +98,15 @@
   // Method 候选改由后端提供—— 原先是这里 10 条硬编码, 加标准要改前端重新发版。
   // value 与 label 相同是既有约定, 后端就按这个约定返回纯字符串列表。
   //
-  // **两份清单**（常规 / 2C）一次下发, 所以切模式是纯前端动作、不重新请求：
-  // methodOptions 存两份, menuName 是**当前生效的那一份**（也就是下拉的数据源,
-  // 直接喂给 LeftTopSection 的 :menuName）。别把 menuName 换成计算属性 ——
-  // 下面的切换 watcher 需要在"值"上做替换, 计算属性给不了那个时机。
-  const methodOptions = ref({ Current: [], Dual: [] })
+  // **四份清单一次下发**：多组分 / 单组分 × 常规 / 2C。
+  // 单组分那份少 AATCC TM20A 复合两条、CNS、JIS（2026-11-09 实验室裁定）。
+  // 所以切模式、切单/多组分都是纯前端动作、不重新请求。
+  // menuName 是**当前生效的那一份**（直接喂给 LeftTopSection 的 :menuName）。
+  // 别把 menuName 换成计算属性 —— 两个切换 watcher 需要在"值"上做替换, 计算属性给不了那个时机。
+  const methodOptions = ref({
+    multi: { Current: [], Dual: [] },
+    single: { Current: [], Dual: [] }
+  })
   const menuName = ref([])
 
   // 切模式时已选项必须先**按值重映射、再**滤掉不在新清单里的。
@@ -115,9 +119,6 @@
     ['AATCC TM20-2021  AATCC TM20A-2025', 'AATCC TM20-2021  AATCC TM20A-2021e'],
     ['AATCC TM20-2021 AATCC TM20A-2025 (Korea)', 'AATCC TM20-2021 AATCC TM20A-2021e (Korea)']
   ]
-
-  // 认不出的模式一律按常规 —— 与后端 FiberWorksheetService.ParseStandardMode 同口径
-  const optionsFor = (mode) => methodOptions.value[mode === 'Dual' ? 'Dual' : 'Current'] || []
 
   function swapMethod(value, toDual) {
     const hit = MODE_VALUE_SWAP.find(([current, dual]) => (toDual ? current : dual) === value)
@@ -176,6 +177,13 @@
     return selectedItem?.fiberType === 'multi'
   })
 
+  // 当前**分析类型 + 口径**下的下拉清单。
+  // 认不出的模式一律按常规 —— 与后端 FiberWorksheetService.ParseStandardMode 同口径。
+  const optionsFor = (mode) => {
+    const byMode = methodOptions.value[isMultiFiber.value ? 'multi' : 'single'] || {}
+    return byMode[mode === 'Dual' ? 'Dual' : 'Current'] || []
+  }
+
   // 模板预览地址：单/多组分是两份**不同的**模板文件，必须告诉后端取哪一份
   // （后端只认 'Single'，其余一律按多组分，见 FiberDocxController.Index）。
   // 值取自 isMultiFiber —— 别在这儿再抄一遍 additionItem === 'type1'，那是同一个判断的第二份拷贝。
@@ -184,9 +192,20 @@
     || `${API_BASE}/fiberdocx/get-docxUrl?type=${isMultiFiber.value ? 'Multiple' : 'Single'}`)
 
   // 监听 additionItem 变化，切换时清空 rows 数据避免数据混乱
+  // 顺带换 Method 下拉：单组分那份少 4 条（AATCC TM20A 复合两条、CNS、JIS），
+  // 所以还要把已勾、但新清单里没有的方法剔掉并报一句 —— 与下面切口径那个 watch 同一套写法。
   watch(() => form.value.additionItem, (newVal, oldVal) => {
     if (newVal && newVal !== oldVal) {
       rows.value = []
+      const target = optionsFor(form.value.standardMode)
+      const selected = form.value.menuName || []
+      const kept = selected.filter(v => target.some(o => o.value === v))
+      const dropped = selected.filter(v => !target.some(o => o.value === v))
+      form.value.menuName = kept
+      menuName.value = target
+      if (dropped.length) {
+        ElMessage.warning(`当前分析类型的清单里没有这些方法，已移除：${dropped.join('、')}`)
+      }
     }
   })
 
@@ -226,8 +245,8 @@
         const d = res.data.data || {}
         const asOptions = list => (list || []).map(m => ({ value: m, label: m }))
         methodOptions.value = {
-          Current: asOptions(d.methodOptions),
-          Dual: asOptions(d.methodOptions2C)
+          multi: { Current: asOptions(d.methodOptions), Dual: asOptions(d.methodOptions2C) },
+          single: { Current: asOptions(d.methodOptionsSingle), Dual: asOptions(d.methodOptions2CSingle) }
         }
         menuName.value = optionsFor(form.value.standardMode)
         fiberOptions.value = {

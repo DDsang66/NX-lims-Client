@@ -66,12 +66,14 @@
                       <el-input type="text" inputmode="decimal" placeholder="Trial #1"
                         :model-value="row.trial1"
                         @update:model-value="onMassInput(row, 'trial1', $event)"
+                        :title="formulaTip(row, 'trial1')"
                         :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
                       <el-input type="text" inputmode="decimal" placeholder="Trial #2"
                         :model-value="row.trial2"
                         @update:model-value="onMassInput(row, 'trial2', $event)"
+                        :title="formulaTip(row, 'trial2')"
                         :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
@@ -107,12 +109,14 @@
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#1" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail1"
-                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)" />
+                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)"
+                          :title="formulaTip(sub, 'gsmTrail1')" />
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#2" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail2"
-                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)" />
+                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)"
+                          :title="formulaTip(sub, 'gsmTrail2')" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -157,12 +161,14 @@
                       <el-input type="text" inputmode="decimal" placeholder="data#1 before proccessing"
                         :model-value="section.headerInputs.trial1"
                         @update:model-value="onMassInput(section.headerInputs, 'trial1', $event)"
+                        :title="formulaTip(section.headerInputs, 'trial1')"
                         class="header-input" />
                     </th>
                     <th class="header-row-2">
                       <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing"
                         :model-value="section.headerInputs.trial2"
                         @update:model-value="onMassInput(section.headerInputs, 'trial2', $event)"
+                        :title="formulaTip(section.headerInputs, 'trial2')"
                         class="header-input" />
                     </th>
                     <th class="header-row-2" style="text-align:center">
@@ -185,12 +191,14 @@
                       <el-input type="text" inputmode="decimal" placeholder="Trial #1"
                         :model-value="row.trial1"
                         @update:model-value="onMassInput(row, 'trial1', $event)"
+                        :title="formulaTip(row, 'trial1')"
                         :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-input">
                       <el-input type="text" inputmode="decimal" placeholder="Trial #2"
                         :model-value="row.trial2"
                         @update:model-value="onMassInput(row, 'trial2', $event)"
+                        :title="formulaTip(row, 'trial2')"
                         :disabled="isBicomponentRow(row)" />
                     </td>
                     <td class="cell-action">
@@ -226,12 +234,14 @@
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#1" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail1"
-                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)" />
+                          @update:model-value="onMassInput(sub, 'gsmTrail1', $event)"
+                          :title="formulaTip(sub, 'gsmTrail1')" />
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#2" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail2"
-                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)" />
+                          @update:model-value="onMassInput(sub, 'gsmTrail2', $event)"
+                          :title="formulaTip(sub, 'gsmTrail2')" />
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -256,7 +266,7 @@
                删掉的 input2~input5 必须**留空号**，不可把后面的往前挪。 -->
           <div class="row">
             <div class="form-group col-xl-12">
-              <label class="mb-2 d-block">Vertify Result</label>
+              <label class="mb-2 d-block">核对结果</label>
               <el-select clearable v-model="extraInputs.input1" placeholder="" style="width: 100%">
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
@@ -269,7 +279,7 @@
           <!-- 第二行：1个输入框 -->
           <div class="row">
             <div class="form-group col-xl-12">
-              <label class="mb-2 d-block">Recommended Label</label>
+              <label class="mb-2 d-block">推荐标签</label>
               <el-select v-model="extraInputs.input6" placeholder="" style="width: 100%">
                 <el-option value="Yes" label="Yes"></el-option>
                 <el-option value="" label=""></el-option>
@@ -280,14 +290,14 @@
           <!-- 第三行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Result Remark</label>
+              <label class="mb-2 d-block">结果备注</label>
               <!-- 多选：选项 55 条、单条最长 179 字符（中英双语成对），不折叠会把表单行撑高、与右列错位 -->
               <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
                 <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Label Remark</label>
+              <label class="mb-2 d-block">标签备注</label>
               <!-- 多选，同上 -->
               <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
                 <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
@@ -298,13 +308,13 @@
           <!-- 第四行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Judgment Label Remark</label>
+              <label class="mb-2 d-block">判定标签备注</label>
               <el-select clearable v-model="extraInputs.input9" placeholder="" style="width: 100%">
                 <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
-              <label class="mb-2 d-block">Language Label Remark</label>
+              <label class="mb-2 d-block">语言标签备注</label>
               <el-select clearable v-model="extraInputs.input10" placeholder="" style="width: 100%">
                 <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
@@ -382,16 +392,37 @@
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
   import { handleGridKeydown } from '@/utils/tableKeyboardNav.js'
   import { createStartsWithFilter } from '@/utils/selectFilter.js'
-  import { applyInlineCalc } from '@/utils/inlineCalc.js'
+  import { applyInlineCalcWithFormula } from '@/utils/inlineCalc.js'
 
   const request = inject('request');
+
+  // 内联算式的悬停提示。**刻意不写进行对象**：提交给后端的 DTO 现在是逐字段拼的，
+  // 但哪天有人改成整行展开，多挂的字段就会跟着进库。键是行 / 子行 / headerInputs 本体，
+  // 删行即随 GC 回收。
+  const massFormulaTips = new WeakMap()
+  // WeakMap 不在响应式系统里：写公式时顺手 +1，模板取 title 时读它建立依赖。
+  const formulaTick = ref(0)
 
   // 称量格：输入算式时，敲下最后一个 `=` 的输入事件里直接换成结果（规则见 utils/inlineCalc.js）。
   // 这些格子刻意用 :model-value + @update:model-value 单向绑定，保证模型里只出现最终值 ——
   // 若保留 v-model 再加 @input，el-input 会先把带 `=` 的原文写进模型，而父组件的
   // Number(...) || 0 会把原文变成 0、静默丢行。
   function onMassInput(target, key, value) {
-    target[key] = applyInlineCalc(value)
+    const { value: nextValue, formula } = applyInlineCalcWithFormula(value)
+    target[key] = nextValue
+
+    const tips = massFormulaTips.get(target) || {}
+    if (formula) tips[key] = formula
+    else delete tips[key]
+    massFormulaTips.set(target, tips)
+    formulaTick.value++
+  }
+
+  // 格子悬停显示 `1.9/1.1 = 1.7273`。只有内联算出来的格子才有；回填的历史数据
+  // 没有原文可解释，返回 undefined（原生不弹）。
+  function formulaTip(target, key) {
+    formulaTick.value; // 依赖：公式写入后让模板重新取 title
+    return massFormulaTips.get(target)?.[key] || undefined
   }
 
   // 子纤维候选改由父组件传入（原先两处内联且**全小写** 'hemp'/'cotton'/'linen'/'ramie'，

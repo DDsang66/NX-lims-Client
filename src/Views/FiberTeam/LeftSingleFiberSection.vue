@@ -87,7 +87,7 @@
                删掉的 input2~input5 必须**留空号**，不可把后面的往前挪。 -->
           <div class="row">
             <div class="form-group col-xl-12">
-              <label>Vertify Result</label>
+              <label>核对结果</label>
               <el-select clearable v-model="extraInputs.input1" placeholder="" style="width: 100%">
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
@@ -100,7 +100,7 @@
           <!-- 第二行：1个输入框 -->
           <div class="row">
             <div class="form-group col-xl-12">
-              <label>Recommended Label</label>
+              <label>建议标签</label>
               <el-select v-model="extraInputs.input6" placeholder="" style="width: 100%">
                 <el-option value="Yes" label="Yes"></el-option>
                 <el-option value="" label=""></el-option>
@@ -111,14 +111,14 @@
           <!-- 第三行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
-              <label>Result Remark</label>
+              <label>结果备注</label>
               <!-- 多选：选项 55 条、单条最长 179 字符（中英双语成对），不折叠会把表单行撑高、与右列错位 -->
               <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.resultRemark" placeholder="" style="width: 100%">
                 <el-option v-for="item in resultRemarkOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
-              <label>Label Remark</label>
+              <label>标签备注</label>
               <!-- 多选，同上 -->
               <el-select multiple collapse-tags collapse-tags-tooltip clearable v-model="extraInputs.input8" placeholder="" style="width: 100%">
                 <el-option v-for="item in labelRemarkOptions" :key="item" :value="item" :label="item"></el-option>
@@ -129,13 +129,13 @@
           <!-- 第四行：2个下拉选择 -->
           <div class="row">
             <div class="form-group col-xl-6">
-              <label>Judgment Label Remark</label>
+              <label>判定标签备注</label>
               <el-select clearable v-model="extraInputs.input9" placeholder="" style="width: 100%">
                 <el-option v-for="item in judgmentLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>
             </div>
             <div class="form-group col-xl-6">
-              <label>Language Lable Remark</label>
+              <label>语言标签备注</label>
               <el-select clearable v-model="extraInputs.input10" placeholder="" style="width: 100%">
                 <el-option v-for="item in languageLabelOptions" :key="item" :value="item" :label="item"></el-option>
               </el-select>

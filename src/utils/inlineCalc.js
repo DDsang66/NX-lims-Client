@@ -22,15 +22,36 @@ const RESULT_DECIMALS = 4;
  * @returns {string|number|null} 求值结果（数字字符串）或原值
  */
 export function applyInlineCalc(raw) {
-  if (typeof raw !== 'string') return raw;
+  return applyInlineCalcWithFormula(raw).value;
+}
+
+/**
+ * 同 <see cref="applyInlineCalc"/>，另外把**算式**交出来给格子悬停显示。
+ *
+ * 格子被替换成结果后原文就没了，操作员事后看不出这个数是怎么来的 ——
+ * 所以求值的同时记一笔 `原文 = 结果`（例：`1.9/1.1 = 1.7273`）。
+ *
+ * @param {string|number|null} raw el-input 的 update:model-value 原值
+ * @returns {{ value: string|number|null, formula: string|null }}
+ *   value   —— 与 applyInlineCalc 的结果逐字相同
+ *   formula —— 形如 `1.9/1.1 = 1.7273`；没触发计算、或算完与原文等价
+ *              （`12=`、`-5=` 这种）时为 null
+ */
+export function applyInlineCalcWithFormula(raw) {
+  if (typeof raw !== 'string') return { value: raw, formula: null };
 
   const text = raw.trimEnd();
-  if (!text.endsWith('=')) return raw;
+  if (!text.endsWith('=')) return { value: raw, formula: null };
 
-  const value = evaluateExpression(text.slice(0, -1));
-  if (value === null) return raw;
+  const source = text.slice(0, -1).trim();
+  const value = evaluateExpression(source);
+  if (value === null) return { value: raw, formula: null };
 
-  return formatResult(value);
+  const result = formatResult(value);
+  // 原文与结果文本一样（`12=` / `-5=`）就没有可解释的东西，不弹公式
+  if (source === result) return { value: result, formula: null };
+
+  return { value: result, formula: `${source} = ${result}` };
 }
 
 /**
