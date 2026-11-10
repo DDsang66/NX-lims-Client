@@ -67,14 +67,22 @@
                         :model-value="row.trial1"
                         @update:model-value="onMassInput(row, 'trial1', $event)"
                         :title="formulaTip(row, 'trial1')"
+                        @blur="onMassBlur(row, 'trial1')"
                         :disabled="isBicomponentRow(row)" />
+                      <span v-if="hasFormula(row, 'trial1')" class="formula-recall"
+                        @click="recallFormula(row, 'trial1', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </td>
                     <td class="cell-input">
                       <el-input type="text" inputmode="decimal" placeholder="Trial #2"
                         :model-value="row.trial2"
                         @update:model-value="onMassInput(row, 'trial2', $event)"
                         :title="formulaTip(row, 'trial2')"
+                        @blur="onMassBlur(row, 'trial2')"
                         :disabled="isBicomponentRow(row)" />
+                      <span v-if="hasFormula(row, 'trial2')" class="formula-recall"
+                        @click="recallFormula(row, 'trial2', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeSplitRow(rIndex)">
@@ -110,13 +118,21 @@
                         <el-input placeholder="Trial#1" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail1"
                           @update:model-value="onMassInput(sub, 'gsmTrail1', $event)"
-                          :title="formulaTip(sub, 'gsmTrail1')" />
+                          :title="formulaTip(sub, 'gsmTrail1')"
+                          @blur="onMassBlur(sub, 'gsmTrail1')" />
+                        <span v-if="hasFormula(sub, 'gsmTrail1')" class="formula-recall"
+                          @click="recallFormula(sub, 'gsmTrail1', $event)"
+                          title="把算式填回去改（不带 =）">ƒ</span>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#2" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail2"
                           @update:model-value="onMassInput(sub, 'gsmTrail2', $event)"
-                          :title="formulaTip(sub, 'gsmTrail2')" />
+                          :title="formulaTip(sub, 'gsmTrail2')"
+                          @blur="onMassBlur(sub, 'gsmTrail2')" />
+                        <span v-if="hasFormula(sub, 'gsmTrail2')" class="formula-recall"
+                          @click="recallFormula(sub, 'gsmTrail2', $event)"
+                          title="把算式填回去改（不带 =）">ƒ</span>
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -162,14 +178,22 @@
                         :model-value="section.headerInputs.trial1"
                         @update:model-value="onMassInput(section.headerInputs, 'trial1', $event)"
                         :title="formulaTip(section.headerInputs, 'trial1')"
+                        @blur="onMassBlur(section.headerInputs, 'trial1')"
                         class="header-input" />
+                      <span v-if="hasFormula(section.headerInputs, 'trial1')" class="formula-recall"
+                        @click="recallFormula(section.headerInputs, 'trial1', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </th>
                     <th class="header-row-2">
                       <el-input type="text" inputmode="decimal" placeholder="data#2 before proccessing"
                         :model-value="section.headerInputs.trial2"
                         @update:model-value="onMassInput(section.headerInputs, 'trial2', $event)"
                         :title="formulaTip(section.headerInputs, 'trial2')"
+                        @blur="onMassBlur(section.headerInputs, 'trial2')"
                         class="header-input" />
+                      <span v-if="hasFormula(section.headerInputs, 'trial2')" class="formula-recall"
+                        @click="recallFormula(section.headerInputs, 'trial2', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </th>
                     <th class="header-row-2" style="text-align:center">
                       <!-- 这里留空或者放置其他操作，如果需要的话 -->
@@ -192,14 +216,22 @@
                         :model-value="row.trial1"
                         @update:model-value="onMassInput(row, 'trial1', $event)"
                         :title="formulaTip(row, 'trial1')"
+                        @blur="onMassBlur(row, 'trial1')"
                         :disabled="isBicomponentRow(row)" />
+                      <span v-if="hasFormula(row, 'trial1')" class="formula-recall"
+                        @click="recallFormula(row, 'trial1', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </td>
                     <td class="cell-input">
                       <el-input type="text" inputmode="decimal" placeholder="Trial #2"
                         :model-value="row.trial2"
                         @update:model-value="onMassInput(row, 'trial2', $event)"
                         :title="formulaTip(row, 'trial2')"
+                        @blur="onMassBlur(row, 'trial2')"
                         :disabled="isBicomponentRow(row)" />
+                      <span v-if="hasFormula(row, 'trial2')" class="formula-recall"
+                        @click="recallFormula(row, 'trial2', $event)"
+                        title="把算式填回去改（不带 =）">ƒ</span>
                     </td>
                     <td class="cell-action">
                       <el-button type="danger" link @click="removeRow(sIndex, rIndex)">
@@ -235,13 +267,21 @@
                         <el-input placeholder="Trial#1" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail1"
                           @update:model-value="onMassInput(sub, 'gsmTrail1', $event)"
-                          :title="formulaTip(sub, 'gsmTrail1')" />
+                          :title="formulaTip(sub, 'gsmTrail1')"
+                          @blur="onMassBlur(sub, 'gsmTrail1')" />
+                        <span v-if="hasFormula(sub, 'gsmTrail1')" class="formula-recall"
+                          @click="recallFormula(sub, 'gsmTrail1', $event)"
+                          title="把算式填回去改（不带 =）">ƒ</span>
                       </td>
                       <td class="cell-sub-input" style="text-align:center">
                         <el-input placeholder="Trial#2" size="small" style="width: 80px"
                           :model-value="sub.gsmTrail2"
                           @update:model-value="onMassInput(sub, 'gsmTrail2', $event)"
-                          :title="formulaTip(sub, 'gsmTrail2')" />
+                          :title="formulaTip(sub, 'gsmTrail2')"
+                          @blur="onMassBlur(sub, 'gsmTrail2')" />
+                        <span v-if="hasFormula(sub, 'gsmTrail2')" class="formula-recall"
+                          @click="recallFormula(sub, 'gsmTrail2', $event)"
+                          title="把算式填回去改（不带 =）">ƒ</span>
                       </td>
                       <td class="cell-sub-action"></td>
                     </tr>
@@ -387,7 +427,7 @@
 </template>
 
 <script setup>
-  import { ref, reactive, watch, computed, inject, onMounted } from 'vue'
+  import { ref, reactive, watch, computed, inject, onMounted, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { ArrowDown, Plus, Delete } from '@element-plus/icons-vue'
   import { handleGridKeydown } from '@/utils/tableKeyboardNav.js'
@@ -396,11 +436,17 @@
 
   const request = inject('request');
 
-  // 内联算式的悬停提示。**刻意不写进行对象**：提交给后端的 DTO 现在是逐字段拼的，
+  // 内联算式的悬停提示 + 回填入口。**刻意不写进行对象**：提交给后端的 DTO 现在是逐字段拼的，
   // 但哪天有人改成整行展开，多挂的字段就会跟着进库。键是行 / 子行 / headerInputs 本体，
   // 删行即随 GC 回收。
+  //
+  // 每格存 `{ source, formula, result, restored }`：
+  //   source   —— 去掉末尾 `=` 的算式原文（`1.9/1.1`），"填回去改"用的就是这个
+  //   formula  —— 悬停提示的文字（`1.9/1.1 = 1.7273`）
+  //   result   —— 当时算出来的结果文本，回填后没提交就拿它退回
+  //   restored —— 这一格正处在"算式已填回、还没按 `=`"的状态，失焦时要兜底
   const massFormulaTips = new WeakMap()
-  // WeakMap 不在响应式系统里：写公式时顺手 +1，模板取 title 时读它建立依赖。
+  // WeakMap 不在响应式系统里：写公式时顺手 +1，模板取 title / ƒ 小标时读它建立依赖。
   const formulaTick = ref(0)
 
   // 称量格：输入算式时，敲下最后一个 `=` 的输入事件里直接换成结果（规则见 utils/inlineCalc.js）。
@@ -408,11 +454,11 @@
   // 若保留 v-model 再加 @input，el-input 会先把带 `=` 的原文写进模型，而父组件的
   // Number(...) || 0 会把原文变成 0、静默丢行。
   function onMassInput(target, key, value) {
-    const { value: nextValue, formula } = applyInlineCalcWithFormula(value)
+    const { value: nextValue, formula, source } = applyInlineCalcWithFormula(value)
     target[key] = nextValue
 
     const tips = massFormulaTips.get(target) || {}
-    if (formula) tips[key] = formula
+    if (formula) tips[key] = { source, formula, result: String(nextValue), restored: false }
     else delete tips[key]
     massFormulaTips.set(target, tips)
     formulaTick.value++
@@ -422,7 +468,59 @@
   // 没有原文可解释，返回 undefined（原生不弹）。
   function formulaTip(target, key) {
     formulaTick.value; // 依赖：公式写入后让模板重新取 title
-    return massFormulaTips.get(target)?.[key] || undefined
+    return massFormulaTips.get(target)?.[key]?.formula || undefined
+  }
+
+  // ƒ 小标是否出现：该格有没有可回填的算式。与 formulaTip 同源，模板里一个控制显隐、一个当提示。
+  function hasFormula(target, key) {
+    formulaTick.value;
+    return !!massFormulaTips.get(target)?.[key]
+  }
+
+  /**
+   * ƒ 小标被点：把算式**原样填回**这一格（不带末尾 `=`），光标放到末尾等操作员改。
+   * 不整格选中 —— 一敲键就把整段算式删了，比不选还糟。
+   */
+  function recallFormula(target, key, event) {
+    const entry = massFormulaTips.get(target)?.[key]
+    if (!entry) return
+
+    entry.restored = true
+    target[key] = entry.source
+    formulaTick.value++
+
+    const host = event?.target?.parentElement
+    nextTick(() => {
+      const input = host?.querySelector('input')
+      if (!input) return
+      input.focus()
+      const end = input.value.length
+      input.setSelectionRange(end, end)
+    })
+  }
+
+  /**
+   * 回填后的**失焦兜底**。
+   *
+   * 算式填回格子后如果没按 `=` 就点走，格子里会留一段 `1.9/1.15` —— 父组件拼 DTO 时
+   * `Number(...) || 0` 会把它吃成 **0**，溶解表整行静默丢数。所以：
+   *   - 内容没动过、或仍然含运算符 → 退回原来的结果值；
+   *   - 改成了普通数字 / 被清空 → 收下，原算式作废（ƒ 小标随之消失）。
+   * 按了 `=` 的那条路会走 onMassInput，落新结果、存新算式，restored 已经是 false，不进这里。
+   */
+  function onMassBlur(target, key) {
+    const entry = massFormulaTips.get(target)?.[key]
+    if (!entry?.restored) return
+    entry.restored = false
+
+    const text = String(target[key] ?? '').trim()
+    if (text === entry.source || /[+\-*/()]/.test(text)) {
+      target[key] = entry.result
+      return
+    }
+
+    delete massFormulaTips.get(target)[key]
+    formulaTick.value++
   }
 
   // 子纤维候选改由父组件传入（原先两处内联且**全小写** 'hemp'/'cotton'/'linen'/'ramie'，
@@ -1072,6 +1170,8 @@
         color: #303133;
         font-weight: normal;
         height: 32px;
+        /* ƒ 小标（算式回填）靠绝对定位贴在这一格右侧 */
+        position: relative;
 
         .header-input {
           width: 90%;
@@ -1091,6 +1191,7 @@
 
       .cell-input {
         width: 23.33%;
+        position: relative;
 
         :deep(.el-input__wrapper) {
           width: 90%;
@@ -1109,9 +1210,44 @@
       .cell-sub-input {
         width: 23.33%;
         padding: 2px 8px;
+        position: relative;
       }
       .cell-sub-action {
         width: 23.33%;
+      }
+
+      /* ƒ 小标：算式回填入口。只有该格真有算式时才被渲染（v-if）。
+         **常显、带边框的方块**——第一版做成悬停才出现的灰字，用户反馈"太隐蔽"：
+         没人会去悬停一个看不见的东西。做成小按钮，一眼看得出能点。
+         贴在格子右侧那点空余里（输入框只占 90% / 80px），不压数字。 */
+      .formula-recall {
+        position: absolute;
+        right: 3px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        box-sizing: border-box;
+        font-family: "Times New Roman", serif;
+        font-style: italic;
+        font-size: 12px;
+        line-height: 1;
+        color: #409eff;
+        background: #ecf5ff;
+        border: 1px solid #409eff;
+        border-radius: 3px;
+        cursor: pointer;
+        user-select: none;
+        z-index: 2;
+        transition: background-color .15s, color .15s;
+
+        &:hover {
+          color: #fff;
+          background: #409eff;
+        }
       }
     }
   }
