@@ -271,7 +271,7 @@
                 <el-option label="Pass" value="Pass"></el-option>
                 <el-option label="Fail" value="Fail"></el-option>
                 <el-option label="Pending" value="Pending"></el-option>
-                <el-option label="Conclusion: The information listed on the fibre content label is appropriate." value="Conclusion: The information listed on the fibre content label is appropriate."></el-option>
+                <el-option label="The information listed on the fibre content label is appropriate." value="Conclusion: The information listed on the fibre content label is appropriate."></el-option>
               </el-select>
             </div>
           </div>
@@ -1075,6 +1075,12 @@
 
         .header-input {
           width: 90%;
+
+          /* 表头两个称量格（Dissolved 的 before processing）数值印红色，
+             与行内 Trial 的黑色数字区分。空值时仍是灰色 placeholder，不受影响。 */
+          :deep(.el-input__inner) {
+            color: #f56c6c;
+          }
         }
       }
 
