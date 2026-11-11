@@ -138,13 +138,16 @@
   // 常用纤维的固定优先顺序。
   // 后端 /render/compositionsearch 没有 ORDER BY, 下来的是 fiber_database 聚集索引的 Guid 字节序
   // （看着像乱序, 官方也不保证稳定）, 所以展示顺序在前端这一处定死。
-  const PINNED_COMPOSITIONS = ['Wool', 'Polyamide', 'Nylon', 'Acrylic', 'Viscose', 'Rayon',
+  // 末尾两条是 ISO 专用锦纶（Iso 列 6.25），跟在同族两行后面；报告上仍印 Nylon / Polyamide。
+  const PINNED_COMPOSITIONS = ['Wool', 'Polyamide', 'Nylon',
+    'Nylon (ISO 6.25%)', 'Polyamide (ISO 6.25%)',
+    'Acrylic', 'Viscose', 'Rayon',
     'Cotton', 'Polyester', 'Elastane', 'Spandex', 'Linen', 'Modal', 'Lyocell'];
   // 通配/分组父槽（*Animal 那一类）：字母序会把 '*' 排到最前, 所以单独挑出来垫底
   const isWildcardComposition = name => name.startsWith('*');
   const byCompositionName = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
 
-  /** 13 个常用名按固定序 → 其余字母序 → 通配项垫底 → 尾段（双组分类名）。只重排, 不增不删。 */
+  /** 15 个常用名按固定序 → 其余字母序 → 通配项垫底 → 尾段（双组分类名）。只重排, 不增不删。 */
   function sortCompositions(list, foot) {
     const pinned = new Map(PINNED_COMPOSITIONS.map((n, i) => [n, i]));
     const taken = new Set([...foot, ...PINNED_COMPOSITIONS]);
