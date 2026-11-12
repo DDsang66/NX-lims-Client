@@ -96,10 +96,11 @@
   ])
 
   // Method 候选改由后端提供—— 原先是这里 10 条硬编码, 加标准要改前端重新发版。
-  // value 与 label 相同是既有约定, 后端就按这个约定返回纯字符串列表。
+  // 后端返回纯字符串列表, 这里包成 {value, label}, 两者同值。
+  // 单组分常规那三条只印主标准的短串由后端改名（值就是短串），前端不再另接显示名。
   //
   // **四份清单一次下发**：多组分 / 单组分 × 常规 / 2C。
-  // 单组分那份少 AATCC TM20A 复合两条、CNS、JIS（2026-11-09 实验室裁定）。
+  // 单组分常规少一条非 Korea 的 AATCC 复合方法, 单组分 2C 少两条 TM20A-2021e。
   // 所以切模式、切单/多组分都是纯前端动作、不重新请求。
   // menuName 是**当前生效的那一份**（直接喂给 LeftTopSection 的 :menuName）。
   // 别把 menuName 换成计算属性 —— 两个切换 watcher 需要在"值"上做替换, 计算属性给不了那个时机。
@@ -195,7 +196,7 @@
     || `${API_BASE}/fiberdocx/get-docxUrl?type=${isMultiFiber.value ? 'Multiple' : 'Single'}`)
 
   // 监听 additionItem 变化，切换时清空 rows 数据避免数据混乱
-  // 顺带换 Method 下拉：单组分那份少 4 条（AATCC TM20A 复合两条、CNS、JIS），
+  // 顺带换 Method 下拉：单组分常规少一条非 Korea 的 AATCC 复合方法、2C 少两条 TM20A-2021e，
   // 所以还要把已勾、但新清单里没有的方法剔掉并报一句 —— 与下面切口径那个 watch 同一套写法。
   watch(() => form.value.additionItem, (newVal, oldVal) => {
     if (newVal && newVal !== oldVal) {
