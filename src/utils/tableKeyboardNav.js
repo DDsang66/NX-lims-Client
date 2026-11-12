@@ -1,5 +1,8 @@
 // 纤维录入表的格子导航：Enter / Tab / ↑ ↓ ← →
 //
+// **四个方向键都跨表**：走到本表边界就落到同一 `.mainContainer` 里的相邻表
+// （拆分表 ↔ 各溶解组的表），落点规则见 cellInAdjacentTable 那一组函数。
+//
 // 为什么挂在 <table> 上用**捕获阶段**，而不是像原先那样一格格绑 @keydown：
 //
 // 1. Element Plus 的 el-select 在内层 input 上对 ArrowUp / ArrowDown / Enter / Escape
@@ -77,7 +80,7 @@ function siblingRow(table, row, step) {
   return j >= 0 && j < rows.length ? rows[j] : null
 }
 
-/** 上/下：逐行找过去，跳过没有可导航格的行；走到头返回 null（停住） */
+/** 上/下：逐行找过去，跳过没有可导航格的行；走到头返回 null（由调用方接跨表） */
 function findVertical(table, row, col, step) {
   let r = siblingRow(table, row, step)
   while (r) {
@@ -97,14 +100,34 @@ function firstNavigableCell(table, col) {
   return null
 }
 
+/** 表内**最后一个**可导航格；col 用来对齐同列（与 ↑ 的落点规则一致） */
+function lastNavigableCell(table, col) {
+  const rows = Array.from(table.rows)
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const hit = cellInRowAt(rows[i], col)
+    if (hit) return hit.cell
+  }
+  return null
+}
+
+/** 表内最末一个可导航格（行尾那个，不看列）—— ← 跨表时落在上一张表的这里 */
+function lastCellOfTable(table) {
+  const rows = Array.from(table.rows)
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const list = navigableOf(rows[i])
+    if (list.length) return list[list.length - 1].cell
+  }
+  return null
+}
+
 /**
- * Enter 在**本表最后一行**时接着跳到的位置：同一 `.mainContainer` 里下一张表的首格
- * （溶解段的多个 section 就是多张表）。
+ * 同一 `.mainContainer` 里本表前/后**邻表**的落点（step = ±1；↔ 上下左右跨表都用它）。
  *
  * 只在容器内找：出到 document 级别会跑出本表单，焦点跳进别的组件。
  * 没包在 `.mainContainer` 里时退到父节点 —— 那只装得下本表，自然返回 null、行为跟改前一样。
+ * pick 返回 null 的邻表（没有可导航格）跳过，接着看再前/再后一张。
  */
-function firstCellInNextTable(table, col) {
+function cellInAdjacentTable(table, step, pick) {
   const scope = table.closest('.mainContainer') || table.parentElement
   if (!scope) return null
 
@@ -112,11 +135,31 @@ function firstCellInNextTable(table, col) {
   const i = tables.indexOf(table)
   if (i < 0) return null
 
-  for (let k = i + 1; k < tables.length; k++) {
-    const hit = firstNavigableCell(tables[k], col)
+  for (let k = i + step; k >= 0 && k < tables.length; k += step) {
+    const hit = pick(tables[k])
     if (hit) return hit
   }
   return null
+}
+
+/** ↓ / Enter 走到本表末行时落到下一张表的同列格（溶解段的多个 section 就是多张表） */
+function firstCellInNextTable(table, col) {
+  return cellInAdjacentTable(table, 1, (t) => firstNavigableCell(t, col))
+}
+
+/** ↑ 走到本表首行时落到上一张表的同列格 */
+function lastCellInPrevTable(table, col) {
+  return cellInAdjacentTable(table, -1, (t) => lastNavigableCell(t, col))
+}
+
+/** → 走到本表末格时落到下一张表的首格 */
+function firstCellOfNextTable(table) {
+  return cellInAdjacentTable(table, 1, (t) => firstNavigableCell(t, 0))
+}
+
+/** ← 走到本表首格时落到上一张表的末格 */
+function lastCellOfPrevTable(table) {
+  return cellInAdjacentTable(table, -1, lastCellOfTable)
 }
 
 /**
@@ -130,7 +173,7 @@ function nextInRow(row, cell) {
   return i >= 0 && i + 1 < cells.length ? cells[i + 1].cell : null
 }
 
-/** 左/右：本行内前/后一个；越界则环绕到上一行末格 / 下一行首格 */
+/** 左/右：本行内前/后一个；越界则环绕到上一行末格 / 下一行首格；整表走完返回 null */
 function findHorizontal(table, row, cell, step) {
   const cells = navigableOf(row)
   const i = cells.findIndex((c) => c.cell === cell)
@@ -182,8 +225,16 @@ export function handleGridKeydown(event) {
           : dir === 'right' ? findHorizontal(table, row, cell, 1)
             : nextInRow(row, cell)
 
-  // Enter 走到本表末行时接着进下一张表（跨 section）；↓ 走到头仍然停住 —— 见 findVertical 的注释。
-  if (!next && event.key === 'Enter') next = firstCellInNextTable(table, col)
+  // 本表走到边界 → 跨到同一 `.mainContainer` 里的**相邻表**（拆分表 ↔ 各溶解组表）：
+  //   ↓ / Enter → 下一张表同列格；↑ → 上一张表同列格；
+  //   → → 下一张表首格；       ← → 上一张表末格。
+  // 只在容器内找（见 cellInAdjacentTable）；最后一张表再按方向键仍然停住。
+  if (!next) {
+    if (dir === 'up') next = lastCellInPrevTable(table, col)
+    else if (dir === 'down') next = firstCellInNextTable(table, col)
+    else if (dir === 'left') next = lastCellOfPrevTable(table)
+    else if (dir === 'right') next = firstCellOfNextTable(table)
+  }
 
   if (isArrow) {
     // 方向键一律接管，**即使走到头也拦**：不拦的话 EP 会借 ↓ 开下拉，
