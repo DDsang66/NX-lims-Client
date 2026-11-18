@@ -3,7 +3,11 @@
     <!-- 左侧 40% -->
     <div class="left-panel">
       <!-- 子组件1: Setting Form -->
-      <left-top-section v-model:reportNums="reportNums"
+      <!-- reportNums 是 reactive 常量：v-model 会生成 `reportNums = $event`，对 const 赋值直接
+           抛 TypeError（Assignment to constant variable）。reactive 只能就地合并、不能整体替换，
+           所以这里显式接 emit 再 Object.assign；form 是 ref，v-model 仍可用。 -->
+      <left-top-section :reportNums="reportNums"
+                        @update:reportNums="v => Object.assign(reportNums, v)"
                         v-model:form="form"
                         :additionItems="additionItems"
                         :menuName="menuName"
